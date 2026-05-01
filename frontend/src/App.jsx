@@ -28,6 +28,8 @@ import CallLayout from "./components/Call/CallLayout";
 
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
+import { SettingsProvider } from "./context/SettingsContext"; // 🔥 NEW
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import UserProfile from "./components/User/UserProfile";
@@ -43,7 +45,7 @@ function App() {
     return localStorage.getItem("step") || "splash";
   });
 
-  // ✅ CENTRAL STEP UPDATE (ONLY THIS USED)
+  // ✅ CENTRAL STEP UPDATE
   const updateStep = (newStep) => {
     localStorage.setItem("step", newStep);
     setStep(newStep);
@@ -103,44 +105,48 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <BrowserRouter>
+        <SettingsProvider> {/* 🔥 NEW WRAP (IMPORTANT) */}
+          <BrowserRouter>
 
-          <Toaster position="top-center" />
-          <Navbar />
+            <Toaster position="top-center" />
+            <Navbar />
 
-          <Routes>
-            <Route path="/" element={<ChatLayout />} />
-            <Route path="/chat/:id" element={<ChatLayout />} />
-            <Route path="/new-chat" element={<NewChat />} />
-            <Route path="/new-group" element={<NewGroup />} />
+            <Routes>
+              <Route path="/" element={<ChatLayout />} />
+              <Route path="/chat/:id" element={<ChatLayout />} />
+              <Route path="/new-chat" element={<NewChat />} />
+              <Route path="/new-group" element={<NewGroup />} />
 
-            <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/profile" element={<Profile />} />
+              <Route path="/user/:id" element={<UserProfile />} />
+              <Route path="/profile" element={<Profile />} />
 
-            <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={<Settings />} />
 
-            <Route path="/settings/privacy" element={<Privacy />} />
-            <Route path="/settings/security" element={<Security />} />
-            <Route path="/settings/chats" element={<ChatsSettings />} />
-            <Route path="/settings/notifications" element={<Notifications />} />
-            <Route path="/settings/storage" element={<Storage />} />
-            <Route path="/settings/two-step" element={<TwoStep />} />
-            <Route path="/settings/help" element={<Help />} />
-            <Route path="/settings/change-number" element={<ChangeNumber />} />
-            <Route path="/linked-devices" element={<LinkedDevices />} />
-            <Route path="/settings/theme-drawer" element={<SettingsDrawer />} />
+              <Route path="/settings/privacy" element={<Privacy />} />
+              <Route path="/settings/security" element={<Security />} />
+              <Route path="/settings/chats" element={<ChatsSettings />} />
+              <Route path="/settings/notifications" element={<Notifications />} />
+              <Route path="/settings/storage" element={<Storage />} />
+              <Route path="/settings/two-step" element={<TwoStep />} />
+              <Route path="/settings/help" element={<Help />} />
+              <Route path="/settings/change-number" element={<ChangeNumber />} />
+              <Route path="/linked-devices" element={<LinkedDevices />} />
 
-            <Route path="/groups" element={<ChatLayout />} />
-            <Route path="/groups/:id" element={<ChatLayout />} />
+              {/* 🔥 Drawer route */}
+              <Route path="/settings/theme-drawer" element={<SettingsDrawer />} />
 
-            <Route path="/community" element={<ChatLayout />} />
-            <Route path="/community/:id" element={<ChatLayout />} />
+              <Route path="/groups" element={<ChatLayout />} />
+              <Route path="/groups/:id" element={<ChatLayout />} />
 
-            <Route path="/status" element={<StatusLayout />} />
-            <Route path="/call" element={<CallLayout />} />
-          </Routes>
+              <Route path="/community" element={<ChatLayout />} />
+              <Route path="/community/:id" element={<ChatLayout />} />
 
-        </BrowserRouter>
+              <Route path="/status" element={<StatusLayout />} />
+              <Route path="/call" element={<CallLayout />} />
+            </Routes>
+
+          </BrowserRouter>
+        </SettingsProvider>
       </ThemeProvider>
     </AuthProvider>
   );

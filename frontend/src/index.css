@@ -10,10 +10,11 @@
 }
 
 .hide-scrollbar {
-  -ms-overflow-style: none;  /* IE/Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
+/* ================= ROOT VARIABLES ================= */
 :root {
   --bg: #0b0f1a;
   --text: #ffffff;
@@ -22,6 +23,10 @@
 
   --primary: #00c896;
   --secondary: #0ea5e9;
+
+  /* 🔥 SETTINGS SUPPORT */
+  --font: sans-serif;
+  --font-size: 16px;
 }
 
 /* ================= LIGHT ================= */
@@ -30,8 +35,7 @@
   --text: #0b0f1a;
   --card: #ffffff;
   --border: rgba(0, 0, 0, 0.08);
-
-  --primary: #00c896; /* same green */
+  --primary: #00c896;
 }
 
 /* ================= DARK ================= */
@@ -40,7 +44,6 @@
   --text: #ffffff;
   --card: #111827;
   --border: rgba(255, 255, 255, 0.1);
-
   --primary: #00c896;
 }
 
@@ -50,8 +53,7 @@
   --text: #22c55e;
   --card: #052e2b;
   --border: rgba(34, 197, 94, 0.2);
-
-  --primary: #22c55e; /* neon green 🔥 */
+  --primary: #22c55e;
 }
 
 /* ================= OCEAN ================= */
@@ -60,8 +62,7 @@
   --text: #38bdf8;
   --card: #0c4a6e;
   --border: rgba(56, 189, 248, 0.2);
-
-  --primary: #38bdf8; /* blue 🌊 */
+  --primary: #38bdf8;
 }
 
 /* ================= PURPLE ================= */
@@ -70,15 +71,19 @@
   --text: #c084fc;
   --card: #3b0764;
   --border: rgba(192, 132, 252, 0.2);
-
-  --primary: #c084fc; /* purple 💜 */
+  --primary: #c084fc;
 }
 
 /* ================= GLOBAL ================= */
 body {
   background-color: var(--bg);
   color: var(--text);
-  transition: all 0.3s ease;
+
+  /* 🔥 FIX: FORCE FONT APPLY (Tailwind override fix) */
+  font-family: var(--font) !important;
+  font-size: var(--font-size);
+
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ================= GLASS ================= */
@@ -86,6 +91,9 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
+
+  /* fallback + modern */
+  background: rgba(255, 255, 255, 0.05);
   background: color-mix(in srgb, var(--card) 60%, transparent);
 }
 
@@ -97,6 +105,7 @@ body {
 
 /* ================= INPUT ================= */
 .input {
+  background: rgba(255,255,255,0.05);
   background: color-mix(in srgb, var(--card) 70%, transparent);
   border: 1px solid var(--border);
   color: var(--text);
@@ -105,7 +114,31 @@ body {
 /* ================= ICON GLOBAL ================= */
 .icon {
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: color 0.3s ease;
+}
+
+/* ================= TRANSPARENT MODE ================= */
+.transparent .glass {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ================= CHAT STYLE SUPPORT (🔥 IMPORTANT) ================= */
+
+/* Rounded (default) */
+.chat-rounded {
+  border-radius: 12px;
+}
+
+/* Sharp */
+.chat-sharp {
+  border-radius: 0px;
+}
+
+/* Glass */
+.chat-glass {
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
 }
 
 /* ================= ANIMATION ================= */
@@ -122,4 +155,18 @@ body {
 
 .animate-menu {
   animation: menuFadeScale 0.2s ease forwards;
+}
+
+/* 🔥 Drawer animation fix */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease;
 }

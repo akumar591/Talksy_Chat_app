@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../../context/ThemeContext";
+import { useSettings } from "../../context/SettingsContext"; // 🔥 NEW
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 
@@ -23,18 +24,24 @@ const themeActive = {
 
 const SettingsDrawer = ({ open, onClose }) => {
   const { theme, setTheme } = useTheme();
+
+  // 🔥 GLOBAL SETTINGS (CONNECTED)
+  const {
+    font, setFont,
+    fontSize, setFontSize,
+    chatStyle, setChatStyle,
+    transparent, setTransparent
+  } = useSettings();
+
   const navigate = useNavigate();
 
   const [showTheme, setShowTheme] = useState(false);
   const [showFont, setShowFont] = useState(false);
-  const [transparent, setTransparent] = useState(false);
 
-  // 🔥 ROUTE SUPPORT ADD (NO UI CHANGE)
+  // 🔥 ROUTE SUPPORT
   const isRouteMode = open === undefined;
-
   if (!open && !isRouteMode) return null;
 
-  // 🔥 SAFE CLOSE HANDLER
   const handleClose = onClose || (() => navigate(-1));
 
   return (
@@ -53,22 +60,15 @@ const SettingsDrawer = ({ open, onClose }) => {
         ${transparent ? "bg-white/5" : "bg-[var(--card)]"}
       `}
       >
-        {/* 🔥 HEADER (NEW) */}
+        {/* HEADER */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] sticky top-0 bg-[var(--card)] z-10">
-          
-          {/* Mobile Back */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleClose}
-              className="md:hidden text-xl icon"
-            >
+            <button onClick={handleClose} className="md:hidden text-xl icon">
               <FiArrowLeft />
             </button>
-
             <h2 className="text-lg font-semibold">Settings</h2>
           </div>
 
-          {/* Close button */}
           <button
             onClick={handleClose}
             className="text-lg icon hover:text-[var(--primary)]"
@@ -109,7 +109,7 @@ const SettingsDrawer = ({ open, onClose }) => {
                       ${
                         theme === t
                           ? themeActive[t]
-                          : themeHover[theme]
+                          : themeHover[t]   // ✅ FIXED BUG
                       }
                     `}
                   >
@@ -142,6 +142,7 @@ const SettingsDrawer = ({ open, onClose }) => {
                 {["Default", "Poppins", "Inter", "Montserrat"].map((f) => (
                   <div
                     key={f}
+                    onClick={() => setFont(f)} // ✅ WORKING
                     className={`p-2 rounded cursor-pointer transition ${themeHover[theme]}`}
                   >
                     {f}
@@ -158,6 +159,7 @@ const SettingsDrawer = ({ open, onClose }) => {
               {["S", "M", "L"].map((size) => (
                 <button
                   key={size}
+                  onClick={() => setFontSize(size)} // ✅ WORKING
                   className={`px-3 py-1 rounded border border-white/10 transition ${themeHover[theme]}`}
                 >
                   {size}
@@ -173,6 +175,7 @@ const SettingsDrawer = ({ open, onClose }) => {
               {["Rounded", "Sharp", "Glass"].map((style) => (
                 <div
                   key={style}
+                  onClick={() => setChatStyle(style)} // ✅ WORKING
                   className={`p-2 rounded cursor-pointer transition ${themeHover[theme]}`}
                 >
                   {style}
@@ -185,7 +188,7 @@ const SettingsDrawer = ({ open, onClose }) => {
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm">Transparent Mode</p>
             <button
-              onClick={() => setTransparent(!transparent)}
+              onClick={() => setTransparent(!transparent)} // ✅ GLOBAL
               className={`
                 w-10 h-5 rounded-full transition relative
                 ${transparent ? "bg-[#00c896]" : "bg-gray-400"}
