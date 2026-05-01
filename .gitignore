@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Env
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# Build
+dist/
+build/
+target/
+
+# Uploads
+uploads/
+
+# Spring sensitive file (VERY IMPORTANT)
+backend/src/main/resources/application.properties
+backend/backend/src/main/resources/application.properties

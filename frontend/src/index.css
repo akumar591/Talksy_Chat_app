@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================= DEFAULT (DARK THEME) ================= */
+
+/* 🔥 HIDE SCROLLBAR COMPLETELY */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE/Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+:root {
+  --bg: #0b0f1a;
+  --text: #ffffff;
+  --card: #111827;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --primary: #00c896;
+  --secondary: #0ea5e9;
+}
+
+/* ================= LIGHT ================= */
+.light {
+  --bg: #ffffff;
+  --text: #0b0f1a;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+
+  --primary: #00c896; /* same green */
+}
+
+/* ================= DARK ================= */
+.dark {
+  --bg: #0b0f1a;
+  --text: #ffffff;
+  --card: #111827;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --primary: #00c896;
+}
+
+/* ================= NEON ================= */
+.neon {
+  --bg: #020617;
+  --text: #22c55e;
+  --card: #052e2b;
+  --border: rgba(34, 197, 94, 0.2);
+
+  --primary: #22c55e; /* neon green 🔥 */
+}
+
+/* ================= OCEAN ================= */
+.ocean {
+  --bg: #020617;
+  --text: #38bdf8;
+  --card: #0c4a6e;
+  --border: rgba(56, 189, 248, 0.2);
+
+  --primary: #38bdf8; /* blue 🌊 */
+}
+
+/* ================= PURPLE ================= */
+.purple {
+  --bg: #020617;
+  --text: #c084fc;
+  --card: #3b0764;
+  --border: rgba(192, 132, 252, 0.2);
+
+  --primary: #c084fc; /* purple 💜 */
+}
+
+/* ================= GLOBAL ================= */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+/* ================= GLASS ================= */
+.glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+}
+
+/* ================= SOLID ================= */
+.solid {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* ================= INPUT ================= */
+.input {
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* ================= ICON GLOBAL ================= */
+.icon {
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes menuFadeScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-menu {
+  animation: menuFadeScale 0.2s ease forwards;
+}
