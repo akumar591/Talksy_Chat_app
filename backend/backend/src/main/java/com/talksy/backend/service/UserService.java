@@ -12,62 +12,50 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    // ===============================
-    // 💾 SAVE USER (CREATE / UPDATE)
-    // ===============================
+    // 💾 SAVE USER
     @Transactional
     public User saveUser(User user) {
 
         if (user == null) {
-            throw new RuntimeException("User is null ❌");
+            throw new RuntimeException("User cannot be null");
         }
 
-        // 🔥 phone must exist
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new RuntimeException("Phone is required ❌");
+            throw new RuntimeException("Phone is required");
         }
 
-        // 🔥 email duplicate check
         if (user.getEmail() != null) {
             User existingByEmail = userRepository.findByEmail(user.getEmail()).orElse(null);
 
             if (existingByEmail != null && !existingByEmail.getId().equals(user.getId())) {
-                throw new RuntimeException("Email already in use ❌");
+                throw new RuntimeException("Email already in use");
             }
         }
 
         return userRepository.save(user);
     }
 
-    // ===============================
     // 📱 GET USER BY PHONE
-    // ===============================
     public User getByPhone(String phone) {
 
         if (phone == null || phone.isBlank()) {
-            throw new RuntimeException("Phone is required ❌");
+            throw new RuntimeException("Phone is required");
         }
 
-        return userRepository.findByPhone(phone)
-                .orElse(null);
+        return userRepository.findByPhone(phone).orElse(null);
     }
 
-    // ===============================
     // 📧 GET USER BY EMAIL
-    // ===============================
     public User getByEmail(String email) {
 
         if (email == null || email.isBlank()) {
-            throw new RuntimeException("Email is required ❌");
+            throw new RuntimeException("Email is required");
         }
 
-        return userRepository.findByEmail(email)
-                .orElse(null);
+        return userRepository.findByEmail(email).orElse(null);
     }
 
-    // ===============================
-    // 🔥 GET OR CREATE USER (IMPORTANT)
-    // ===============================
+    // 🔥 GET OR CREATE USER
     @Transactional
     public User getOrCreate(String phone) {
 
@@ -82,9 +70,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // ===============================
     // ✅ EXISTS CHECKS
-    // ===============================
     public boolean existsByPhone(String phone) {
         return userRepository.findByPhone(phone).isPresent();
     }

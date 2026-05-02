@@ -14,7 +14,6 @@ import com.talksy.backend.entity.RefreshToken;
 import com.talksy.backend.repository.RefreshTokenRepository;
 import com.talksy.backend.payload.ApiResponse;
 
-// DTO
 import com.talksy.backend.dto.*;
 import jakarta.validation.Valid;
 
@@ -40,7 +39,7 @@ public class AuthController {
     private final RefreshTokenRepository refreshRepo;
 
     // ===============================
-    // 📱 SEND PHONE OTP
+    // SEND PHONE OTP
     // ===============================
     @PostMapping("/send-otp")
     public ResponseEntity<ApiResponse<?>> sendOtp(@Valid @RequestBody SendOtpRequest req) {
@@ -48,18 +47,18 @@ public class AuthController {
         String phone = req.getPhone();
 
         if (phone == null || !phone.matches("^[6-9]\\d{9}$")) {
-            throw new RuntimeException("Invalid phone ❌");
+            throw new RuntimeException("Invalid phone");
         }
 
         otpService.sendOtp(phone, OtpType.PHONE);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "OTP sent ✅", null)
+                new ApiResponse<>(true, "OTP sent", null)
         );
     }
 
     // ===============================
-    // 🔐 VERIFY PHONE OTP
+    // VERIFY PHONE OTP
     // ===============================
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<?>> verifyOtp(@Valid @RequestBody VerifyOtpRequest req,
@@ -69,13 +68,13 @@ public class AuthController {
         String otp = req.getOtp();
 
         if (phone == null || otp == null) {
-            throw new RuntimeException("Phone & OTP required ❌");
+            throw new RuntimeException("Phone and OTP required");
         }
 
         boolean valid = otpService.verifyOtp(phone, otp, OtpType.PHONE);
 
         if (!valid) {
-            throw new RuntimeException("Invalid OTP ❌");
+            throw new RuntimeException("Invalid OTP");
         }
 
         User user = userService.getByPhone(phone);
@@ -99,7 +98,6 @@ public class AuthController {
         rt.setExpiry(LocalDateTime.now().plusDays(7));
         refreshRepo.save(rt);
 
-        // 🔥 FIXED COOKIE CONFIG
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(true)
                 .secure(false)
@@ -124,12 +122,12 @@ public class AuthController {
         data.put("isNewUser", isNewUser);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Login successful ✅", data)
+                new ApiResponse<>(true, "Login successful", data)
         );
     }
 
     // ===============================
-    // 📧 SEND EMAIL OTP
+    // SEND EMAIL OTP
     // ===============================
     @PostMapping("/send-email-otp")
     public ResponseEntity<ApiResponse<?>> sendEmailOtp(@Valid @RequestBody SendEmailOtpRequest req) {
@@ -137,18 +135,18 @@ public class AuthController {
         String email = req.getEmail();
 
         if (email == null || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new RuntimeException("Invalid email ❌");
+            throw new RuntimeException("Invalid email");
         }
 
         otpService.sendOtp(email, OtpType.EMAIL);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Email OTP sent ✅", null)
+                new ApiResponse<>(true, "Email OTP sent", null)
         );
     }
 
     // ===============================
-    // 📧 VERIFY EMAIL OTP
+    // VERIFY EMAIL OTP
     // ===============================
     @PostMapping("/verify-email")
     public ResponseEntity<ApiResponse<?>> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
@@ -158,23 +156,23 @@ public class AuthController {
         String otp = req.getOtp();
 
         if (phone == null || email == null || otp == null) {
-            throw new RuntimeException("Phone, Email & OTP required ❌");
+            throw new RuntimeException("Phone, Email and OTP required");
         }
 
         User user = userService.getByPhone(phone);
 
         if (user == null) {
-            throw new RuntimeException("User not found ❌");
+            throw new RuntimeException("User not found");
         }
 
         if (!user.isPhoneVerified()) {
-            throw new RuntimeException("Verify phone first ❌");
+            throw new RuntimeException("Verify phone first");
         }
 
         boolean valid = otpService.verifyOtp(email, otp, OtpType.EMAIL);
 
         if (!valid) {
-            throw new RuntimeException("Invalid OTP ❌");
+            throw new RuntimeException("Invalid OTP");
         }
 
         user.setEmail(email);
@@ -183,18 +181,18 @@ public class AuthController {
         User saved = userService.saveUser(user);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Email verified ✅", saved)
+                new ApiResponse<>(true, "Email verified", saved)
         );
     }
 
     // ===============================
-    // 👤 PROFILE UPDATE
+    // PROFILE UPDATE
     // ===============================
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody ProfileSetupRequest req) {
 
         if (req.getPhone() == null || req.getPhone().isBlank()) {
-            throw new RuntimeException("Phone required ❌");
+            throw new RuntimeException("Phone required");
         }
 
         String phone = req.getPhone().trim();
@@ -202,15 +200,15 @@ public class AuthController {
         User user = userService.getByPhone(phone);
 
         if (user == null) {
-            throw new RuntimeException("User not found ❌");
+            throw new RuntimeException("User not found");
         }
 
         if (!user.isPhoneVerified()) {
-            throw new RuntimeException("Verify phone first ❌");
+            throw new RuntimeException("Verify phone first");
         }
 
         if (!user.isEmailVerified()) {
-            throw new RuntimeException("Verify email first ❌");
+            throw new RuntimeException("Verify email first");
         }
 
         if (req.getName() != null && !req.getName().isBlank()) {
@@ -228,36 +226,32 @@ public class AuthController {
         User updated = userService.saveUser(user);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Profile updated ✅", updated)
+                new ApiResponse<>(true, "Profile updated", updated)
         );
     }
 
     // ===============================
-    // 👤 GET PROFILE
+    // GET PROFILE (CLEAN)
     // ===============================
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<?>> getProfile(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<?>> getProfile() {
 
-        String token = extractToken(request, "accessToken");
-
-        if (token == null) {
-            throw new RuntimeException("Unauthorized ❌");
-        }
-
-        String phone = jwtService.extractPhone(token);
-        User user = userService.getByPhone(phone);
+        User user = (User) org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
 
         if (user == null) {
-            throw new RuntimeException("User not found ❌");
+            throw new RuntimeException("Unauthorized");
         }
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Profile fetched ✅", user)
+                new ApiResponse<>(true, "Profile fetched", user)
         );
     }
 
     // ===============================
-    // 👤 LOGOUT
+    // LOGOUT
     // ===============================
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
@@ -291,12 +285,12 @@ public class AuthController {
         response.addHeader("Set-Cookie", clearRefresh.toString());
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Logout successful ✅", null)
+                new ApiResponse<>(true, "Logout successful", null)
         );
     }
 
     // ===============================
-    // 🔄 REFRESH TOKEN
+    // REFRESH TOKEN
     // ===============================
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<?>> refresh(HttpServletRequest request, HttpServletResponse response) {
@@ -306,7 +300,7 @@ public class AuthController {
         Optional<RefreshToken> stored = refreshRepo.findByToken(refreshToken);
 
         if (stored.isEmpty()) {
-            throw new RuntimeException("Invalid refresh token ❌");
+            throw new RuntimeException("Invalid refresh token");
         }
 
         String phone = jwtService.extractPhone(refreshToken);
@@ -325,12 +319,12 @@ public class AuthController {
         response.addHeader("Set-Cookie", cookie.toString());
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Token refreshed ✅", null)
+                new ApiResponse<>(true, "Token refreshed", null)
         );
     }
 
     // ===============================
-    // 🍪 EXTRACT TOKEN
+    // EXTRACT TOKEN
     // ===============================
     private String extractToken(HttpServletRequest request, String name) {
 

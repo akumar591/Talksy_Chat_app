@@ -12,22 +12,17 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    // 🔐 SECRET FROM ENV (FINAL FIX)
     @Value("${jwt.secret}")
     private String SECRET;
 
-    // 🔑 Dynamic key (same logic, no change)
     private Key getKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
 
-    // ⏳ expiry (UNCHANGED)
-    private final long ACCESS_EXPIRATION = 1000 * 60 * 15; // 15 min
-    private final long REFRESH_EXPIRATION = 1000L * 60 * 60 * 24 * 7; // 7 days
+    private final long ACCESS_EXPIRATION = 1000 * 60 * 15;
+    private final long REFRESH_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
 
-    // ===============================
-    // 🔥 GENERATE ACCESS TOKEN
-    // ===============================
+    // 🔥 ACCESS TOKEN
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getPhone())
@@ -38,9 +33,7 @@ public class JwtService {
                 .compact();
     }
 
-    // ===============================
-    // 🔥 GENERATE REFRESH TOKEN
-    // ===============================
+    // 🔥 REFRESH TOKEN
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getPhone())
@@ -51,16 +44,26 @@ public class JwtService {
                 .compact();
     }
 
-    // ===============================
     // 🔍 EXTRACT PHONE
-    // ===============================
     public String extractPhone(String token) {
         return getClaims(token).getSubject();
     }
 
-    // ===============================
-    // 🔍 VALIDATE TOKEN
-    // ===============================
+    // 🔍 CHECK EXPIRY
+    public boolean isTokenExpired(String token) {
+        return getClaims(token).getExpiration().before(new Date());
+    }
+
+    // 🔍 FULL VALIDATION (🔥 USE THIS)
+    public boolean isTokenValid(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // 🔍 OLD METHOD (optional keep)
     public boolean isValid(String token) {
         try {
             getClaims(token);
@@ -70,9 +73,7 @@ public class JwtService {
         }
     }
 
-    // ===============================
     // 🔍 PARSE CLAIMS
-    // ===============================
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey())

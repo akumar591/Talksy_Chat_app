@@ -3,16 +3,13 @@ package com.talksy.backend.config;
 import com.talksy.backend.security.JwtFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-// 🔥 CORS IMPORTS
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.*;
 
 import java.util.List;
 
@@ -26,55 +23,45 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // 🔥 Disable CSRF (JWT based auth)
+                // ❌ CSRF off (JWT use kar rahe ho)
                 .csrf(csrf -> csrf.disable())
 
-                // 🔥 ENABLE CORS (VERY IMPORTANT)
+                // 🔥 Stateless (VERY IMPORTANT)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔥 CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 🔥 Custom error handling (VERY IMPORTANT)
+                // 🔥 Error handling (same style as tera ApiResponse)
                 .exceptionHandling(ex -> ex
-
-                        // 🔐 User not logged in / invalid token
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
-                            response.getWriter().write("""
-                                {
-                                  "success": false,
-                                  "message": "Please login / verify phone first ❌"
-                                }
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setContentType("application/json");
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.getWriter().write("""
+                                {"success":false,"message":"Unauthorized ❌"}
                             """);
                         })
-
-                        // 🚫 User logged in but no permission
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-
-                            response.getWriter().write("""
-                                {
-                                  "success": false,
-                                  "message": "Access denied ❌"
-                                }
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setContentType("application/json");
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            res.getWriter().write("""
+                                {"success":false,"message":"Access denied ❌"}
                             """);
                         })
                 )
 
-                // 🔐 Route security
+                // 🔐 ROUTES
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔓 PUBLIC ROUTES
-                        .requestMatchers(
-                                "/api/auth/send-otp",
-                                "/api/auth/verify-otp",
-                                "/api/auth/send-email-otp",
-                                "/api/auth/verify-email",
-                                "/api/file/**"
-                        ).permitAll()
+                        // 🔓 AUTH (LOGIN FLOW — MUST BE OPEN)
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                        // 🔒 PROTECTED ROUTES
+                        // 🔓 FILE UPLOAD (public)
+                        .requestMatchers("/api/file/**").permitAll()
+
+                        // 🔒 EVERYTHING ELSE (contacts, future APIs)
                         .anyRequest().authenticated()
                 )
 
@@ -84,16 +71,25 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔥🔥🔥 CORS CONFIG (MAIN FIX)
+    // ===============================
+    // 🌐 CORS CONFIG (SAFE FOR YOUR FLOW)
+    // ===============================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
 
+        // ⚠️ frontend origin (React/Vite)
         config.setAllowedOrigins(List.of("http://localhost:5173"));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+
+        // 🔥 VERY IMPORTANT (cookies ke liye)
         config.setAllowCredentials(true);
+
+        // 🔥 expose cookies
+        config.setExposedHeaders(List.of("Set-Cookie"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
