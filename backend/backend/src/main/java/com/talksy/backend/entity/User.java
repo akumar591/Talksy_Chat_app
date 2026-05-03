@@ -1,13 +1,17 @@
 package com.talksy.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     @Id
@@ -39,10 +43,21 @@ public class User {
     @Column(nullable = false)
     private boolean emailVerified = false;
 
-    // 🟢 last active
+    // ===============================
+    // 🟢 ONLINE / ACTIVITY
+    // ===============================
+    @Column(nullable = false)
+    private boolean online = false;
+
+    // 🔥 last activity (important for presence logic)
+    private LocalDateTime lastActiveAt;
+
+    // 🟢 last seen (shown in UI)
     private LocalDateTime lastSeen;
 
-    // 🕒 timestamps
+    // ===============================
+    // 🕒 TIMESTAMPS
+    // ===============================
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,12 +68,37 @@ public class User {
     // ===============================
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        // default activity
+        this.lastActiveAt = now;
+
+        if (!this.online) {
+            this.lastSeen = now;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===============================
+    // 🔥 HELPER METHODS
+    // ===============================
+
+    // 🟢 mark user online
+    public void markOnline() {
+        this.online = true;
+        this.lastActiveAt = LocalDateTime.now();
+    }
+
+    // 🔴 mark user offline
+    public void markOffline() {
+        this.online = false;
+        this.lastSeen = LocalDateTime.now();
     }
 }

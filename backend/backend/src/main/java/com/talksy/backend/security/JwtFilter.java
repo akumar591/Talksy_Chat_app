@@ -21,7 +21,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final TokenBlacklistRepository blacklistRepo;
-    private final UserService userService; // 🔥 NEW
+    private final UserService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,7 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (token != null) {
 
-                // ❌ blacklist
+                // ❌ blacklist check
                 if (blacklistRepo.existsByToken(token)) {
                     sendError(response, "Token is blacklisted");
                     return;
@@ -52,6 +52,12 @@ public class JwtFilter extends OncePerRequestFilter {
                 User user = userService.getByPhone(phone);
 
                 if (user != null) {
+
+                    // 🔥 NEW: Activity tracking (SAFE ADDITION)
+                    user.markOnline(); // sets online + lastActiveAt
+                    userService.saveUser(user);
+
+                    // ✅ authentication set
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(
                                     user,
@@ -73,7 +79,11 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    // ===============================
+    // 🍪 Extract token
+    // ===============================
     private String extractTokenFromCookies(HttpServletRequest request) {
+
         if (request.getCookies() == null) return null;
 
         for (Cookie cookie : request.getCookies()) {
@@ -81,12 +91,20 @@ public class JwtFilter extends OncePerRequestFilter {
                 return cookie.getValue();
             }
         }
+
         return null;
     }
 
+    // ===============================
+    // ❌ Error response
+    // ===============================
     private void sendError(HttpServletResponse response, String msg) throws IOException {
+
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
-        response.getWriter().write("{\"success\":false,\"message\":\"" + msg + "\"}");
+
+        response.getWriter().write(
+                "{\"success\":false,\"message\":\"" + msg + "\"}"
+        );
     }
 }
