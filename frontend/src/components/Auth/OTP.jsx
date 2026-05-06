@@ -78,7 +78,7 @@ function OTP({ onVerify }) {
       );
 
       // ✅ GET PROFILE (with credentials)
-      const res = await API.get("/auth/profile", {
+      const res = await API.get("/users/me", {
         withCredentials: true, // 🔥 FIX
       });
 

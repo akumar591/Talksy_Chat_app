@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+
 import {
   FiMoreVertical,
   FiPhone,
@@ -9,116 +10,308 @@ import {
   FiSmile,
   FiCamera,
   FiUser,
-  FiBellOff,
   FiTrash2,
   FiImage,
-  FiLock,
   FiCornerUpLeft,
+  FiX,
 } from "react-icons/fi";
+
 import { useNavigate } from "react-router-dom";
-import { useSettings } from "../../context/SettingsContext"; // 🔥 NEW
+
+import { useSettings } from "../../context/SettingsContext";
+import { useChat } from "../../context/ChatContext";
+import { useAuth } from "../../context/AuthContext";
 
 const ChatWindow = ({ chat, onBack }) => {
   const navigate = useNavigate();
 
-  const { chatStyle } = useSettings(); // 🔥 NEW
+  const { user } = useAuth();
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello 👋", sender: "other" },
-    { id: 2, text: "Hi bro!", sender: "me" },
-  ]);
+  const { chatStyle } = useSettings();
 
+  const {
+    messages,
+    conversation,
+
+    sendMessage,
+    reactToMessage,
+
+    deleteForMe,
+    deleteForEveryone,
+
+    clearChat,
+
+    replyTo,
+    setReplyTo,
+
+    fetchMessages,
+  } = useChat();
+
+  // ===============================
+  // 🔥 STATES
+  // ===============================
   const [input, setInput] = useState("");
-  const [replyTo, setReplyTo] = useState(null);
 
   const [showAttach, setShowAttach] = useState(false);
+
   const [showEmoji, setShowEmoji] = useState(false);
+
   const [showMenu, setShowMenu] = useState(false);
+
   const [reactionMsgId, setReactionMsgId] = useState(null);
+
+  const [activeMessageId, setActiveMessageId] = useState(null);
+
+  const [messageMenuId, setMessageMenuId] = useState(null);
 
   const [isRecording, setIsRecording] = useState(false);
 
+  // ===============================
+  // 🔥 REFS
+  // ===============================
   const menuRef = useRef(null);
+
   const emojiRef = useRef(null);
+
   const attachRef = useRef(null);
 
+  const reactionRef = useRef(null);
+
+  const messagesEndRef = useRef(null);
+
+  const inputRef = useRef(null);
+
+  const timerRef = useRef(null);
+
+  // ===============================
+  // 🔥 EMOJIS
+  // ===============================
   const emojis = ["😀", "😂", "😍", "😎", "😢", "🔥", "❤️", "👍", "🎉"];
 
-  const sendMessage = () => {
+  // ===============================
+  // 🔥 SORT MESSAGES
+  // ===============================
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
+  }, [messages]);
+
+  // ===============================
+  // 🔥 FETCH MESSAGES
+  // ===============================
+  useEffect(() => {
+    if (conversation?.id) {
+      fetchMessages(conversation.id);
+    }
+  }, [conversation?.id, fetchMessages]);
+
+  // ===============================
+  // 🔥 AUTO SCROLL
+  // ===============================
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [sortedMessages]);
+
+  // ===============================
+  // 🔥 AUTO FOCUS
+  // ===============================
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [replyTo]);
+
+  // ===============================
+  // 🔥 CLEANUP TIMER
+  // ===============================
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  // ===============================
+  // 🔥 CLOSE MENUS
+  // ===============================
+  useEffect(() => {
+    const handler = (e) => {
+      // MENU
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+
+      // EMOJI
+      if (emojiRef.current && !emojiRef.current.contains(e.target)) {
+        setShowEmoji(false);
+      }
+
+      // ATTACH
+      if (attachRef.current && !attachRef.current.contains(e.target)) {
+        setShowAttach(false);
+      }
+
+      // REACTION
+      if (reactionRef.current && !reactionRef.current.contains(e.target)) {
+        setReactionMsgId(null);
+      }
+
+      // DELETE MENU
+      if (!e.target.closest(".delete-menu")) {
+        setMessageMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handler);
+
+    return () => {
+      document.removeEventListener("mousedown", handler);
+    };
+  }, []);
+
+  // ===============================
+  // 🔥 SEND MESSAGE
+  // ===============================
+  const handleSendMessage = useCallback(async () => {
     if (!input.trim()) return;
 
-    setMessages([
-      ...messages,
-      {
-        id: Date.now(),
-        text: input,
-        sender: "me",
-        replyTo,
-      },
-    ]);
+    if (!conversation?.id) return;
 
-    setInput("");
-    setReplyTo(null);
-  };
+    try {
+      await sendMessage({
+        conversationId: conversation.id,
+        content: input.trim(),
+        type: "TEXT",
 
+        // 🔥 REPLY FIX
+        replyToId: replyTo?.id || null,
+      });
+
+      setInput("");
+
+      setReplyTo(null);
+
+      inputRef.current?.focus();
+    } catch (error) {
+      console.error("Send message error:", error);
+    }
+  }, [input, conversation, sendMessage, replyTo, setReplyTo]);
+
+  // ===============================
+  // 🔥 MIC
+  // ===============================
   const handleMicClick = () => {
     setIsRecording(true);
-    setTimeout(() => {
+
+    timerRef.current = setTimeout(() => {
       setIsRecording(false);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now(), text: "🎤 Voice message", sender: "me" },
-      ]);
     }, 2000);
   };
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target))
-        setShowMenu(false);
-      if (emojiRef.current && !emojiRef.current.contains(e.target))
-        setShowEmoji(false);
-      if (attachRef.current && !attachRef.current.contains(e.target))
-        setShowAttach(false);
-      setReactionMsgId(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  // ===============================
+  // 🔥 FORMAT TIME
+  // ===============================
+  const formatTime = (date) => {
+    if (!date) return "";
 
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // ===============================
+  // 🔥 CLEAR CHAT
+  // ===============================
+  const handleClearChat = () => {
+    if (!conversation?.id) return;
+
+    clearChat(conversation.id);
+
+    setShowMenu(false);
+  };
+
+  // ===============================
+  // 🔥 EMPTY CHAT
+  // ===============================
   if (!chat) {
     return (
       <div className="hidden md:flex items-center justify-center h-full w-full">
         <div className="glass p-8 rounded-2xl text-center max-w-sm">
           <div className="text-4xl mb-3">💬</div>
-          <h2 className="text-xl font-semibold mb-2">Welcome to Chat App</h2>
-          <p className="opacity-60 text-sm">
-            Select a conversation from the sidebar to start messaging
-          </p>
+
+          <h2 className="text-xl font-semibold mb-2">Welcome to Talksy</h2>
+
+          <p className="opacity-60 text-sm">Select a conversation</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col w-full h-full bg-[var(--bg)] text-[var(--text)]">
-      {/* HEADER */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)]">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="md:hidden text-xl">
+    <div className="flex flex-col w-full h-full overflow-x-hidden bg-[var(--bg)] text-[var(--text)]">
+      {/* 🔥 HEADER */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-xl sticky top-0 z-40">
+        {/* 🔥 LEFT */}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onBack}
+            aria-label="Go back"
+            className="md:hidden text-xl shrink-0"
+          >
             ←
           </button>
-          <img src={chat.avatar} className="w-10 h-10 rounded-full" />
-          <div>
-            <h2 className="font-medium">{chat.name}</h2>
-            <p className="text-xs opacity-60">
-              {isRecording ? "Recording..." : "online"}
-            </p>
+
+          {/* 🔥 PROFILE CLICK */}
+          <div
+            onClick={() => navigate(`/user/${chat.id}`)}
+            className="flex items-center gap-3 cursor-pointer min-w-0"
+          >
+            <div className="relative shrink-0">
+              <img
+                src={chat.avatar || "/default-avatar.png"}
+                alt={chat.name}
+                className="w-11 h-11 rounded-full object-cover"
+              />
+
+              {chat.online && (
+                <span
+                  className="
+                    absolute
+                    bottom-0
+                    right-0
+                    w-3
+                    h-3
+                    bg-green-500
+                    rounded-full
+                    border-2
+                    border-[var(--bg)]
+                  "
+                />
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="font-semibold truncate">{chat.name}</h2>
+
+              <p className="text-xs opacity-60 truncate">
+                {isRecording
+                  ? "Recording..."
+                  : chat.online
+                    ? "online"
+                    : "last seen recently"}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xl icon">
-          <FiVideo
+        {/* 🔥 RIGHT */}
+        <div className="flex items-center gap-3 text-[22px] shrink-0">
+          {/* 🔥 VIDEO */}
+          <button
+            aria-label="Start video call"
             onClick={() =>
               navigate("/call", {
                 state: {
@@ -130,10 +323,23 @@ const ChatWindow = ({ chat, onBack }) => {
                 },
               })
             }
-            className="cursor-pointer hover:text-[var(--primary)]"
-          />
+            className="
+              w-10
+              h-10
+              rounded-full
+              flex
+              items-center
+              justify-center
+              hover:bg-[var(--primary)]/10
+              transition
+            "
+          >
+            <FiVideo />
+          </button>
 
-          <FiPhone
+          {/* 🔥 AUDIO */}
+          <button
+            aria-label="Start audio call"
             onClick={() =>
               navigate("/call", {
                 state: {
@@ -145,36 +351,120 @@ const ChatWindow = ({ chat, onBack }) => {
                 },
               })
             }
-            className="cursor-pointer hover:text-[var(--primary)]"
-          />
+            className="
+              w-10
+              h-10
+              rounded-full
+              flex
+              items-center
+              justify-center
+              hover:bg-[var(--primary)]/10
+              transition
+            "
+          >
+            <FiPhone />
+          </button>
 
+          {/* 🔥 MENU */}
           <div ref={menuRef} className="relative">
-            <FiMoreVertical
+            <button
+              aria-label="Open menu"
               onClick={(e) => {
                 e.stopPropagation();
+
                 setShowMenu((prev) => !prev);
               }}
-              className="cursor-pointer hover:text-[var(--primary)]"
-            />
+              className="
+                w-10
+                h-10
+                rounded-full
+                flex
+                items-center
+                justify-center
+                hover:bg-[var(--primary)]/10
+                transition
+              "
+            >
+              <FiMoreVertical />
+            </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-52 glass rounded-xl p-2 z-50">
-                <div onClick={() => {navigate(`/user/${chat.id}`); setShowMenu(false);}} className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded flex gap-2 cursor-pointer">
-                  <FiUser /> Profile
+              <div
+                className="
+                  absolute
+                  right-0
+                  mt-2
+                  w-56
+                  glass
+                  rounded-2xl
+                  p-2
+                  z-50
+                  shadow-2xl
+                  border
+                  border-[var(--border)]
+                "
+              >
+                <div
+                  onClick={() => {
+                    navigate(`/user/${chat.id}`);
+
+                    setShowMenu(false);
+                  }}
+                  className="
+                    px-3
+                    py-2.5
+                    hover:bg-[var(--primary)]/10
+                    rounded-xl
+                    flex
+                    gap-3
+                    cursor-pointer
+                    transition
+                  "
+                >
+                  <FiUser />
+                  Profile
                 </div>
-                <div onClick={() => navigate(`/media/${chat.id}`)} className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded flex gap-2 cursor-pointer">
-                  <FiImage /> Media
+
+                <div
+                  onClick={() => {
+                    navigate(`/media/${chat.id}`);
+
+                    setShowMenu(false);
+                  }}
+                  className="
+                    px-3
+                    py-2.5
+                    hover:bg-[var(--primary)]/10
+                    rounded-xl
+                    flex
+                    gap-3
+                    cursor-pointer
+                    transition
+                  "
+                >
+                  <FiImage />
+                  Media
                 </div>
-                <div className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded flex gap-2 cursor-pointer">
-                  <FiBellOff /> Mute
-                </div>
-                <div className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded flex gap-2 cursor-pointer">
-                  <FiLock /> Block
-                </div>
-                <div className="border-t my-1"></div>
-                <div onClick={() => setMessages([])} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg cursor-pointer text-red-400 hover:bg-red-500/10 transition">
-                  <FiTrash2 className="text-sm" />
-                  <span>Clear chat</span>
+
+                <div className="border-t border-[var(--border)] my-2"></div>
+
+                <div
+                  onClick={handleClearChat}
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    px-3
+                    py-2.5
+                    rounded-xl
+                    cursor-pointer
+                    text-red-400
+                    hover:bg-red-500/10
+                    transition
+                  "
+                >
+                  <FiTrash2 />
+                  Clear chat
                 </div>
               </div>
             )}
@@ -182,105 +472,472 @@ const ChatWindow = ({ chat, onBack }) => {
         </div>
       </div>
 
-      {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
+      {/* 🔥 MESSAGES */}
+      {/* 🔥 MESSAGES */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-4">
+        {sortedMessages.map((msg) => {
+          const isMe = Number(msg.senderId) === Number(user?.id);
+
+          return (
             <div
-              className={`relative px-4 py-2 max-w-[70%] group
-              ${msg.sender === "me" ? "bg-[var(--primary)] text-black" : "bg-[var(--card)]"}
-              ${
-                chatStyle === "Rounded"
-                  ? "chat-rounded"
-                  : chatStyle === "Sharp"
-                  ? "chat-sharp"
-                  : "chat-glass"
-              }`}
+              key={msg.id}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
-              {msg.replyTo && (
-                <div className="text-xs opacity-60 mb-1 border-l-2 pl-2 border-[var(--primary)]">
-                  {msg.replyTo.text}
-                </div>
-              )}
+              <div className="relative max-w-full pb-3">
+                {/* 🔥 ACTIONS */}
+                {!msg.deleted && activeMessageId === msg.id && (
+                  <div
+                    className={`
+                  absolute
+                  -top-9
+                  z-40
+                  flex
+                  gap-2
 
-              {msg.text}
+                  ${isMe ? "right-0" : "left-0"}
+                `}
+                  >
+                    {/* REPLY */}
+                    <button
+                      aria-label="Reply message"
+                      onClick={(e) => {
+                        e.stopPropagation();
 
-              <div className={`absolute -bottom-8 ${msg.sender === "me" ? "right-0" : "left-0"} hidden group-hover:flex gap-2 glass px-2 py-1 rounded-lg shadow z-40`}>
-                <button onClick={() => setReplyTo(msg)} className="text-[var(--text)] hover:text-[var(--primary)]">
-                  <FiCornerUpLeft />
-                </button>
-                <button onClick={() => setReactionMsgId(msg.id)} className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-[var(--primary)]/20 transition text-[var(--text)]">
-                  <FiSmile />
-                </button>
-              </div>
+                        setReplyTo(msg);
+                      }}
+                      className="
+                    w-7
+                    h-7
 
-              {reactionMsgId === msg.id && (
-                <div className={`absolute -bottom-16 ${msg.sender === "me" ? "right-0" : "left-0"} glass px-2 py-1 rounded-lg flex gap-1 shadow z-50`}>
-                  {emojis.map((e, i) => (
-                    <span key={i} onClick={() => {
-                      setMessages((prev) =>
-                        prev.map((m) =>
-                          m.id === msg.id ? { ...m, reaction: e } : m,
-                        ),
-                      );
-                      setReactionMsgId(null);
-                    }} className="cursor-pointer hover:scale-110 transition">
-                      {e}
+                    rounded-full
+                    glass
+
+                    flex
+                    items-center
+                    justify-center
+
+                    hover:text-[var(--primary)]
+
+                    transition
+                  "
+                    >
+                      <FiCornerUpLeft size={14} />
+                    </button>
+
+                    {/* REACTION */}
+                    <button
+                      aria-label="React message"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setReactionMsgId(msg.id);
+                      }}
+                      className="
+                    w-7
+                    h-7
+
+                    rounded-full
+                    glass
+
+                    flex
+                    items-center
+                    justify-center
+
+                    hover:text-[var(--primary)]
+
+                    transition
+                  "
+                    >
+                      <FiSmile size={14} />
+                    </button>
+
+                    {/* DELETE */}
+                    <button
+                      aria-label="Delete message"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setMessageMenuId(msg.id);
+                      }}
+                      className="
+                    w-7
+                    h-7
+
+                    rounded-full
+                    glass
+
+                    flex
+                    items-center
+                    justify-center
+
+                    hover:text-red-400
+
+                    transition
+                  "
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* 🔥 MESSAGE */}
+                <div
+                  onClick={() =>
+                    setActiveMessageId(
+                      activeMessageId === msg.id ? null : msg.id,
+                    )
+                  }
+                  className={`
+              relative
+
+              px-3
+              py-1.5
+
+              w-fit
+              max-w-[320px]
+              md:max-w-[480px]
+
+              overflow-visible
+              pb-3
+
+              rounded-[20px]
+
+              shadow-sm
+              transition-all
+              duration-200
+
+              cursor-pointer
+
+              ${
+                isMe
+                  ? `
+                    bg-[var(--primary)]
+                    text-black
+                    rounded-br-md
+                  `
+                  : `
+                    bg-[var(--card)]
+                    text-[var(--text)]
+                    rounded-bl-md
+                    border
+                    border-[var(--border)]
+                  `
+              }
+
+              hover:shadow-lg
+            `}
+                >
+                  {/* 🔥 REPLY */}
+                  {msg.replyTo && (
+                    <div
+                      className={`
+                  mb-1.5
+                  px-2.5
+                  py-1.5
+
+                  rounded-xl
+
+                  text-[11px]
+
+                  border-l-[3px]
+
+                  ${
+                    isMe
+                      ? `
+                        bg-black/10
+                        border-black/30
+                      `
+                      : `
+                        bg-[var(--primary)]/10
+                        border-[var(--primary)]
+                      `
+                  }
+                `}
+                    >
+                      <p className="font-medium opacity-70 mb-0.5">Reply</p>
+
+                      <p className="truncate opacity-80">
+                        {msg.replyTo.content}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 🔥 TEXT */}
+                  <div
+                    className="
+                w-full
+                max-w-full
+
+                text-[13.5px]
+                leading-[1.3]
+
+                whitespace-pre-wrap
+                break-words
+                break-all
+
+                tracking-[0.1px]
+              "
+                    style={{
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {msg.deleted ? "🚫 This message was deleted" : msg.content}
+                  </div>
+
+                  {/* 🔥 FOOTER */}
+                  <div className="flex items-center justify-end gap-1 mt-0.5">
+                    <span
+                      className={`
+                  text-[9px]
+                  tracking-wide
+
+                  ${isMe ? "text-black/70" : "text-[var(--text)]/50"}
+                `}
+                    >
+                      {formatTime(msg.createdAt)}
                     </span>
-                  ))}
-                </div>
-              )}
+                  </div>
 
-              {msg.reaction && <div className="text-xs mt-1">{msg.reaction}</div>}
+                  {/* 🔥 REACTIONS */}
+                  {msg.reactions?.length > 0 && (
+                    <div
+                      className="
+                  absolute
+                  -bottom-3
+
+                  left-2
+
+                  flex
+                  items-center
+                  gap-1
+
+                  px-2
+                  py-[2px]
+
+                  rounded-full
+
+                  bg-[var(--bg)]
+
+                  border
+                  border-[var(--border)]
+
+                  shadow-md
+                  z-20
+                "
+                    >
+                      {msg.reactions.map((r, i) => (
+                        <span key={i} className="text-[11px]">
+                          {r.emoji}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 🔥 REACTION PICKER */}
+                {reactionMsgId === msg.id && (
+                  <div
+                    ref={reactionRef}
+                    className={`
+                absolute
+                z-50
+                -top-14
+
+                glass
+
+                px-3
+                py-2
+
+                rounded-2xl
+
+                flex
+                gap-2
+
+                shadow-2xl
+
+                ${isMe ? "right-0" : "left-0"}
+              `}
+                  >
+                    {emojis.map((e, i) => (
+                      <span
+                        key={i}
+                        onClick={() => {
+                          reactToMessage(msg.id, e);
+
+                          setReactionMsgId(null);
+                        }}
+                        className="
+                    cursor-pointer
+                    hover:scale-125
+                    transition
+                  "
+                      >
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* 🔥 DELETE MENU */}
+                {messageMenuId === msg.id && (
+                  <div
+                    className={`
+                delete-menu
+
+                absolute
+                z-50
+                mt-2
+
+                glass
+
+                rounded-2xl
+                p-2
+
+                w-52
+
+                shadow-2xl
+                border
+                border-[var(--border)]
+
+                ${isMe ? "right-0" : "left-0"}
+              `}
+                  >
+                    {/* DELETE FOR ME */}
+                    <div
+                      onClick={() => {
+                        deleteForMe(msg.id);
+
+                        setMessageMenuId(null);
+
+                        setActiveMessageId(null);
+                      }}
+                      className="
+                  px-4
+                  py-2.5
+
+                  hover:bg-[var(--primary)]/10
+
+                  rounded-xl
+                  cursor-pointer
+
+                  text-sm
+
+                  transition
+                "
+                    >
+                      Delete for me
+                    </div>
+
+                    {/* DELETE FOR EVERYONE */}
+                    <div
+                      onClick={() => {
+                        deleteForEveryone(msg.id);
+
+                        setMessageMenuId(null);
+
+                        setActiveMessageId(null);
+                      }}
+                      className="
+                  px-4
+                  py-2.5
+
+                  hover:bg-red-500/10
+
+                  text-red-400
+
+                  rounded-xl
+                  cursor-pointer
+
+                  text-sm
+
+                  transition
+                "
+                    >
+                      Delete for everyone
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT (UNCHANGED) */}
-      <div className="p-3 bg-[var(--card)] sticky bottom-0">
+      {/* 🔥 INPUT */}
+      <div className="p-3 bg-[var(--card)] border-t border-[var(--border)] sticky bottom-0">
+        {/* 🔥 REPLY PREVIEW */}
         {replyTo && (
-          <div className="mb-2 px-3 py-1 bg-[var(--primary)]/10 rounded flex justify-between text-sm">
-            <span>Replying: {replyTo.text}</span>
-            <button onClick={() => setReplyTo(null)}>✕</button>
+          <div className="mb-2 px-3 py-2 bg-[var(--primary)]/10 rounded-2xl flex justify-between items-center text-sm">
+            <div className="truncate flex-1">
+              <span className="font-semibold">Replying:</span> {replyTo.content}
+            </div>
+
+            <button
+              aria-label="Cancel reply"
+              onClick={() => setReplyTo(null)}
+              className="ml-2 opacity-70 hover:opacity-100"
+            >
+              <FiX />
+            </button>
           </div>
         )}
 
-        {showEmoji && (
-          <div ref={emojiRef} className="absolute bottom-16 left-10 w-56 glass p-2 rounded-xl flex flex-wrap gap-2 z-50">
-            {emojis.map((e, i) => (
-              <span key={i} onClick={() => setInput(input + e)} className="cursor-pointer">
-                {e}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {showAttach && (
-          <div ref={attachRef} className="absolute bottom-16 left-3 glass p-2 rounded-xl z-50">
-            <div className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded">📷 Photo</div>
-            <div className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded">📄 Document</div>
-            <div className="px-3 py-2 hover:bg-[var(--primary)]/10 rounded">📍 Location</div>
-          </div>
-        )}
-
+        {/* 🔥 INPUT ROW */}
         <div className="flex items-center gap-2">
-          <button onClick={(e) => { e.stopPropagation(); setShowAttach((prev) => !prev); }}>
+          <button
+            aria-label="Attach file"
+            ref={attachRef}
+            onClick={() => setShowAttach((prev) => !prev)}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--primary)]/10"
+          >
             <FiPlus />
           </button>
 
-          <div className="flex items-center flex-1 px-3 py-2 rounded-full input gap-2">
-            <FiSmile onClick={(e) => { e.stopPropagation(); setShowEmoji((prev) => !prev); }} />
-            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Message" className="flex-1 bg-transparent outline-none" />
-            <FiCamera />
+          <div className="flex items-center flex-1 px-3 py-2 rounded-full bg-[var(--bg)] border border-[var(--border)] gap-2">
+            <FiSmile
+              onClick={() => setShowEmoji((prev) => !prev)}
+              className="cursor-pointer"
+            />
+
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+
+                  handleSendMessage();
+                }
+              }}
+              placeholder="Message"
+              className="flex-1 bg-transparent outline-none text-sm min-w-0"
+            />
+
+            <FiCamera className="cursor-pointer shrink-0" />
           </div>
 
-          {input ? (
-            <button onClick={sendMessage} className="w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-black">
+          {input.trim() ? (
+            <button
+              aria-label="Send message"
+              onClick={handleSendMessage}
+              className="w-11 h-11 rounded-full bg-[var(--primary)] flex items-center justify-center text-black shadow-lg hover:scale-105 transition shrink-0"
+            >
               <FiSend />
             </button>
           ) : (
-            <button onClick={handleMicClick} className={`w-10 h-10 rounded-full flex items-center justify-center ${isRecording ? "bg-[var(--primary)] text-black" : "border border-[var(--border)] hover:bg-[var(--primary)]/20"}`}>
+            <button
+              aria-label="Record voice"
+              onClick={handleMicClick}
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${
+                isRecording
+                  ? "bg-[var(--primary)] text-black"
+                  : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
+              }`}
+            >
               <FiMic />
             </button>
           )}

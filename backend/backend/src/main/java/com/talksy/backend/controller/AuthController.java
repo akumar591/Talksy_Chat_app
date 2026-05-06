@@ -231,26 +231,6 @@ public class AuthController {
     }
 
     // ===============================
-    // GET PROFILE (CLEAN)
-    // ===============================
-    @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<?>> getProfile() {
-
-        User user = (User) org.springframework.security.core.context.SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-
-        if (user == null) {
-            throw new RuntimeException("Unauthorized");
-        }
-
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, "Profile fetched", user)
-        );
-    }
-
-    // ===============================
     // LOGOUT
     // ===============================
     @PostMapping("/logout")

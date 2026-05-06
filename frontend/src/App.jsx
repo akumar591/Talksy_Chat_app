@@ -37,6 +37,7 @@ import NewGroup from "./components/Chat/NewGroup";
 import SettingsDrawer from "./components/Settings/SettingsDrawer";
 
 import { Toaster } from "react-hot-toast";
+import { ChatProvider } from "./context/ChatContext";
 
 function App() {
 
@@ -104,6 +105,7 @@ function App() {
   // 🔥 MAIN APP
   return (
     <AuthProvider>
+      <ChatProvider>
       <ThemeProvider>
         <SettingsProvider> {/* 🔥 NEW WRAP (IMPORTANT) */}
           <BrowserRouter>
@@ -148,6 +150,7 @@ function App() {
           </BrowserRouter>
         </SettingsProvider>
       </ThemeProvider>
+      </ChatProvider>
     </AuthProvider>
   );
 }
