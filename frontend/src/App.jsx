@@ -27,130 +27,428 @@ import StatusLayout from "./components/Status/StatusLayout";
 import CallLayout from "./components/Call/CallLayout";
 
 import { ThemeProvider } from "./context/ThemeContext";
-import { AuthProvider } from "./context/AuthContext";
-import { SettingsProvider } from "./context/SettingsContext"; // 🔥 NEW
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import {
+  AuthProvider,
+  useAuth,
+} from "./context/AuthContext";
+
+import { SettingsProvider } from "./context/SettingsContext";
+
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import {
+  useState,
+  useEffect,
+} from "react";
+
 import UserProfile from "./components/User/UserProfile";
 import NewGroup from "./components/Chat/NewGroup";
 import SettingsDrawer from "./components/Settings/SettingsDrawer";
 
 import { Toaster } from "react-hot-toast";
+
 import { ChatProvider } from "./context/ChatContext";
 
-function App() {
+import ProtectedRoute from "./components/ProtectedRoute";
 
-  // ✅ SAFE INITIAL LOAD (NO FLASH, NO RESET)
-  const [step, setStep] = useState(() => {
-    return localStorage.getItem("step") || "splash";
-  });
+function AppContent() {
 
-  // ✅ CENTRAL STEP UPDATE
-  const updateStep = (newStep) => {
-    localStorage.setItem("step", newStep);
+  const {
+    user,
+    authLoading,
+  } = useAuth();
+
+  // ===============================
+  // 🔥 APP STEP
+  // ===============================
+  const [step, setStep] =
+    useState(() => {
+
+      return (
+        localStorage.getItem(
+          "step"
+        ) || "splash"
+      );
+    });
+
+  // ===============================
+  // 🔥 UPDATE STEP
+  // ===============================
+  const updateStep = (
+    newStep
+  ) => {
+
+    localStorage.setItem(
+      "step",
+      newStep
+    );
+
     setStep(newStep);
   };
 
+  // ===============================
+  // 🔥 AUTH SAFETY
+  // ===============================
+  useEffect(() => {
+
+    if (authLoading) return;
+
+    // 🔥 invalid protected state
+    if (!user) {
+
+      if (
+        step === "app"
+      ) {
+
+        localStorage.setItem(
+          "step",
+          "splash"
+        );
+
+        setStep("splash");
+      }
+    }
+
+  }, [
+    user,
+    authLoading,
+    step,
+  ]);
+
+  // ===============================
+  // 🔥 WAIT AUTH
+  // ===============================
+  if (authLoading) {
+
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0b0f1a] text-white">
+        Loading...
+      </div>
+    );
+  }
+
+  // ===============================
   // 🔥 SPLASH
+  // ===============================
   if (step === "splash") {
+
     return (
       <>
         <Toaster position="top-center" />
-        <Splash onFinish={() => updateStep("onboarding")} />
+
+        <Splash
+          onFinish={() => {
+
+            if (user) {
+
+              updateStep(
+                "app"
+              );
+            }
+
+            else {
+
+              updateStep(
+                "onboarding"
+              );
+            }
+          }}
+        />
       </>
     );
   }
 
+  // ===============================
   // 🔥 ONBOARDING
-  if (step === "onboarding") {
+  // ===============================
+  if (
+    step ===
+    "onboarding"
+  ) {
+
     return (
       <>
         <Toaster position="top-center" />
-        <Onboarding onFinish={() => updateStep("login")} />
+
+        <Onboarding
+          onFinish={() =>
+            updateStep(
+              "login"
+            )
+          }
+        />
       </>
     );
   }
 
+  // ===============================
   // 🔥 LOGIN
-  if (step === "login") {
+  // ===============================
+  if (
+    step === "login"
+  ) {
+
     return (
       <>
         <Toaster position="top-center" />
-        <Login onLogin={() => updateStep("otp")} />
+
+        <Login
+          onLogin={() => {
+
+            localStorage.setItem(
+              "step",
+              "otp"
+            );
+
+            updateStep(
+              "otp"
+            );
+          }}
+        />
       </>
     );
   }
 
+  // ===============================
   // 🔥 OTP
-  if (step === "otp") {
+  // ===============================
+  if (
+    step === "otp"
+  ) {
+
     return (
       <>
         <Toaster position="top-center" />
-        <OTP onVerify={() => updateStep("profile")} />
+
+        <OTP
+          onVerify={(nextStep) => {
+
+            if (!nextStep)
+              return;
+
+            localStorage.setItem(
+              "step",
+              nextStep
+            );
+
+            updateStep(
+              nextStep
+            );
+          }}
+        />
       </>
     );
   }
 
-  // 🔥 PROFILE
-  if (step === "profile") {
+  // ===============================
+  // 🔥 PROFILE SETUP
+  // ===============================
+  if (
+    step ===
+    "profile"
+  ) {
+
     return (
       <>
         <Toaster position="top-center" />
-        <ProfileSetup onComplete={() => updateStep("app")} />
+
+        <ProfileSetup
+          onComplete={() => {
+
+            localStorage.setItem(
+              "step",
+              "app"
+            );
+
+            updateStep(
+              "app"
+            );
+          }}
+        />
       </>
     );
   }
 
+  // ===============================
   // 🔥 MAIN APP
+  // ===============================
+  return (
+    <BrowserRouter>
+
+      <Toaster position="top-center" />
+
+      <ProtectedRoute>
+
+        <Navbar />
+
+        <Routes>
+
+          {/* CHAT */}
+          <Route
+            path="/"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/chat/:id"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/new-chat"
+            element={<NewChat />}
+          />
+
+          <Route
+            path="/new-group"
+            element={<NewGroup />}
+          />
+
+          {/* USER */}
+          <Route
+            path="/user/:id"
+            element={<UserProfile />}
+          />
+
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
+
+          {/* SETTINGS */}
+          <Route
+            path="/settings"
+            element={<Settings />}
+          />
+
+          <Route
+            path="/settings/privacy"
+            element={<Privacy />}
+          />
+
+          <Route
+            path="/settings/security"
+            element={<Security />}
+          />
+
+          <Route
+            path="/settings/chats"
+            element={<ChatsSettings />}
+          />
+
+          <Route
+            path="/settings/notifications"
+            element={<Notifications />}
+          />
+
+          <Route
+            path="/settings/storage"
+            element={<Storage />}
+          />
+
+          <Route
+            path="/settings/two-step"
+            element={<TwoStep />}
+          />
+
+          <Route
+            path="/settings/help"
+            element={<Help />}
+          />
+
+          <Route
+            path="/settings/change-number"
+            element={<ChangeNumber />}
+          />
+
+          <Route
+            path="/linked-devices"
+            element={<LinkedDevices />}
+          />
+
+          {/* DRAWER */}
+          <Route
+            path="/settings/theme-drawer"
+            element={<SettingsDrawer />}
+          />
+
+          {/* GROUPS */}
+          <Route
+            path="/groups"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/groups/:id"
+            element={<ChatLayout />}
+          />
+
+          {/* COMMUNITY */}
+          <Route
+            path="/community"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/community/:id"
+            element={<ChatLayout />}
+          />
+
+          {/* STATUS */}
+          <Route
+            path="/status"
+            element={<StatusLayout />}
+          />
+
+          {/* CALL */}
+          <Route
+            path="/call"
+            element={<CallLayout />}
+          />
+
+          {/* INVALID */}
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/"
+                replace
+              />
+            }
+          />
+        </Routes>
+
+      </ProtectedRoute>
+
+    </BrowserRouter>
+  );
+}
+
+function App() {
+
   return (
     <AuthProvider>
+
       <ChatProvider>
-      <ThemeProvider>
-        <SettingsProvider> {/* 🔥 NEW WRAP (IMPORTANT) */}
-          <BrowserRouter>
 
-            <Toaster position="top-center" />
-            <Navbar />
+        <ThemeProvider>
 
-            <Routes>
-              <Route path="/" element={<ChatLayout />} />
-              <Route path="/chat/:id" element={<ChatLayout />} />
-              <Route path="/new-chat" element={<NewChat />} />
-              <Route path="/new-group" element={<NewGroup />} />
+          <SettingsProvider>
 
-              <Route path="/user/:id" element={<UserProfile />} />
-              <Route path="/profile" element={<Profile />} />
+            <AppContent />
 
-              <Route path="/settings" element={<Settings />} />
+          </SettingsProvider>
 
-              <Route path="/settings/privacy" element={<Privacy />} />
-              <Route path="/settings/security" element={<Security />} />
-              <Route path="/settings/chats" element={<ChatsSettings />} />
-              <Route path="/settings/notifications" element={<Notifications />} />
-              <Route path="/settings/storage" element={<Storage />} />
-              <Route path="/settings/two-step" element={<TwoStep />} />
-              <Route path="/settings/help" element={<Help />} />
-              <Route path="/settings/change-number" element={<ChangeNumber />} />
-              <Route path="/linked-devices" element={<LinkedDevices />} />
+        </ThemeProvider>
 
-              {/* 🔥 Drawer route */}
-              <Route path="/settings/theme-drawer" element={<SettingsDrawer />} />
-
-              <Route path="/groups" element={<ChatLayout />} />
-              <Route path="/groups/:id" element={<ChatLayout />} />
-
-              <Route path="/community" element={<ChatLayout />} />
-              <Route path="/community/:id" element={<ChatLayout />} />
-
-              <Route path="/status" element={<StatusLayout />} />
-              <Route path="/call" element={<CallLayout />} />
-            </Routes>
-
-          </BrowserRouter>
-        </SettingsProvider>
-      </ThemeProvider>
       </ChatProvider>
+
     </AuthProvider>
   );
 }

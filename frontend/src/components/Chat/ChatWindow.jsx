@@ -14,10 +14,17 @@ import {
   FiImage,
   FiCornerUpLeft,
   FiX,
+  FiEdit3,
+  FiGrid,
+  FiSearch,
+  FiBellOff,
+  FiSlash,
+  FiUnlock,
+  FiUserX,
 } from "react-icons/fi";
 
 import { useNavigate } from "react-router-dom";
-
+import EmojiPicker from "emoji-picker-react";
 import { useSettings } from "../../context/SettingsContext";
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
@@ -30,6 +37,9 @@ const ChatWindow = ({ chat, onBack }) => {
   const { chatStyle } = useSettings();
 
   const {
+    toggleBlockContact,
+    deleteContact,
+
     messages,
     conversation,
 
@@ -375,15 +385,15 @@ const ChatWindow = ({ chat, onBack }) => {
                 setShowMenu((prev) => !prev);
               }}
               className="
-                w-10
-                h-10
-                rounded-full
-                flex
-                items-center
-                justify-center
-                hover:bg-[var(--primary)]/10
-                transition
-              "
+      w-10
+      h-10
+      rounded-full
+      flex
+      items-center
+      justify-center
+      hover:bg-[var(--primary)]/10
+      transition
+    "
             >
               <FiMoreVertical />
             </button>
@@ -391,19 +401,31 @@ const ChatWindow = ({ chat, onBack }) => {
             {showMenu && (
               <div
                 className="
-                  absolute
-                  right-0
-                  mt-2
-                  w-56
-                  glass
-                  rounded-2xl
-                  p-2
-                  z-50
-                  shadow-2xl
-                  border
-                  border-[var(--border)]
-                "
+        absolute
+        right-0
+        top-12
+
+        w-56
+
+        p-1.5
+
+        z-50
+
+        rounded-2xl
+
+        bg-[var(--card)]
+
+        border
+        border-[var(--border)]
+
+        shadow-[0_12px_40px_rgba(0,0,0,0.35)]
+
+        overflow-hidden
+
+        animate-menu
+      "
               >
+                {/* PROFILE */}
                 <div
                   onClick={() => {
                     navigate(`/user/${chat.id}`);
@@ -411,20 +433,29 @@ const ChatWindow = ({ chat, onBack }) => {
                     setShowMenu(false);
                   }}
                   className="
-                    px-3
-                    py-2.5
-                    hover:bg-[var(--primary)]/10
-                    rounded-xl
-                    flex
-                    gap-3
-                    cursor-pointer
-                    transition
-                  "
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          hover:bg-white/5
+
+          transition-all
+          duration-200
+        "
                 >
-                  <FiUser />
-                  Profile
+                  <FiUser size={16} />
+
+                  <span className="text-[13px] font-medium">View Profile</span>
                 </div>
 
+                {/* MEDIA */}
                 <div
                   onClick={() => {
                     navigate(`/media/${chat.id}`);
@@ -432,39 +463,211 @@ const ChatWindow = ({ chat, onBack }) => {
                     setShowMenu(false);
                   }}
                   className="
-                    px-3
-                    py-2.5
-                    hover:bg-[var(--primary)]/10
-                    rounded-xl
-                    flex
-                    gap-3
-                    cursor-pointer
-                    transition
-                  "
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          hover:bg-white/5
+
+          transition-all
+          duration-200
+        "
                 >
-                  <FiImage />
-                  Media
+                  <FiImage size={16} />
+
+                  <span className="text-[13px] font-medium">Media & Files</span>
                 </div>
 
-                <div className="border-t border-[var(--border)] my-2"></div>
-
+                {/* CHAT THEME */}
                 <div
-                  onClick={handleClearChat}
                   className="
-                    flex
-                    items-center
-                    gap-3
-                    px-3
-                    py-2.5
-                    rounded-xl
-                    cursor-pointer
-                    text-red-400
-                    hover:bg-red-500/10
-                    transition
-                  "
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          hover:bg-white/5
+
+          transition-all
+          duration-200
+        "
                 >
-                  <FiTrash2 />
-                  Clear chat
+                  <FiEdit3 size={16} />
+
+                  <span className="text-[13px] font-medium">Chat Theme</span>
+                </div>
+
+                {/* WALLPAPER */}
+                <div
+                  className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          hover:bg-white/5
+
+          transition-all
+          duration-200
+        "
+                >
+                  <FiGrid size={16} />
+
+                  <span className="text-[13px] font-medium">
+                    Change Wallpaper
+                  </span>
+                </div>
+
+                {/* MUTE */}
+                <div
+                  className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          hover:bg-white/5
+
+          transition-all
+          duration-200
+        "
+                >
+                  <FiBellOff size={16} />
+
+                  <span className="text-[13px] font-medium">
+                    Mute Notifications
+                  </span>
+                </div>
+
+                <div className="h-px bg-white/10 my-1.5" />
+
+                {/* BLOCK / UNBLOCK */}
+                <div
+                  onClick={async () => {
+                    await toggleBlockContact(chat.id);
+
+                    setShowMenu(false);
+                  }}
+                  className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          text-yellow-400
+
+          hover:bg-yellow-500/10
+
+          transition-all
+          duration-200
+        "
+                >
+                  {chat?.blocked ? (
+                    <FiUnlock size={16} />
+                  ) : (
+                    <FiSlash size={16} />
+                  )}
+
+                  <span className="text-[13px] font-medium">
+                    {chat?.blocked ? "Unblock Contact" : "Block Contact"}
+                  </span>
+                </div>
+
+                {/* CLEAR CHAT */}
+                <div
+                  onClick={() => {
+                    handleClearChat();
+
+                    setShowMenu(false);
+                  }}
+                  className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          text-red-400
+
+          hover:bg-red-500/10
+
+          transition-all
+          duration-200
+        "
+                >
+                  <FiTrash2 size={16} />
+
+                  <span className="text-[13px] font-medium">Clear Chat</span>
+                </div>
+
+                {/* DELETE CONTACT */}
+                <div
+                  onClick={async () => {
+                    await deleteContact(chat.id);
+
+                    setShowMenu(false);
+                  }}
+                  className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          text-red-400
+
+          hover:bg-red-500/10
+
+          transition-all
+          duration-200
+        "
+                >
+                  <FiUserX size={16} />
+
+                  <span className="text-[13px] font-medium">
+                    Delete Contact
+                  </span>
                 </div>
               </div>
             )}
@@ -472,22 +675,50 @@ const ChatWindow = ({ chat, onBack }) => {
         </div>
       </div>
 
-      {/* 🔥 MESSAGES */}
-      {/* 🔥 MESSAGES */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-4">
-        {sortedMessages.map((msg) => {
-          const isMe = Number(msg.senderId) === Number(user?.id);
+{/* 🔥 MESSAGES */}
+<div
+  className="
+    flex-1
 
-          return (
-            <div
-              key={msg.id}
-              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-            >
-              <div className="relative max-w-full pb-3">
-                {/* 🔥 ACTIONS */}
-                {!msg.deleted && activeMessageId === msg.id && (
-                  <div
-                    className={`
+    overflow-y-auto
+    overflow-x-hidden
+
+    hide-scrollbar
+
+    px-4
+    py-4
+
+    space-y-4
+  "
+>
+
+  {/* 🔥 EMOJI CHECK */}
+  {(() => {
+
+    const isOnlyEmoji = (text = "") => {
+
+      const emojiRegex =
+        /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
+
+      return emojiRegex.test(text.trim());
+    };
+
+    return sortedMessages.map((msg) => {
+
+      const isMe =
+        Number(msg.senderId) === Number(user?.id);
+
+      return (
+        <div
+          key={msg.id}
+          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+        >
+          <div className="relative max-w-full pb-3">
+
+            {/* 🔥 ACTIONS */}
+            {!msg.deleted && activeMessageId === msg.id && (
+              <div
+                className={`
                   absolute
                   -top-9
                   z-40
@@ -496,16 +727,17 @@ const ChatWindow = ({ chat, onBack }) => {
 
                   ${isMe ? "right-0" : "left-0"}
                 `}
-                  >
-                    {/* REPLY */}
-                    <button
-                      aria-label="Reply message"
-                      onClick={(e) => {
-                        e.stopPropagation();
+              >
 
-                        setReplyTo(msg);
-                      }}
-                      className="
+                {/* REPLY */}
+                <button
+                  aria-label="Reply message"
+                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    setReplyTo(msg);
+                  }}
+                  className="
                     w-7
                     h-7
 
@@ -520,19 +752,19 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     transition
                   "
-                    >
-                      <FiCornerUpLeft size={14} />
-                    </button>
+                >
+                  <FiCornerUpLeft size={14} />
+                </button>
 
-                    {/* REACTION */}
-                    <button
-                      aria-label="React message"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                {/* REACTION */}
+                <button
+                  aria-label="React message"
+                  onClick={(e) => {
+                    e.stopPropagation();
 
-                        setReactionMsgId(msg.id);
-                      }}
-                      className="
+                    setReactionMsgId(msg.id);
+                  }}
+                  className="
                     w-7
                     h-7
 
@@ -547,19 +779,19 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     transition
                   "
-                    >
-                      <FiSmile size={14} />
-                    </button>
+                >
+                  <FiSmile size={14} />
+                </button>
 
-                    {/* DELETE */}
-                    <button
-                      aria-label="Delete message"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                {/* DELETE */}
+                <button
+                  aria-label="Delete message"
+                  onClick={(e) => {
+                    e.stopPropagation();
 
-                        setMessageMenuId(msg.id);
-                      }}
-                      className="
+                    setMessageMenuId(msg.id);
+                  }}
+                  className="
                     w-7
                     h-7
 
@@ -574,300 +806,365 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     transition
                   "
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                )}
+                >
+                  <FiTrash2 size={14} />
+                </button>
+              </div>
+            )}
 
-                {/* 🔥 MESSAGE */}
-                <div
-                  onClick={() =>
-                    setActiveMessageId(
-                      activeMessageId === msg.id ? null : msg.id,
-                    )
-                  }
-                  className={`
-              relative
-
-              px-3
-              py-1.5
-
-              w-fit
-              max-w-[320px]
-              md:max-w-[480px]
-
-              overflow-visible
-              pb-3
-
-              rounded-[20px]
-
-              shadow-sm
-              transition-all
-              duration-200
-
-              cursor-pointer
-
-              ${
-                isMe
-                  ? `
-                    bg-[var(--primary)]
-                    text-black
-                    rounded-br-md
-                  `
-                  : `
-                    bg-[var(--card)]
-                    text-[var(--text)]
-                    rounded-bl-md
-                    border
-                    border-[var(--border)]
-                  `
+            {/* 🔥 MESSAGE */}
+            <div
+              onClick={() =>
+                setActiveMessageId(
+                  activeMessageId === msg.id
+                    ? null
+                    : msg.id
+                )
               }
 
-              hover:shadow-lg
-            `}
+              className={`
+                relative
+
+                w-fit
+                max-w-[320px]
+                md:max-w-[480px]
+
+                overflow-visible
+                pb-3
+
+                shadow-sm
+                transition-all
+                duration-200
+
+                cursor-pointer
+
+                ${
+                  isOnlyEmoji(msg.content)
+
+                    ? `
+                      bg-transparent
+
+                      px-1
+                      py-0
+
+                      shadow-none
+
+                      border-none
+                    `
+
+                    : `
+                      px-3
+                      py-1.5
+
+                      rounded-[20px]
+
+                      ${
+                        isMe
+                          ? `
+                            bg-[var(--primary)]
+                            text-black
+                            rounded-br-md
+                          `
+                          : `
+                            bg-[var(--card)]
+                            text-[var(--text)]
+                            rounded-bl-md
+                            border
+                            border-[var(--border)]
+                          `
+                      }
+
+                      hover:shadow-lg
+                    `
+                }
+              `}
+            >
+
+              {/* 🔥 REPLY */}
+              {msg.replyTo && (
+                <div
+                  className={`
+                    mb-1.5
+                    px-2.5
+                    py-1.5
+
+                    rounded-xl
+
+                    text-[11px]
+
+                    border-l-[3px]
+
+                    ${
+                      isMe
+                        ? `
+                          bg-black/10
+                          border-black/30
+                        `
+                        : `
+                          bg-[var(--primary)]/10
+                          border-[var(--primary)]
+                        `
+                    }
+                  `}
                 >
-                  {/* 🔥 REPLY */}
-                  {msg.replyTo && (
-                    <div
-                      className={`
-                  mb-1.5
-                  px-2.5
-                  py-1.5
+                  <p className="font-medium opacity-70 mb-0.5">
+                    Reply
+                  </p>
 
-                  rounded-xl
+                  <p className="truncate opacity-80">
+                    {msg.replyTo.content}
+                  </p>
+                </div>
+              )}
 
-                  text-[11px]
+              {/* 🔥 TEXT */}
+              <div
+                className={`
+                  w-full
+                  max-w-full
 
-                  border-l-[3px]
+                  whitespace-pre-wrap
+                  break-words
+                  break-all
+
+                  tracking-[0.1px]
 
                   ${
-                    isMe
+                    isOnlyEmoji(msg.content)
+
                       ? `
-                        bg-black/10
-                        border-black/30
+                        text-[24px]
+                        leading-none
                       `
+
                       : `
-                        bg-[var(--primary)]/10
-                        border-[var(--primary)]
+                        text-[13.5px]
+                        leading-[1.3]
                       `
                   }
                 `}
-                    >
-                      <p className="font-medium opacity-70 mb-0.5">Reply</p>
+                style={{
+                  overflowWrap: "anywhere",
+                  wordBreak: "break-word",
+                }}
+              >
+                {msg.deleted
+                  ? "🚫 This message was deleted"
+                  : msg.content}
+              </div>
 
-                      <p className="truncate opacity-80">
-                        {msg.replyTo.content}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* 🔥 TEXT */}
-                  <div
-                    className="
-                w-full
-                max-w-full
-
-                text-[13.5px]
-                leading-[1.3]
-
-                whitespace-pre-wrap
-                break-words
-                break-all
-
-                tracking-[0.1px]
-              "
-                    style={{
-                      overflowWrap: "anywhere",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {msg.deleted ? "🚫 This message was deleted" : msg.content}
-                  </div>
-
-                  {/* 🔥 FOOTER */}
-                  <div className="flex items-center justify-end gap-1 mt-0.5">
-                    <span
-                      className={`
-                  text-[9px]
-                  tracking-wide
-
-                  ${isMe ? "text-black/70" : "text-[var(--text)]/50"}
-                `}
-                    >
-                      {formatTime(msg.createdAt)}
-                    </span>
-                  </div>
-
-                  {/* 🔥 REACTIONS */}
-                  {msg.reactions?.length > 0 && (
-                    <div
-                      className="
-                  absolute
-                  -bottom-3
-
-                  left-2
-
+              {/* 🔥 FOOTER */}
+              <div
+                className={`
                   flex
                   items-center
+                  justify-end
+
                   gap-1
 
-                  px-2
-                  py-[2px]
+                  ${
+                    isOnlyEmoji(msg.content)
+                      ? "mt-0"
+                      : "mt-0.5"
+                  }
+                `}
+              >
+                <span
+                  className={`
+                    text-[9px]
+                    tracking-wide
 
-                  rounded-full
+                    ${
+                      isMe
+                        ? "text-black/70"
+                        : "text-[var(--text)]/50"
+                    }
+                  `}
+                >
+                  {formatTime(msg.createdAt)}
+                </span>
+              </div>
 
-                  bg-[var(--bg)]
+              {/* 🔥 REACTIONS */}
+              {msg.reactions?.length > 0 && (
+                <div
+                  className="
+                    absolute
+                    -bottom-3
 
+                    left-2
+
+                    flex
+                    items-center
+                    gap-1
+
+                    px-2
+                    py-[2px]
+
+                    rounded-full
+
+                    bg-[var(--bg)]
+
+                    border
+                    border-[var(--border)]
+
+                    shadow-md
+                    z-20
+                  "
+                >
+                  {msg.reactions.map((r, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px]"
+                    >
+                      {r.emoji}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 🔥 REACTION PICKER */}
+            {reactionMsgId === msg.id && (
+              <div
+                ref={reactionRef}
+                className={`
+                  absolute
+                  z-50
+                  -top-14
+
+                  glass
+
+                  px-3
+                  py-2
+
+                  rounded-2xl
+
+                  flex
+                  gap-2
+
+                  shadow-2xl
+
+                  ${isMe ? "right-0" : "left-0"}
+                `}
+              >
+                {emojis.map((e, i) => (
+                  <span
+                    key={i}
+                    onClick={() => {
+
+                      reactToMessage(msg.id, e);
+
+                      setReactionMsgId(null);
+                    }}
+
+                    className="
+                      cursor-pointer
+                      hover:scale-125
+                      transition
+                    "
+                  >
+                    {e}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 🔥 DELETE MENU */}
+            {messageMenuId === msg.id && (
+              <div
+                className={`
+                  delete-menu
+
+                  absolute
+                  z-50
+                  mt-2
+
+                  glass
+
+                  rounded-2xl
+                  p-2
+
+                  w-52
+
+                  shadow-2xl
                   border
                   border-[var(--border)]
 
-                  shadow-md
-                  z-20
-                "
-                    >
-                      {msg.reactions.map((r, i) => (
-                        <span key={i} className="text-[11px]">
-                          {r.emoji}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  ${isMe ? "right-0" : "left-0"}
+                `}
+              >
 
-                {/* 🔥 REACTION PICKER */}
-                {reactionMsgId === msg.id && (
-                  <div
-                    ref={reactionRef}
-                    className={`
-                absolute
-                z-50
-                -top-14
+                {/* DELETE FOR ME */}
+                <div
+                  onClick={() => {
 
-                glass
+                    deleteForMe(msg.id);
 
-                px-3
-                py-2
+                    setMessageMenuId(null);
 
-                rounded-2xl
+                    setActiveMessageId(null);
+                  }}
 
-                flex
-                gap-2
+                  className="
+                    px-4
+                    py-2.5
 
-                shadow-2xl
+                    hover:bg-[var(--primary)]/10
 
-                ${isMe ? "right-0" : "left-0"}
-              `}
-                  >
-                    {emojis.map((e, i) => (
-                      <span
-                        key={i}
-                        onClick={() => {
-                          reactToMessage(msg.id, e);
-
-                          setReactionMsgId(null);
-                        }}
-                        className="
+                    rounded-xl
                     cursor-pointer
-                    hover:scale-125
+
+                    text-sm
+
                     transition
                   "
-                      >
-                        {e}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                >
+                  Delete for me
+                </div>
 
-                {/* 🔥 DELETE MENU */}
-                {messageMenuId === msg.id && (
-                  <div
-                    className={`
-                delete-menu
+                {/* DELETE FOR EVERYONE */}
+                <div
+                  onClick={() => {
 
-                absolute
-                z-50
-                mt-2
+                    deleteForEveryone(msg.id);
 
-                glass
+                    setMessageMenuId(null);
 
-                rounded-2xl
-                p-2
+                    setActiveMessageId(null);
+                  }}
 
-                w-52
+                  className="
+                    px-4
+                    py-2.5
 
-                shadow-2xl
-                border
-                border-[var(--border)]
+                    hover:bg-red-500/10
 
-                ${isMe ? "right-0" : "left-0"}
-              `}
-                  >
-                    {/* DELETE FOR ME */}
-                    <div
-                      onClick={() => {
-                        deleteForMe(msg.id);
+                    text-red-400
 
-                        setMessageMenuId(null);
+                    rounded-xl
+                    cursor-pointer
 
-                        setActiveMessageId(null);
-                      }}
-                      className="
-                  px-4
-                  py-2.5
+                    text-sm
 
-                  hover:bg-[var(--primary)]/10
-
-                  rounded-xl
-                  cursor-pointer
-
-                  text-sm
-
-                  transition
-                "
-                    >
-                      Delete for me
-                    </div>
-
-                    {/* DELETE FOR EVERYONE */}
-                    <div
-                      onClick={() => {
-                        deleteForEveryone(msg.id);
-
-                        setMessageMenuId(null);
-
-                        setActiveMessageId(null);
-                      }}
-                      className="
-                  px-4
-                  py-2.5
-
-                  hover:bg-red-500/10
-
-                  text-red-400
-
-                  rounded-xl
-                  cursor-pointer
-
-                  text-sm
-
-                  transition
-                "
-                    >
-                      Delete for everyone
-                    </div>
-                  </div>
-                )}
+                    transition
+                  "
+                >
+                  Delete for everyone
+                </div>
               </div>
-            </div>
-          );
-        })}
+            )}
+          </div>
+        </div>
+      );
+    });
+  })()}
 
-        <div ref={messagesEndRef} />
-      </div>
+  <div ref={messagesEndRef} />
+</div>
 
       {/* 🔥 INPUT */}
-      <div className="p-3 bg-[var(--card)] border-t border-[var(--border)] sticky bottom-0">
+      <div className="relative p-3 bg-[var(--card)] border-t border-[var(--border)] sticky bottom-0">
         {/* 🔥 REPLY PREVIEW */}
         {replyTo && (
           <div className="mb-2 px-3 py-2 bg-[var(--primary)]/10 rounded-2xl flex justify-between items-center text-sm">
@@ -882,6 +1179,324 @@ const ChatWindow = ({ chat, onBack }) => {
             >
               <FiX />
             </button>
+          </div>
+        )}
+
+        {/* 🔥 ATTACH MENU */}
+        {showAttach && (
+          <div
+            className="
+      absolute
+      bottom-24
+      left-4
+
+      z-50
+
+      w-60
+
+      p-2
+
+      rounded-3xl
+
+      bg-[var(--card)]
+
+      border
+      border-[var(--border)]
+
+      shadow-2xl
+
+      animate-menu
+    "
+          >
+            <div className="grid grid-cols-3 gap-3">
+              {/* IMAGE */}
+              <button
+                className="
+          flex
+          flex-col
+          items-center
+          gap-2
+
+          p-3
+
+          rounded-2xl
+
+          hover:bg-white/5
+
+          transition
+        "
+              >
+                <div
+                  className="
+            w-12
+            h-12
+
+            rounded-2xl
+
+            bg-pink-500/20
+
+            flex
+            items-center
+            justify-center
+          "
+                >
+                  <FiImage className="text-pink-400 text-xl" />
+                </div>
+
+                <span className="text-[11px]">Gallery</span>
+              </button>
+
+              {/* CAMERA */}
+              <button
+                className="
+          flex
+          flex-col
+          items-center
+          gap-2
+
+          p-3
+
+          rounded-2xl
+
+          hover:bg-white/5
+
+          transition
+        "
+              >
+                <div
+                  className="
+            w-12
+            h-12
+
+            rounded-2xl
+
+            bg-blue-500/20
+
+            flex
+            items-center
+            justify-center
+          "
+                >
+                  <FiCamera className="text-blue-400 text-xl" />
+                </div>
+
+                <span className="text-[11px]">Camera</span>
+              </button>
+
+              {/* FILE */}
+              <button
+                className="
+          flex
+          flex-col
+          items-center
+          gap-2
+
+          p-3
+
+          rounded-2xl
+
+          hover:bg-white/5
+
+          transition
+        "
+              >
+                <div
+                  className="
+            w-12
+            h-12
+
+            rounded-2xl
+
+            bg-green-500/20
+
+            flex
+            items-center
+            justify-center
+          "
+                >
+                  <FiPlus className="text-green-400 text-xl" />
+                </div>
+
+                <span className="text-[11px]">File</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 🔥 PREMIUM EMOJI PICKER */}
+        {showEmoji && (
+          <div
+            ref={emojiRef}
+            className="
+      fixed
+
+      left-0
+      right-0
+      bottom-0
+
+      md:absolute
+      md:left-14
+      md:right-auto
+      md:bottom-24
+
+      z-[999]
+
+      md:w-[320px]
+
+      rounded-t-[24px]
+      md:rounded-[24px]
+
+      overflow-hidden
+      hide-scrollbar
+
+      border-t
+      md:border
+
+      border-[var(--border)]
+
+      shadow-[0_-10px_40px_rgba(0,0,0,0.45)]
+
+      animate-menu
+    "
+            style={{
+              background: "var(--card)",
+            }}
+          >
+            {/* 🔥 TOP BAR */}
+            <div
+              className="
+        flex
+        items-center
+        justify-between
+
+        px-3
+        py-2
+
+        border-b
+        border-[rgba(255,255,255,0.05)]
+      "
+            >
+              <h3
+                className="
+          text-[13px]
+          font-medium
+          opacity-80
+        "
+              >
+                Emojis
+              </h3>
+
+              <button
+                onClick={() => setShowEmoji(false)}
+                className="
+          w-7
+          h-7
+
+          rounded-full
+
+          flex
+          items-center
+          justify-center
+
+          hover:bg-white/5
+
+          transition
+        "
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            {/* 🔥 LIVE INPUT PREVIEW */}
+            <div
+              className="
+        flex
+        items-center
+
+        gap-2
+
+        px-3
+        py-2
+
+        border-b
+        border-[rgba(255,255,255,0.05)]
+
+        overflow-x-auto
+
+        hide-scrollbar
+      "
+            >
+              <div
+                className="
+          flex
+          items-center
+
+          gap-1
+
+          text-lg
+
+          whitespace-nowrap
+        "
+              >
+                {input}
+              </div>
+            </div>
+
+            {/* 🔥 EMOJI PICKER */}
+            <EmojiPicker
+              theme="dark"
+              width="100%"
+              height={window.innerWidth < 768 ? 240 : 340}
+              lazyLoadEmojis
+              searchDisabled={false}
+              skinTonesDisabled
+              previewConfig={{
+                showPreview: false,
+              }}
+              searchPlaceHolder="Search"
+              onEmojiClick={(emojiData) => {
+                setInput((prev) => prev + emojiData.emoji);
+
+                inputRef.current?.focus();
+              }}
+              style={{
+                background: "var(--card)",
+
+                border: "none",
+
+                borderRadius: window.innerWidth < 768 ? "0px" : "24px",
+
+                boxShadow: "none",
+
+                width: "100%",
+
+                scrollbarWidth: "none",
+
+                msOverflowStyle: "none",
+
+                "--epr-bg-color": "var(--card)",
+
+                "--epr-category-label-bg-color": "var(--card)",
+
+                "--epr-hover-bg-color": "rgba(255,255,255,0.06)",
+
+                "--epr-focus-bg-color": "rgba(255,255,255,0.08)",
+
+                "--epr-search-input-bg-color": "rgba(255,255,255,0.03)",
+
+                "--epr-search-input-text-color": "var(--text)",
+
+                "--epr-search-border-color": "transparent",
+
+                "--epr-category-icon-active-color": "var(--primary)",
+
+                "--epr-text-color": "var(--text)",
+
+                "--epr-emoji-size": "24px",
+
+                "--epr-emoji-gap": "6px",
+              }}
+            />
           </div>
         )}
 

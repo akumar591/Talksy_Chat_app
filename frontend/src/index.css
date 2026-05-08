@@ -6,12 +6,32 @@
 
 /* 🔥 HIDE SCROLLBAR COMPLETELY */
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
 }
 
 .hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* 🔥 EMOJI PICKER SCROLLBAR REMOVE */
+.epr-body::-webkit-scrollbar,
+.epr-emoji-category-content::-webkit-scrollbar,
+.epr-body *::-webkit-scrollbar,
+.epr-category-content::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+}
+
+.epr-body,
+.epr-emoji-category-content,
+.epr-body *,
+.epr-category-content {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 /* ================= ROOT VARIABLES ================= */
@@ -79,52 +99,74 @@ body {
   background-color: var(--bg);
   color: var(--text);
 
-  /* 🔥 FIX: FORCE FONT APPLY (Tailwind override fix) */
+  /* 🔥 FIX: FORCE FONT APPLY */
   font-family: var(--font) !important;
   font-size: var(--font-size);
 
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+
+  overflow-x: hidden;
 }
 
 /* ================= GLASS ================= */
 .glass {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+
   border: 1px solid var(--border);
 
-  /* fallback + modern */
-  background: rgba(255, 255, 255, 0.05);
-  background: color-mix(in srgb, var(--card) 60%, transparent);
+  background: rgba(255, 255, 255, 0.08);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--card) 88%,
+      transparent
+    );
 }
 
 /* ================= SOLID ================= */
 .solid {
   background: var(--card);
+
   border: 1px solid var(--border);
 }
 
 /* ================= INPUT ================= */
 .input {
-  background: rgba(255,255,255,0.05);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
+  background:
+    rgba(255,255,255,0.05);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--card) 70%,
+      transparent
+    );
+
   border: 1px solid var(--border);
+
   color: var(--text);
 }
 
 /* ================= ICON GLOBAL ================= */
 .icon {
   color: var(--text);
+
   transition: color 0.3s ease;
 }
 
 /* ================= TRANSPARENT MODE ================= */
 .transparent .glass {
-  background: rgba(255, 255, 255, 0.05);
+  background:
+    rgba(255, 255, 255, 0.05);
 }
 
-/* ================= CHAT STYLE SUPPORT (🔥 IMPORTANT) ================= */
+/* ================= CHAT STYLE SUPPORT ================= */
 
-/* Rounded (default) */
+/* Rounded */
 .chat-rounded {
   border-radius: 12px;
 }
@@ -137,36 +179,209 @@ body {
 /* Glass */
 .chat-glass {
   backdrop-filter: blur(10px);
-  background: rgba(255,255,255,0.08);
+
+  background:
+    rgba(255,255,255,0.08);
+
   border: 1px solid var(--border);
 }
 
 /* ================= ANIMATION ================= */
+
 @keyframes menuFadeScale {
+
   0% {
     opacity: 0;
-    transform: scale(0.95) translateY(-5px);
+
+    transform:
+      scale(0.95)
+      translateY(-5px);
   }
+
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+
+    transform:
+      scale(1)
+      translateY(0);
   }
 }
 
 .animate-menu {
-  animation: menuFadeScale 0.2s ease forwards;
+  animation:
+    menuFadeScale 0.2s ease forwards;
 }
 
-/* 🔥 Drawer animation fix */
+/* 🔥 Drawer animation */
 @keyframes slideIn {
+
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
 }
 
 .animate-slideIn {
-  animation: slideIn 0.3s ease;
+  animation:
+    slideIn 0.3s ease;
+}
+
+/* ================= EMOJI PICKER SLIM UI ================= */
+
+/* 🔥 SEARCH WRAPPER */
+.epr-search-container {
+
+  padding:
+    4px 10px !important;
+
+  background:
+    transparent !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* 🔥 SEARCH INPUT */
+.epr-search-container input {
+
+  background:
+    rgba(255,255,255,0.03) !important;
+
+  border:
+    none !important;
+
+  border-radius:
+    10px !important;
+
+  box-shadow:
+    none !important;
+
+  color:
+    var(--text) !important;
+
+  padding:
+    6px 10px !important;
+
+  font-size:
+    13px !important;
+
+  min-height:
+    34px !important;
+}
+
+/* 🔥 PLACEHOLDER */
+.epr-search-container input::placeholder {
+
+  color:
+    rgba(255,255,255,0.4) !important;
+
+  font-size:
+    12px !important;
+}
+
+/* 🔥 FOCUS */
+.epr-search-container input:focus {
+
+  outline:
+    none !important;
+
+  border:
+    none !important;
+
+  box-shadow:
+    none !important;
+
+  background:
+    rgba(255,255,255,0.04) !important;
+}
+
+/* 🔥 SEARCH ICON */
+.epr-search-container svg {
+
+  color:
+    var(--primary) !important;
+
+  width:
+    16px !important;
+
+  height:
+    16px !important;
+
+  opacity:
+    0.75;
+}
+
+/* 🔥 CATEGORY BAR */
+.epr-category-nav {
+
+  padding:
+    2px 6px !important;
+
+  background:
+    var(--card) !important;
+
+  border-top:
+    1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* 🔥 CATEGORY BUTTON */
+.epr-category-nav button {
+
+  transform:
+    scale(0.88);
+
+  border-radius:
+    8px !important;
+
+  transition:
+    all 0.15s ease !important;
+}
+
+/* 🔥 ACTIVE CATEGORY */
+.epr-btn-active {
+
+  background:
+    rgba(255,255,255,0.06) !important;
+}
+
+/* 🔥 BODY */
+.epr-body {
+
+  padding:
+    2px !important;
+}
+
+/* 🔥 CATEGORY LABEL */
+.epr-emoji-category-label {
+
+  background:
+    var(--card) !important;
+
+  padding:
+    3px 10px !important;
+
+  font-size:
+    11px !important;
+
+  color:
+    rgba(255,255,255,0.55) !important;
+
+  font-weight:
+    500 !important;
+}
+
+/* 🔥 EMOJI */
+.epr-emoji {
+
+  transition:
+    transform 0.12s ease !important;
+}
+
+.epr-emoji:hover {
+
+  transform:
+    scale(1.12);
 }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +19,9 @@ public class MessageService {
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
     private final MessageReactionRepository messageReactionRepository;
+
+    // 🔥 NEW
+    private final ContactRepository contactRepository;
 
     // ===============================
     // 🔥 SEND MESSAGE (ENCRYPTED + REPLY)
@@ -38,6 +42,44 @@ public class MessageService {
         if (!conversation.getUser1().getId().equals(senderId) &&
                 !conversation.getUser2().getId().equals(senderId)) {
             throw new RuntimeException("You are not part of this conversation");
+        }
+
+        // ===============================
+        // 🚫 BLOCK CHECK
+        // ===============================
+        Long receiverId;
+
+        if (conversation.getUser1().getId().equals(senderId)) {
+
+            receiverId = conversation.getUser2().getId();
+
+        } else {
+
+            receiverId = conversation.getUser1().getId();
+        }
+
+        Optional<Contact> senderContact =
+                contactRepository.findByUserIdAndContactUser_Id(
+                        senderId,
+                        receiverId
+                );
+
+        Optional<Contact> receiverContact =
+                contactRepository.findByUserIdAndContactUser_Id(
+                        receiverId,
+                        senderId
+                );
+
+        boolean blocked =
+                senderContact.map(Contact::isBlocked).orElse(false)
+                        ||
+                        receiverContact.map(Contact::isBlocked).orElse(false);
+
+        if (blocked) {
+
+            throw new RuntimeException(
+                    "Messaging not allowed"
+            );
         }
 
         // ===============================

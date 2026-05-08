@@ -142,6 +142,7 @@ const Sidebar = ({ onSelectChat }) => {
           }
           className="
             w-full
+            min-w-0
             px-4
             py-3
             rounded-2xl
@@ -155,7 +156,7 @@ const Sidebar = ({ onSelectChat }) => {
       </div>
 
       {/* 🔥 SCROLL AREA */}
-      <div className="h-full md:h-[calc(100%-80px)] overflow-y-auto px-2 pb-20 md:pb-2 hide-scrollbar">
+      <div className="h-full md:h-[calc(100%-80px)] overflow-y-auto overflow-x-hidden px-2 pb-20 md:pb-2 hide-scrollbar">
 
         {/* 🔥 LOADING */}
         {sidebarLoading && (
@@ -199,11 +200,12 @@ const Sidebar = ({ onSelectChat }) => {
             <div className="h-full flex items-center justify-center opacity-60 text-sm">
 
               No chats found
+
             </div>
           )}
 
         {/* 🔥 CHAT LIST */}
-        <div className="flex flex-col gap-1 pt-16 md:pt-0">
+        <div className="flex flex-col gap-1 pt-[72px] md:pt-0">
 
           {filteredChats.map(
             (chat) => {
@@ -245,6 +247,7 @@ const Sidebar = ({ onSelectChat }) => {
                       <img
                         src={chat.avatar}
                         alt={chat.name}
+                        draggable={false}
                         className="
                           w-12
                           h-12
