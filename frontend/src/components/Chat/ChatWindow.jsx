@@ -21,6 +21,8 @@ import {
   FiSlash,
   FiUnlock,
   FiUserX,
+  FiUserPlus,
+  FiLogOut,
 } from "react-icons/fi";
 
 import { useNavigate } from "react-router-dom";
@@ -93,10 +95,8 @@ const ChatWindow = ({ chat, onBack }) => {
 
   const timerRef = useRef(null);
 
-  // ===============================
-  // 🔥 EMOJIS
-  // ===============================
-  const emojis = ["😀", "😂", "😍", "😎", "😢", "🔥", "❤️", "👍", "🎉"];
+  const emojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🙏",];
+
 
   // ===============================
   // 🔥 SORT MESSAGES
@@ -276,7 +276,16 @@ const ChatWindow = ({ chat, onBack }) => {
 
           {/* 🔥 PROFILE CLICK */}
           <div
-            onClick={() => navigate(`/user/${chat.id}`)}
+            onClick={() => {
+              if (chat.isGroup) {
+
+                navigate(`/group-info/${chat.id}`);
+
+              } else {
+
+                navigate(`/user/${chat.id}`);
+              }
+            }}
             className="flex items-center gap-3 cursor-pointer min-w-0"
           >
             <div className="relative shrink-0">
@@ -286,7 +295,7 @@ const ChatWindow = ({ chat, onBack }) => {
                 className="w-11 h-11 rounded-full object-cover"
               />
 
-              {chat.online && (
+              {!chat.isGroup && chat.online && (
                 <span
                   className="
                     absolute
@@ -307,11 +316,20 @@ const ChatWindow = ({ chat, onBack }) => {
               <h2 className="font-semibold truncate">{chat.name}</h2>
 
               <p className="text-xs opacity-60 truncate">
+
                 {isRecording
+
                   ? "Recording..."
-                  : chat.online
-                    ? "online"
-                    : "last seen recently"}
+
+                  : chat.isGroup
+
+                    ? `${chat.members?.length || 0} members`
+
+                    : chat.online
+
+                      ? "online"
+
+                      : "last seen recently"}
               </p>
             </div>
           </div>
@@ -425,10 +443,19 @@ const ChatWindow = ({ chat, onBack }) => {
         animate-menu
       "
               >
-                {/* PROFILE */}
+
+                {/* PROFILE / GROUP INFO */}
                 <div
                   onClick={() => {
-                    navigate(`/user/${chat.id}`);
+
+                    if (chat.isGroup) {
+
+                      navigate(`/group-info/${chat.id}`);
+
+                    } else {
+
+                      navigate(`/user/${chat.id}`);
+                    }
 
                     setShowMenu(false);
                   }}
@@ -452,7 +479,13 @@ const ChatWindow = ({ chat, onBack }) => {
                 >
                   <FiUser size={16} />
 
-                  <span className="text-[13px] font-medium">View Profile</span>
+                  <span className="text-[13px] font-medium">
+
+                    {chat.isGroup
+                      ? "Group Info"
+                      : "View Profile"}
+
+                  </span>
                 </div>
 
                 {/* MEDIA */}
@@ -482,7 +515,9 @@ const ChatWindow = ({ chat, onBack }) => {
                 >
                   <FiImage size={16} />
 
-                  <span className="text-[13px] font-medium">Media & Files</span>
+                  <span className="text-[13px] font-medium">
+                    Media & Files
+                  </span>
                 </div>
 
                 {/* CHAT THEME */}
@@ -507,7 +542,9 @@ const ChatWindow = ({ chat, onBack }) => {
                 >
                   <FiEdit3 size={16} />
 
-                  <span className="text-[13px] font-medium">Chat Theme</span>
+                  <span className="text-[13px] font-medium">
+                    Chat Theme
+                  </span>
                 </div>
 
                 {/* WALLPAPER */}
@@ -566,43 +603,111 @@ const ChatWindow = ({ chat, onBack }) => {
 
                 <div className="h-px bg-white/10 my-1.5" />
 
-                {/* BLOCK / UNBLOCK */}
-                <div
-                  onClick={async () => {
-                    await toggleBlockContact(chat.id);
+                {/* 🔥 PRIVATE CHAT ONLY */}
+                {!chat.isGroup && (
+                  <>
+                    {/* BLOCK / UNBLOCK */}
+                    <div
+                      onClick={async () => {
+                        await toggleBlockContact(chat.id);
 
-                    setShowMenu(false);
-                  }}
-                  className="
-          flex
-          items-center
-          gap-3
+                        setShowMenu(false);
+                      }}
+                      className="
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          text-yellow-400
+              text-yellow-400
 
-          hover:bg-yellow-500/10
+              hover:bg-yellow-500/10
 
-          transition-all
-          duration-200
-        "
-                >
-                  {chat?.blocked ? (
-                    <FiUnlock size={16} />
-                  ) : (
-                    <FiSlash size={16} />
-                  )}
+              transition-all
+              duration-200
+            "
+                    >
+                      {chat?.blocked ? (
+                        <FiUnlock size={16} />
+                      ) : (
+                        <FiSlash size={16} />
+                      )}
 
-                  <span className="text-[13px] font-medium">
-                    {chat?.blocked ? "Unblock Contact" : "Block Contact"}
-                  </span>
-                </div>
+                      <span className="text-[13px] font-medium">
+                        {chat?.blocked
+                          ? "Unblock Contact"
+                          : "Block Contact"}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {/* 🔥 GROUP ONLY */}
+                {chat.isGroup && (
+                  <>
+                    {/* ADD MEMBERS */}
+                    <div
+                      className="
+              flex
+              items-center
+              gap-3
+
+              px-3
+              py-2.5
+
+              rounded-xl
+
+              cursor-pointer
+
+              hover:bg-white/5
+
+              transition-all
+              duration-200
+            "
+                    >
+                      <FiUserPlus size={16} />
+
+                      <span className="text-[13px] font-medium">
+                        Add Members
+                      </span>
+                    </div>
+
+                    {/* LEAVE GROUP */}
+                    <div
+                      className="
+              flex
+              items-center
+              gap-3
+
+              px-3
+              py-2.5
+
+              rounded-xl
+
+              cursor-pointer
+
+              text-red-400
+
+              hover:bg-red-500/10
+
+              transition-all
+              duration-200
+            "
+                    >
+                      <FiLogOut size={16} />
+
+                      <span className="text-[13px] font-medium">
+                        Leave Group
+                      </span>
+                    </div>
+                  </>
+                )}
 
                 {/* CLEAR CHAT */}
                 <div
@@ -633,538 +738,574 @@ const ChatWindow = ({ chat, onBack }) => {
                 >
                   <FiTrash2 size={16} />
 
-                  <span className="text-[13px] font-medium">Clear Chat</span>
+                  <span className="text-[13px] font-medium">
+                    Clear Chat
+                  </span>
                 </div>
 
                 {/* DELETE CONTACT */}
-                <div
-                  onClick={async () => {
-                    await deleteContact(chat.id);
+                {!chat.isGroup && (
+                  <div
+                    onClick={async () => {
+                      await deleteContact(chat.id);
 
-                    setShowMenu(false);
-                  }}
-                  className="
-          flex
-          items-center
-          gap-3
+                      setShowMenu(false);
+                    }}
+                    className="
+            flex
+            items-center
+            gap-3
 
-          px-3
-          py-2.5
+            px-3
+            py-2.5
 
-          rounded-xl
+            rounded-xl
 
-          cursor-pointer
+            cursor-pointer
 
-          text-red-400
+            text-red-400
 
-          hover:bg-red-500/10
+            hover:bg-red-500/10
 
-          transition-all
-          duration-200
-        "
-                >
-                  <FiUserX size={16} />
+            transition-all
+            duration-200
+          "
+                  >
+                    <FiUserX size={16} />
 
-                  <span className="text-[13px] font-medium">
-                    Delete Contact
-                  </span>
-                </div>
+                    <span className="text-[13px] font-medium">
+                      Delete Contact
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-{/* 🔥 MESSAGES */}
-<div
-  className="
+      {/* 🔥 MESSAGES */}
+      <div
+        className="
     flex-1
-
     overflow-y-auto
     overflow-x-hidden
-
     hide-scrollbar
-
     px-4
     py-4
-
     space-y-4
   "
->
+      >
 
-  {/* 🔥 EMOJI CHECK */}
-  {(() => {
+        {/* 🔥 EMOJI CHECK */}
+        {(() => {
 
-    const isOnlyEmoji = (text = "") => {
+          const isOnlyEmoji = (text = "") => {
 
-      const emojiRegex =
-        /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
+            const emojiRegex =
+              /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
 
-      return emojiRegex.test(text.trim());
-    };
+            return emojiRegex.test(text.trim());
+          };
 
-    return sortedMessages.map((msg) => {
+          return sortedMessages.map((msg) => {
 
-      const isMe =
-        Number(msg.senderId) === Number(user?.id);
+            const isMe =
+              Number(msg.senderId) === Number(user?.id);
 
-      return (
-        <div
-          key={msg.id}
-          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-        >
-          <div className="relative max-w-full pb-3">
-
-            {/* 🔥 ACTIONS */}
-            {!msg.deleted && activeMessageId === msg.id && (
+            return (
               <div
-                className={`
-                  absolute
-                  -top-9
-                  z-40
-                  flex
-                  gap-2
-
-                  ${isMe ? "right-0" : "left-0"}
-                `}
+                key={msg.id}
+                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
 
-                {/* REPLY */}
-                <button
-                  aria-label="Reply message"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                <div className="flex items-end gap-2 max-w-full">
 
-                    setReplyTo(msg);
-                  }}
-                  className="
-                    w-7
-                    h-7
+                  {/* 🔥 GROUP AVATAR */}
+                  {chat?.isGroup && !isMe && (
+                    <img
+                      src={
+                        msg.senderAvatar ||
+                        "https://i.pravatar.cc/150?img=3"
+                      }
+                      alt={msg.senderName}
+                      className="
+                  w-8
+                  h-8
+                  rounded-full
+                  object-cover
+                  mb-1
+                "
+                    />
+                  )}
 
-                    rounded-full
-                    glass
+                  <div className="relative max-w-full">
 
-                    flex
-                    items-center
-                    justify-center
+                    {/* 🔥 MESSAGE */}
+                    <div
+                      onClick={() =>
+                        setActiveMessageId(
+                          activeMessageId === msg.id
+                            ? null
+                            : msg.id
+                        )
+                      }
 
-                    hover:text-[var(--primary)]
+                      className={`
+                  relative
+                  w-fit
+                  max-w-[320px]
+                  md:max-w-[480px]
 
-                    transition
-                  "
-                >
-                  <FiCornerUpLeft size={14} />
-                </button>
+                  overflow-visible
 
-                {/* REACTION */}
-                <button
-                  aria-label="React message"
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  shadow-sm
+                  transition-all
+                  duration-200
 
-                    setReactionMsgId(msg.id);
-                  }}
-                  className="
-                    w-7
-                    h-7
+                  cursor-pointer
 
-                    rounded-full
-                    glass
+                  ${isOnlyEmoji(msg.content)
 
-                    flex
-                    items-center
-                    justify-center
-
-                    hover:text-[var(--primary)]
-
-                    transition
-                  "
-                >
-                  <FiSmile size={14} />
-                </button>
-
-                {/* DELETE */}
-                <button
-                  aria-label="Delete message"
-                  onClick={(e) => {
-                    e.stopPropagation();
-
-                    setMessageMenuId(msg.id);
-                  }}
-                  className="
-                    w-7
-                    h-7
-
-                    rounded-full
-                    glass
-
-                    flex
-                    items-center
-                    justify-center
-
-                    hover:text-red-400
-
-                    transition
-                  "
-                >
-                  <FiTrash2 size={14} />
-                </button>
-              </div>
-            )}
-
-            {/* 🔥 MESSAGE */}
-            <div
-              onClick={() =>
-                setActiveMessageId(
-                  activeMessageId === msg.id
-                    ? null
-                    : msg.id
-                )
-              }
-
-              className={`
-                relative
-
-                w-fit
-                max-w-[320px]
-                md:max-w-[480px]
-
-                overflow-visible
-                pb-3
-
-                shadow-sm
-                transition-all
-                duration-200
-
-                cursor-pointer
-
-                ${
-                  isOnlyEmoji(msg.content)
-
-                    ? `
+                          ? `
                       bg-transparent
-
                       px-1
                       py-0
-
                       shadow-none
-
                       border-none
                     `
 
-                    : `
+                          : `
                       px-3
-                      py-1.5
+                      py-2
 
                       rounded-[20px]
 
-                      ${
-                        isMe
-                          ? `
-                            bg-[var(--primary)]
-                            text-black
-                            rounded-br-md
-                          `
-                          : `
-                            bg-[var(--card)]
-                            text-[var(--text)]
-                            rounded-bl-md
-                            border
-                            border-[var(--border)]
-                          `
-                      }
+                      ${isMe
+                            ? `
+                          bg-[var(--primary)]
+                          text-black
+                          rounded-br-md
+                        `
+                            : `
+                          bg-[var(--card)]
+                          text-[var(--text)]
+                          rounded-bl-md
+                          border
+                          border-[var(--border)]
+                        `
+                          }
 
                       hover:shadow-lg
                     `
-                }
-              `}
-            >
+                        }
+                `}
+                    >
 
-              {/* 🔥 REPLY */}
-              {msg.replyTo && (
-                <div
-                  className={`
-                    mb-1.5
-                    px-2.5
-                    py-1.5
+                      {/* 🔥 GROUP SENDER NAME */}
+                      {chat?.isGroup && !isMe && !msg.deleted && (
+                        <p
+                          className="
+                      text-[11px]
+                      font-semibold
+                      text-[var(--primary)]
+                      mb-1
+                    "
+                        >
+                          {msg.senderName || "Unknown"}
+                        </p>
+                      )}
 
-                    rounded-xl
+                      {/* 🔥 REPLY */}
+                      {msg.replyTo && (
+                        <div
+                          className={`
+                      mb-1.5
+                      px-2.5
+                      py-1.5
 
-                    text-[11px]
+                      rounded-xl
 
-                    border-l-[3px]
+                      text-[11px]
 
-                    ${
-                      isMe
-                        ? `
+                      border-l-[3px]
+
+                      ${isMe
+                              ? `
                           bg-black/10
                           border-black/30
                         `
-                        : `
+                              : `
                           bg-[var(--primary)]/10
                           border-[var(--primary)]
                         `
-                    }
-                  `}
-                >
-                  <p className="font-medium opacity-70 mb-0.5">
-                    Reply
-                  </p>
+                            }
+                    `}
+                        >
 
-                  <p className="truncate opacity-80">
-                    {msg.replyTo.content}
-                  </p>
-                </div>
-              )}
+                          <p className="font-medium opacity-70 mb-0.5">
+                            Reply
+                          </p>
 
-              {/* 🔥 TEXT */}
-              <div
-                className={`
-                  w-full
-                  max-w-full
+                          <p className="truncate opacity-80">
+                            {msg.replyTo.content}
+                          </p>
+                        </div>
+                      )}
 
-                  whitespace-pre-wrap
-                  break-words
-                  break-all
+                      {/* 🔥 TEXT */}
+                      <div
+                        className={`
+                    w-full
+                    max-w-full
 
-                  tracking-[0.1px]
+                    whitespace-pre-wrap
+                    break-words
+                    break-all
 
-                  ${
-                    isOnlyEmoji(msg.content)
+                    tracking-[0.1px]
 
-                      ? `
+                    ${isOnlyEmoji(msg.content)
+
+                            ? `
                         text-[24px]
                         leading-none
                       `
 
-                      : `
+                            : `
                         text-[13.5px]
-                        leading-[1.3]
+                        leading-[1.4]
                       `
-                  }
-                `}
-                style={{
-                  overflowWrap: "anywhere",
-                  wordBreak: "break-word",
-                }}
-              >
-                {msg.deleted
-                  ? "🚫 This message was deleted"
-                  : msg.content}
-              </div>
-
-              {/* 🔥 FOOTER */}
-              <div
-                className={`
-                  flex
-                  items-center
-                  justify-end
-
-                  gap-1
-
-                  ${
-                    isOnlyEmoji(msg.content)
-                      ? "mt-0"
-                      : "mt-0.5"
-                  }
-                `}
-              >
-                <span
-                  className={`
-                    text-[9px]
-                    tracking-wide
-
-                    ${
-                      isMe
-                        ? "text-black/70"
-                        : "text-[var(--text)]/50"
-                    }
+                          }
                   `}
-                >
-                  {formatTime(msg.createdAt)}
-                </span>
-              </div>
+                        style={{
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
 
-              {/* 🔥 REACTIONS */}
-              {msg.reactions?.length > 0 && (
-                <div
-                  className="
-                    absolute
-                    -bottom-3
+                        {msg.deleted
+                          ? "🚫 This message was deleted"
+                          : msg.content}
 
-                    left-2
+                      </div>
 
+                      {/* 🔥 FOOTER */}
+                      <div
+                        className={`
                     flex
                     items-center
+                    justify-end
+
                     gap-1
 
-                    px-2
-                    py-[2px]
+                    ${isOnlyEmoji(msg.content)
+                            ? "mt-0"
+                            : "mt-1"
+                          }
+                  `}
+                      >
 
-                    rounded-full
+                        <span
+                          className={`
+                      text-[9px]
+                      tracking-wide
 
-                    bg-[var(--bg)]
+                      ${isMe
+                              ? "text-black/70"
+                              : "text-[var(--text)]/50"
+                            }
+                    `}
+                        >
+                          {formatTime(msg.createdAt)}
+                        </span>
+                      </div>
 
+                      {/* 🔥 REACTIONS */}
+                      {msg.reactions?.length > 0 && (
+                        <div
+                          className="
+                      absolute
+                      -bottom-3
+
+                      left-2
+
+                      flex
+                      items-center
+                      gap-1
+
+                      px-2
+                      py-[3px]
+
+                      rounded-full
+
+                      bg-[var(--card)]
+
+                      border
+                      border-[var(--border)]
+
+                      shadow-lg
+                      z-20
+                    "
+                        >
+
+                          {msg.reactions.map((r, i) => (
+                            <span
+                              key={i}
+                              className="text-[12px]"
+                            >
+                              {r.emoji}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 🔥 ACTIONS BELOW MESSAGE */}
+                    {!msg.deleted && activeMessageId === msg.id && (
+                      <div
+                        className={`
+                    absolute
+                    top-[100%]
+                    mt-[2px]
+
+                    z-40
+                    flex
+                    gap-2
+
+                    ${isMe ? "right-0" : "left-0"}
+                  `}
+                      >
+
+                        {/* REPLY */}
+                        <button
+                          aria-label="Reply message"
+                          onClick={(e) => {
+                            e.stopPropagation();
+
+                            setReplyTo(msg);
+                          }}
+                          className="
+                      w-7
+                      h-7
+
+                      rounded-full
+                      glass
+
+                      flex
+                      items-center
+                      justify-center
+
+                      hover:text-[var(--primary)]
+
+                      transition
+                    "
+                        >
+                          <FiCornerUpLeft size={14} />
+                        </button>
+
+                        {/* REACTION */}
+                        <button
+                          aria-label="React message"
+                          onClick={(e) => {
+                            e.stopPropagation();
+
+                            setReactionMsgId(msg.id);
+                          }}
+                          className="
+                      w-7
+                      h-7
+
+                      rounded-full
+                      glass
+
+                      flex
+                      items-center
+                      justify-center
+
+                      hover:text-[var(--primary)]
+
+                      transition
+                    "
+                        >
+                          <FiSmile size={14} />
+                        </button>
+
+                        {/* DELETE */}
+                        <button
+                          aria-label="Delete message"
+                          onClick={(e) => {
+                            e.stopPropagation();
+
+                            setMessageMenuId(msg.id);
+                          }}
+                          className="
+                      w-7
+                      h-7
+
+                      rounded-full
+                      glass
+
+                      flex
+                      items-center
+                      justify-center
+
+                      hover:text-red-400
+
+                      transition
+                    "
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 🔥 REACTION PICKER */}
+                    {reactionMsgId === msg.id && (
+                      <div
+                        ref={reactionRef}
+                        className={`
+                    absolute
+                    z-50
+                    top-full
+                    mt-2
+
+                    glass
+
+                    px-3
+                    py-2
+
+                    rounded-2xl
+
+                    flex
+                    gap-2
+
+                    shadow-2xl
+
+                    ${isMe ? "right-0" : "left-0"}
+                  `}
+                      >
+
+                        {emojis.map((e, i) => (
+                          <span
+                            key={i}
+                            onClick={() => {
+
+                              reactToMessage(msg.id, e);
+
+                              setReactionMsgId(null);
+                            }}
+
+                            className="
+                        cursor-pointer
+                        hover:scale-125
+                        transition
+                      "
+                          >
+                            {e}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 🔥 DELETE MENU */}
+                    {messageMenuId === msg.id && (
+                      <div
+                        className={`
+                    delete-menu
+
+                    absolute
+                    z-50
+
+                    top-full
+                    mt-2
+
+                    glass
+
+                    rounded-2xl
+                    p-2
+
+                    w-52
+
+                    shadow-2xl
                     border
                     border-[var(--border)]
 
-                    shadow-md
-                    z-20
-                  "
-                >
-                  {msg.reactions.map((r, i) => (
-                    <span
-                      key={i}
-                      className="text-[11px]"
-                    >
-                      {r.emoji}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ${isMe ? "right-0" : "left-0"}
+                  `}
+                      >
 
-            {/* 🔥 REACTION PICKER */}
-            {reactionMsgId === msg.id && (
-              <div
-                ref={reactionRef}
-                className={`
-                  absolute
-                  z-50
-                  -top-14
+                        {/* DELETE FOR ME */}
+                        <div
+                          onClick={() => {
 
-                  glass
+                            deleteForMe(msg.id);
 
-                  px-3
-                  py-2
+                            setMessageMenuId(null);
 
-                  rounded-2xl
+                            setActiveMessageId(null);
+                          }}
 
-                  flex
-                  gap-2
+                          className="
+                      px-4
+                      py-2.5
 
-                  shadow-2xl
+                      hover:bg-[var(--primary)]/10
 
-                  ${isMe ? "right-0" : "left-0"}
-                `}
-              >
-                {emojis.map((e, i) => (
-                  <span
-                    key={i}
-                    onClick={() => {
-
-                      reactToMessage(msg.id, e);
-
-                      setReactionMsgId(null);
-                    }}
-
-                    className="
+                      rounded-xl
                       cursor-pointer
-                      hover:scale-125
+
+                      text-sm
+
                       transition
                     "
-                  >
-                    {e}
-                  </span>
-                ))}
-              </div>
-            )}
+                        >
+                          Delete for me
+                        </div>
 
-            {/* 🔥 DELETE MENU */}
-            {messageMenuId === msg.id && (
-              <div
-                className={`
-                  delete-menu
+                        {/* DELETE FOR EVERYONE */}
+                        <div
+                          onClick={() => {
 
-                  absolute
-                  z-50
-                  mt-2
+                            deleteForEveryone(msg.id);
 
-                  glass
+                            setMessageMenuId(null);
 
-                  rounded-2xl
-                  p-2
+                            setActiveMessageId(null);
+                          }}
 
-                  w-52
+                          className="
+                      px-4
+                      py-2.5
 
-                  shadow-2xl
-                  border
-                  border-[var(--border)]
+                      hover:bg-red-500/10
 
-                  ${isMe ? "right-0" : "left-0"}
-                `}
-              >
+                      text-red-400
 
-                {/* DELETE FOR ME */}
-                <div
-                  onClick={() => {
+                      rounded-xl
+                      cursor-pointer
 
-                    deleteForMe(msg.id);
+                      text-sm
 
-                    setMessageMenuId(null);
-
-                    setActiveMessageId(null);
-                  }}
-
-                  className="
-                    px-4
-                    py-2.5
-
-                    hover:bg-[var(--primary)]/10
-
-                    rounded-xl
-                    cursor-pointer
-
-                    text-sm
-
-                    transition
-                  "
-                >
-                  Delete for me
-                </div>
-
-                {/* DELETE FOR EVERYONE */}
-                <div
-                  onClick={() => {
-
-                    deleteForEveryone(msg.id);
-
-                    setMessageMenuId(null);
-
-                    setActiveMessageId(null);
-                  }}
-
-                  className="
-                    px-4
-                    py-2.5
-
-                    hover:bg-red-500/10
-
-                    text-red-400
-
-                    rounded-xl
-                    cursor-pointer
-
-                    text-sm
-
-                    transition
-                  "
-                >
-                  Delete for everyone
+                      transition
+                    "
+                        >
+                          Delete for everyone
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      );
-    });
-  })()}
+            );
+          });
+        })()}
 
-  <div ref={messagesEndRef} />
-</div>
+        <div ref={messagesEndRef} />
+      </div>
 
       {/* 🔥 INPUT */}
-      <div className="relative p-3 bg-[var(--card)] border-t border-[var(--border)] sticky bottom-0">
+      <div className="relative p-3 bg-[var(--card)] border-t border-[var(--border)] bottom-0">
         {/* 🔥 REPLY PREVIEW */}
         {replyTo && (
           <div className="mb-2 px-3 py-2 bg-[var(--primary)]/10 rounded-2xl flex justify-between items-center text-sm">
@@ -1547,11 +1688,10 @@ const ChatWindow = ({ chat, onBack }) => {
             <button
               aria-label="Record voice"
               onClick={handleMicClick}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${
-                isRecording
-                  ? "bg-[var(--primary)] text-black"
-                  : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
-              }`}
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${isRecording
+                ? "bg-[var(--primary)] text-black"
+                : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
+                }`}
             >
               <FiMic />
             </button>

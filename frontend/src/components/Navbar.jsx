@@ -1,8 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-} from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 import {
   FiMessageCircle,
@@ -17,20 +13,14 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-import {
-  MdOutlineGroups,
-  MdOutlineGroup,
-  MdGroups,
-} from "react-icons/md";
+import { MdOutlineGroups, MdOutlineGroup, MdGroups } from "react-icons/md";
 
 import { BsThreeDotsVertical } from "react-icons/bs";
 
 import { createPortal } from "react-dom";
+import { useChat } from "../context/ChatContext";
 
-import {
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -41,7 +31,6 @@ import { useTheme } from "../context/ThemeContext";
 import SettingsDrawer from "./Settings/SettingsDrawer";
 
 const Navbar = () => {
-
   const { theme, setTheme } = useTheme();
 
   const navigate = useNavigate();
@@ -51,21 +40,16 @@ const Navbar = () => {
   const { user } = useAuth();
 
   /* 🔥 MOBILE CHECK */
-  const [isMobile, setIsMobile] =
-    useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   /* 🔥 UI STATES */
-  const [openSettings, setOpenSettings] =
-    useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
 
-  const [showMenu, setShowMenu] =
-    useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
-  const [activeTab, setActiveTab] =
-    useState("All");
+  const { activeFilter, setActiveFilter } = useChat();
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const menuRef = useRef(null);
 
@@ -73,60 +57,36 @@ const Navbar = () => {
 
   /* 🔥 RESPONSIVE */
   useEffect(() => {
-
     const handleResize = () => {
-
-      setIsMobile(
-        window.innerWidth < 768
-      );
+      setIsMobile(window.innerWidth < 768);
     };
 
     handleResize();
 
-    window.addEventListener(
-      "resize",
-      handleResize
-    );
+    window.addEventListener("resize", handleResize);
 
     return () => {
-
-      window.removeEventListener(
-        "resize",
-        handleResize
-      );
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   /* 🔥 CLOSE MENU OUTSIDE */
   useEffect(() => {
-
     const handleClick = (e) => {
-
       if (
         menuRef.current &&
-        !menuRef.current.contains(
-          e.target
-        ) &&
+        !menuRef.current.contains(e.target) &&
         dropdownRef.current &&
-        !dropdownRef.current.contains(
-          e.target
-        )
+        !dropdownRef.current.contains(e.target)
       ) {
         setShowMenu(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClick
-    );
+    document.addEventListener("mousedown", handleClick);
 
     return () => {
-
-      document.removeEventListener(
-        "mousedown",
-        handleClick
-      );
+      document.removeEventListener("mousedown", handleClick);
     };
   }, []);
 
@@ -153,15 +113,13 @@ const Navbar = () => {
 
   /* 🔥 HIDE NAVBAR */
   const hideNavbar =
-    fullScreenRoutes.some((route) =>
-      location.pathname.startsWith(route)
-    ) && isMobile;
+    fullScreenRoutes.some((route) => location.pathname.startsWith(route)) &&
+    isMobile;
 
   return (
     <>
       {!hideNavbar && (
         <>
-
           {/* ================= DESKTOP NAVBAR ================= */}
           <div
             className="
@@ -191,18 +149,11 @@ const Navbar = () => {
               isolate
             "
           >
-
             {/* LOGO */}
             <div className="flex items-center gap-3">
               <img
-                src={
-                  theme === "light"
-                    ? assets.LightMoodLogo
-                    : assets.Logo
-                }
-
+                src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
                 alt="logo"
-
                 className="
                   w-24
                   h-10
@@ -225,39 +176,35 @@ const Navbar = () => {
               <NavItem
                 icon={<FiMessageCircle />}
                 label="Chats"
-                onClick={() => navigate("/")}
-              />
+                onClick={() => { setActiveFilter("All"); navigate("/");}} />
 
               <NavItem
                 icon={<FiUsers />}
                 label="Status"
-                onClick={() =>
-                  navigate("/status")
-                }
+                onClick={() => navigate("/status")}
               />
 
               <NavItem
                 icon={<FiPhone />}
                 label="Calls"
-                onClick={() =>
-                  navigate("/call")
-                }
+                onClick={() => navigate("/call")}
               />
 
               <NavItem
                 icon={<MdOutlineGroups />}
                 label="Groups"
-                onClick={() =>
-                  navigate("/groups")
-                }
+                onClick={() => { setActiveFilter("Groups"); navigate("/");}} />
+
+              <NavItem
+                icon={<MdOutlineGroups/>}
+                label="New-group"
+                onClick={() => navigate("/new-group")}
               />
 
               <NavItem
                 icon={<FiUserPlus />}
                 label="New-chat"
-                onClick={() =>
-                  navigate("/new-chat")
-                }
+                onClick={() => navigate("/new-chat")}
               />
             </div>
 
@@ -270,11 +217,9 @@ const Navbar = () => {
                 gap-4
               "
             >
-
               {/* PROFILE */}
               <div
                 onClick={() => {
-
                   navigate("/profile");
 
                   setShowMenu(false);
@@ -286,12 +231,10 @@ const Navbar = () => {
               {/* SETTINGS */}
               <div
                 onClick={(e) => {
-
                   e.stopPropagation();
 
                   setOpenSettings(true);
                 }}
-
                 className="
                   cursor-pointer
                   group
@@ -308,10 +251,7 @@ const Navbar = () => {
               </div>
 
               {/* THEME */}
-              <ThemeToggle
-                theme={theme}
-                setTheme={setTheme}
-              />
+              <ThemeToggle theme={theme} setTheme={setTheme} />
             </div>
           </div>
 
@@ -331,7 +271,6 @@ const Navbar = () => {
               isolate
             "
           >
-
             {/* BACKGROUND */}
             <div
               className={`
@@ -346,14 +285,12 @@ const Navbar = () => {
 
                 ${
                   theme === "light"
-
                     ? `
                       bg-gradient-to-r
                       from-white
                       via-gray-100
                       to-white
                     `
-
                     : `
                       bg-gradient-to-r
                       from-[#020617]
@@ -365,7 +302,6 @@ const Navbar = () => {
             />
 
             <div className="relative">
-
               {/* TOP */}
               <div
                 className="
@@ -377,17 +313,10 @@ const Navbar = () => {
                   pt-3
                 "
               >
-
                 {/* LOGO */}
                 <img
-                  src={
-                    theme === "light"
-                      ? assets.LightMoodLogo
-                      : assets.Logo
-                  }
-
+                  src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
                   alt="logo"
-
                   className="
                     w-20
                     h-8
@@ -404,7 +333,6 @@ const Navbar = () => {
                     gap-3
                   "
                 >
-
                   {/* NEW CHAT */}
                   <div
                     className="
@@ -424,7 +352,6 @@ const Navbar = () => {
                       active:scale-95
                     "
                   >
-
                     <div
                       className="
                         absolute
@@ -443,10 +370,7 @@ const Navbar = () => {
                     />
 
                     <FiUserPlus
-                      onClick={() =>
-                        navigate("/new-chat")
-                      }
-
+                      onClick={() => navigate("/new-chat")}
                       className="
                         icon
                         text-sm
@@ -461,14 +385,8 @@ const Navbar = () => {
 
                   {/* MENU */}
                   <div ref={menuRef}>
-
                     <BsThreeDotsVertical
-                      onClick={() =>
-                        setShowMenu(
-                          (prev) => !prev
-                        )
-                      }
-
+                      onClick={() => setShowMenu((prev) => !prev)}
                       className="
                         text-xl
                         cursor-pointer
@@ -484,7 +402,6 @@ const Navbar = () => {
                       createPortal(
                         <div
                           ref={dropdownRef}
-
                           className="
                             fixed
 
@@ -503,25 +420,18 @@ const Navbar = () => {
 
                             shadow-2xl
                           "
-
                           style={{
-                            backgroundColor:
-                              "var(--card)",
+                            backgroundColor: "var(--card)",
 
-                            color:
-                              "var(--text)",
+                            color: "var(--text)",
 
-                            border:
-                              "1px solid var(--border)",
+                            border: "1px solid var(--border)",
                           }}
                         >
-
                           <MenuItem
                             icon={<FiUser />}
                             label="Profile"
-
                             onClick={() => {
-
                               navigate("/profile");
 
                               setShowMenu(false);
@@ -531,9 +441,7 @@ const Navbar = () => {
                           <MenuItem
                             icon={<FiMessageCircle />}
                             label="Status"
-
                             onClick={() => {
-
                               navigate("/status");
 
                               setShowMenu(false);
@@ -543,9 +451,7 @@ const Navbar = () => {
                           <MenuItem
                             icon={<MdGroups />}
                             label="New Group"
-
                             onClick={() => {
-
                               navigate("/new-group");
 
                               setShowMenu(false);
@@ -555,9 +461,7 @@ const Navbar = () => {
                           <MenuItem
                             icon={<FiLink />}
                             label="Linked Devices"
-
                             onClick={() => {
-
                               navigate("/linked-devices");
 
                               setShowMenu(false);
@@ -576,16 +480,14 @@ const Navbar = () => {
                           <MenuItem
                             icon={<FiSettings />}
                             label="Settings"
-
                             onClick={() => {
-
                               navigate("/settings");
 
                               setShowMenu(false);
                             }}
                           />
                         </div>,
-                        document.body
+                        document.body,
                       )}
                   </div>
                 </div>
@@ -593,7 +495,6 @@ const Navbar = () => {
 
               {/* SEARCH */}
               <div className="px-4 mt-3">
-
                 <div
                   className="
                     flex
@@ -613,7 +514,6 @@ const Navbar = () => {
                     border-[var(--border)]
                   "
                 >
-
                   <FiSearch
                     className="
                       text-sm
@@ -623,17 +523,9 @@ const Navbar = () => {
 
                   <input
                     type="text"
-
                     value={search}
-
-                    onChange={(e) =>
-                      setSearch(
-                        e.target.value
-                      )
-                    }
-
+                    onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search chats..."
-
                     className="
                       bg-transparent
                       outline-none
@@ -664,25 +556,12 @@ const Navbar = () => {
                   hide-scrollbar
                 "
               >
-                {[
-                  "All",
-                  "Unread",
-                  "Favorites",
-                  "Groups",
-                ].map((tab) => (
-
+                {["All", "Unread", "Favorites", "Groups"].map((tab) => (
                   <Tab
                     key={tab}
-
                     label={tab}
-
-                    active={
-                      activeTab === tab
-                    }
-
-                    onClick={() =>
-                      setActiveTab(tab)
-                    }
+                    active={activeFilter === tab}
+                    onClick={() => setActiveFilter(tab)}
                   />
                 ))}
               </div>
@@ -713,41 +592,28 @@ const Navbar = () => {
               glass
             "
           >
-
             <MobileItem
               icon={<FiMessageCircle />}
               label="Chats"
-
-              onClick={() =>
-                navigate("/")
-              }
+              onClick={() => {setActiveFilter("All"); navigate("/");}}
             />
 
             <MobileItem
               icon={<FiUsers />}
               label="Status"
-
-              onClick={() =>
-                navigate("/status")
-              }
+              onClick={() => navigate("/status")}
             />
 
             <MobileItem
               icon={<FiPhone />}
               label="Calls"
-
-              onClick={() =>
-                navigate("/call")
-              }
+              onClick={() => navigate("/call")}
             />
 
             <MobileItem
               icon={<MdOutlineGroup />}
               label="Groups"
-
-              onClick={() =>
-                navigate("/groups")
-              }
+              onClick={() => { setActiveFilter("Groups"); navigate("/");}}
             />
           </div>
         </>
@@ -756,10 +622,7 @@ const Navbar = () => {
       {/* SETTINGS DRAWER */}
       <SettingsDrawer
         open={openSettings}
-
-        onClose={() =>
-          setOpenSettings(false)
-        }
+        onClose={() => setOpenSettings(false)}
       />
     </>
   );
@@ -769,15 +632,9 @@ export default Navbar;
 
 /* ================= COMPONENTS ================= */
 
-const NavItem = ({
-  icon,
-  label,
-  onClick,
-}) => (
-
+const NavItem = ({ icon, label, onClick }) => (
   <div
     onClick={onClick}
-
     className="
       flex
       flex-col
@@ -809,15 +666,9 @@ const NavItem = ({
   </div>
 );
 
-const MobileItem = ({
-  icon,
-  label,
-  onClick,
-}) => (
-
+const MobileItem = ({ icon, label, onClick }) => (
   <div
     onClick={onClick}
-
     className="
       flex
       flex-col
@@ -830,23 +681,15 @@ const MobileItem = ({
       hover:text-[var(--primary)]
     "
   >
-    <div className="text-xl">
-      {icon}
-    </div>
+    <div className="text-xl">{icon}</div>
 
     <span>{label}</span>
   </div>
 );
 
-const MenuItem = ({
-  icon,
-  label,
-  onClick,
-}) => (
-
+const MenuItem = ({ icon, label, onClick }) => (
   <div
     onClick={onClick}
-
     className="
       flex
       items-center
@@ -877,7 +720,6 @@ const MenuItem = ({
 );
 
 const Profile = ({ user }) => (
-
   <div
     className="
       relative
@@ -902,45 +744,27 @@ const Profile = ({ user }) => (
       font-semibold
     "
   >
-
-    {user?.avatar &&
-    user.avatar.trim() !== ""
-
-      ? (
-        <img
-          src={user.avatar}
-
-          className="
+    {user?.avatar && user.avatar.trim() !== "" ? (
+      <img
+        src={user.avatar}
+        className="
             w-full
             h-full
 
             object-cover
           "
-
-          alt="profile"
-
-          onError={(e) => {
-            e.target.style.display =
-              "none";
-          }}
-        />
-      )
-
-      : (
-        <span>
-          {user?.name
-            ? user.name[0].toUpperCase()
-            : "U"}
-        </span>
-      )}
+        alt="profile"
+        onError={(e) => {
+          e.target.style.display = "none";
+        }}
+      />
+    ) : (
+      <span>{user?.name ? user.name[0].toUpperCase() : "U"}</span>
+    )}
   </div>
 );
 
-const ThemeToggle = ({
-  theme,
-  setTheme,
-}) => (
-
+const ThemeToggle = ({ theme, setTheme }) => (
   <div
     className="
       flex
@@ -958,15 +782,10 @@ const ThemeToggle = ({
       border-[var(--border)]
     "
   >
-
     <div
-      onClick={() =>
-        setTheme("light")
-      }
-
+      onClick={() => setTheme("light")}
       className={
         theme === "light"
-
           ? `
             bg-[#00c896]
             text-black
@@ -975,7 +794,6 @@ const ThemeToggle = ({
 
             rounded-full
           `
-
           : "p-1"
       }
     >
@@ -983,13 +801,9 @@ const ThemeToggle = ({
     </div>
 
     <div
-      onClick={() =>
-        setTheme("dark")
-      }
-
+      onClick={() => setTheme("dark")}
       className={
         theme === "dark"
-
           ? `
             bg-[#0ea5e9]
             text-black
@@ -998,7 +812,6 @@ const ThemeToggle = ({
 
             rounded-full
           `
-
           : "p-1"
       }
     >
@@ -1007,15 +820,9 @@ const ThemeToggle = ({
   </div>
 );
 
-const Tab = ({
-  label,
-  active,
-  onClick,
-}) => (
-
+const Tab = ({ label, active, onClick }) => (
   <div
     onClick={onClick}
-
     className={`
       px-3
       py-1
@@ -1030,12 +837,10 @@ const Tab = ({
 
       ${
         active
-
           ? `
             bg-[var(--primary)]
             text-black
           `
-
           : `
             bg-[var(--card)]/30
           `

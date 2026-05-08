@@ -12,43 +12,65 @@ import toast from "react-hot-toast";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
+
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] =
+    useState([]);
 
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedChat, setSelectedChat] =
+    useState(null);
 
-  const [conversation, setConversation] = useState(null);
+  const [conversation, setConversation] =
+    useState(null);
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] =
+    useState([]);
 
-  const [replyTo, setReplyTo] = useState(null);
+  const [replyTo, setReplyTo] =
+    useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
-  const [sending, setSending] = useState(false);
+  const [sending, setSending] =
+    useState(false);
 
-  const [sidebarLoading, setSidebarLoading] = useState(false);
+  const [sidebarLoading, setSidebarLoading] =
+    useState(false);
 
-  const [hasFetchedContacts, setHasFetchedContacts] = useState(false);
+  const [hasFetchedContacts, setHasFetchedContacts] =
+    useState(false);
+
+  // 🔥 NEW
+  const [activeFilter, setActiveFilter] =
+    useState("All");
 
   // ===============================
   // 🔥 LOCKS
   // ===============================
-  const messageFetchLock = useRef(false);
+  const messageFetchLock =
+    useRef(false);
 
-  const sendLock = useRef(false);
+  const sendLock =
+    useRef(false);
 
   // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
+
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+
+      const user = JSON.parse(
+        localStorage.getItem("user")
+      );
 
       return Number(user?.id);
+
     } catch {
+
       return null;
     }
   };
@@ -56,501 +78,796 @@ export const ChatProvider = ({ children }) => {
   // ===============================
   // 🚫 BLOCK / UNBLOCK CONTACT
   // ===============================
-  const toggleBlockContact = useCallback(async (contactId) => {
-    try {
-      const res = await API.put(`/contacts/${contactId}/block`);
+  const toggleBlockContact =
+    useCallback(async (contactId) => {
 
-      const updated = res?.data?.data;
+      try {
 
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === contactId
+        const res = await API.put(
+          `/contacts/${contactId}/block`
+        );
+
+        const updated =
+          res?.data?.data;
+
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.id === contactId
+
+              ? {
+                  ...c,
+                  blocked:
+                    updated.blocked,
+                }
+
+              : c
+          )
+        );
+
+        setSelectedChat((prev) =>
+          prev?.id === contactId
+
             ? {
-                ...c,
-                blocked: updated.blocked,
+                ...prev,
+                blocked:
+                  updated.blocked,
               }
-            : c,
-        ),
-      );
 
-      setSelectedChat((prev) =>
-        prev?.id === contactId
-          ? {
-              ...prev,
-              blocked: updated.blocked,
-            }
-          : prev,
-      );
+            : prev
+        );
 
-      toast.success(updated.blocked ? "Contact blocked" : "Contact unblocked");
-    } catch (err) {
-      console.log(err);
+        toast.success(
+          updated.blocked
+            ? "Contact blocked"
+            : "Contact unblocked"
+        );
 
-      toast.error("Failed to update contact");
-    }
-  }, []);
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Failed to update contact"
+        );
+      }
+    }, []);
 
   // ===============================
   // ❌ DELETE CONTACT
   // ===============================
-  const deleteContact = useCallback(async (contactId) => {
-    try {
-      await API.delete(`/contacts/${contactId}`);
+  const deleteContact =
+    useCallback(async (contactId) => {
 
-      setContacts((prev) => prev.filter((c) => c.id !== contactId));
+      try {
 
-      toast.success("Contact deleted");
-    } catch (err) {
-      console.log(err);
+        await API.delete(
+          `/contacts/${contactId}`
+        );
 
-      toast.error("Delete failed");
-    }
-  }, []);
+        setContacts((prev) =>
+          prev.filter(
+            (c) => c.id !== contactId
+          )
+        );
+
+        toast.success(
+          "Contact deleted"
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error("Delete failed");
+      }
+    }, []);
 
   // ===============================
   // 🔥 FETCH CONTACTS
   // ===============================
-  const fetchContacts = useCallback(async () => {
-    try {
-      if (sidebarLoading) return;
+  const fetchContacts =
+    useCallback(async () => {
 
-      setSidebarLoading(true);
+      try {
 
-      const res = await API.get("/contacts");
+        if (sidebarLoading) return;
 
-      const data = res?.data?.data || [];
+        setSidebarLoading(true);
 
-      const mapped = data.map((item, index) => ({
-        id:
-          item.contactUser?.id ||
-          item.contactId ||
-          item.userId ||
-          item.id ||
-          index + 1,
+        const res =
+          await API.get("/contacts");
 
-        name: item.contactUser?.name || item.name || "Unknown",
+        const data =
+          res?.data?.data || [];
 
-        avatar: item.contactUser?.avatar || item.avatar || "",
+        const mapped = data.map(
+          (item, index) => ({
 
-        bio: item.contactUser?.bio || item.bio || "",
+            id:
+              item.contactUser?.id ||
+              item.contactId ||
+              item.userId ||
+              item.id ||
+              index + 1,
 
-        phone: item.contactUser?.phone || item.phone || "",
+            name:
+              item.contactUser?.name ||
+              item.name ||
+              "Unknown",
 
-        // 🔥 NEW
-        blocked: item.blocked || false,
+            avatar:
+              item.contactUser?.avatar ||
+              item.avatar ||
+              "",
 
-        online: item.contactUser?.online || item.online || false,
+            bio:
+              item.contactUser?.bio ||
+              item.bio ||
+              "",
 
-        lastSeen: item.contactUser?.lastSeen || item.lastSeen || null,
+            phone:
+              item.contactUser?.phone ||
+              item.phone ||
+              "",
 
-        conversationId: item.conversationId || null,
+            blocked:
+              item.blocked || false,
 
-        unreadCount: item.unreadCount || 0,
+            online:
+              item.contactUser?.online ||
+              item.online ||
+              false,
 
-        lastMessage: item.lastMessage?.trim() || "",
+            lastSeen:
+              item.contactUser?.lastSeen ||
+              item.lastSeen ||
+              null,
 
-        lastMessageTime: item.lastMessageTime || null,
-      }));
+            conversationId:
+              item.conversationId ||
+              null,
 
-      // 🔥 latest sort
-      mapped.sort((a, b) => {
-        if (!a.lastMessageTime) return 1;
+            unreadCount:
+              item.unreadCount || 0,
 
-        if (!b.lastMessageTime) return -1;
+            lastMessage:
+              item.lastMessage?.trim() ||
+              "",
 
-        return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
-      });
+            lastMessageTime:
+              item.lastMessageTime ||
+              null,
 
-      setContacts(mapped);
+            // 🔥 NEW
+            isGroup: false,
+          })
+        );
 
-      setHasFetchedContacts(true);
-    } catch (err) {
-      console.log(err);
+        // 🔥 latest sort
+        mapped.sort((a, b) => {
 
-      toast.error("Failed to load contacts");
-    } finally {
-      setSidebarLoading(false);
-    }
-  }, [sidebarLoading]);
+          if (!a.lastMessageTime)
+            return 1;
+
+          if (!b.lastMessageTime)
+            return -1;
+
+          return (
+            new Date(
+              b.lastMessageTime
+            ) -
+            new Date(
+              a.lastMessageTime
+            )
+          );
+        });
+
+        setContacts(mapped);
+
+        setHasFetchedContacts(true);
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Failed to load contacts"
+        );
+
+      } finally {
+
+        setSidebarLoading(false);
+      }
+    }, [sidebarLoading]);
 
   // ===============================
   // 🔥 OPEN CONVERSATION
   // ===============================
-  const openConversation = useCallback(async (contact) => {
-    try {
-      setLoading(true);
+  const openConversation =
+    useCallback(async (contact) => {
 
-      const res = await API.post(`/conversations/${contact.id}`);
+      try {
 
-      const conversationData = res?.data?.data;
+        setLoading(true);
 
-      if (!conversationData) {
-        throw new Error("Conversation failed");
+        const res = await API.post(
+          `/conversations/${contact.id}`
+        );
+
+        const conversationData =
+          res?.data?.data;
+
+        if (!conversationData) {
+
+          throw new Error(
+            "Conversation failed"
+          );
+        }
+
+        const updatedChat = {
+          ...contact,
+
+          conversationId:
+            conversationData.id,
+        };
+
+        setSelectedChat(
+          updatedChat
+        );
+
+        setConversation(
+          conversationData
+        );
+
+        await fetchMessages(
+          conversationData.id
+        );
+
+        await markAsRead(
+          conversationData.id
+        );
+
+        return conversationData;
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Failed to open chat"
+        );
+
+        return null;
+
+      } finally {
+
+        setLoading(false);
       }
-
-      const updatedChat = {
-        ...contact,
-
-        conversationId: conversationData.id,
-      };
-
-      setSelectedChat(updatedChat);
-
-      setConversation(conversationData);
-
-      // 🔥 fetch messages
-      await fetchMessages(conversationData.id);
-
-      // 🔥 mark as read
-      await markAsRead(conversationData.id);
-
-      return conversationData;
-    } catch (err) {
-      console.log(err);
-
-      toast.error("Failed to open chat");
-
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    }, []);
 
   // ===============================
   // 🔥 FETCH MESSAGES
   // ===============================
-  const fetchMessages = useCallback(async (conversationId) => {
-    try {
-      if (!conversationId || messageFetchLock.current) return;
+  const fetchMessages =
+    useCallback(async (conversationId) => {
 
-      messageFetchLock.current = true;
+      try {
 
-      const res = await API.get(`/messages/${conversationId}`);
+        if (
+          !conversationId ||
+          messageFetchLock.current
+        ) {
+          return;
+        }
 
-      const data = res?.data?.data || [];
+        messageFetchLock.current =
+          true;
 
-      const mapped = data.map((msg) => ({
-        id: msg.id,
+        const res = await API.get(
+          `/messages/${conversationId}`
+        );
 
-        content: msg.content || "",
+        const data =
+          res?.data?.data || [];
 
-        type: msg.type || "TEXT",
+        const mapped = data.map(
+          (msg) => ({
 
-        senderId: Number(msg.senderId),
+            id: msg.id,
 
-        createdAt: msg.createdAt,
+            content:
+              msg.content || "",
 
-        isRead: msg.isRead || false,
+            type:
+              msg.type || "TEXT",
 
-        deleted: msg.deleted || false,
+            senderId:
+              Number(msg.senderId),
 
-        reactions: msg.reactions || [],
+            createdAt:
+              msg.createdAt,
 
-        replyTo: msg.replyTo
-          ? {
-              id: msg.replyTo.id,
-              content: msg.replyTo.content,
-            }
-          : null,
-      }));
+            isRead:
+              msg.isRead || false,
 
-      // 🔥 strict order
-      mapped.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            deleted:
+              msg.deleted || false,
 
-      setMessages(mapped);
-    } catch (err) {
-      console.log(err);
+            reactions:
+              msg.reactions || [],
 
-      toast.error("Failed to load messages");
-    } finally {
-      messageFetchLock.current = false;
-    }
-  }, []);
+            replyTo: msg.replyTo
+
+              ? {
+                  id:
+                    msg.replyTo.id,
+
+                  content:
+                    msg.replyTo.content,
+                }
+
+              : null,
+          })
+        );
+
+        mapped.sort(
+          (a, b) =>
+            new Date(a.createdAt) -
+            new Date(b.createdAt)
+        );
+
+        setMessages(mapped);
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Failed to load messages"
+        );
+
+      } finally {
+
+        messageFetchLock.current =
+          false;
+      }
+    }, []);
 
   // ===============================
   // 🔥 SEND MESSAGE
   // ===============================
-  const sendMessage = useCallback(
-    async ({ conversationId, content, type = "TEXT" }) => {
-      try {
-        if (!content?.trim() || sendLock.current) return;
+  const sendMessage =
+    useCallback(
+      async ({
+        conversationId,
+        content,
+        type = "TEXT",
+      }) => {
 
-        sendLock.current = true;
+        try {
 
-        setSending(true);
+          if (
+            !content?.trim() ||
+            sendLock.current
+          ) {
+            return;
+          }
 
-        const currentUserId = getCurrentUserId();
+          sendLock.current =
+            true;
 
-        // 🔥 optimistic id
-        const tempId = `temp-${Date.now()}`;
+          setSending(true);
 
-        const optimisticMessage = {
-          id: tempId,
+          const currentUserId =
+            getCurrentUserId();
 
-          content,
+          const tempId =
+            `temp-${Date.now()}`;
 
-          type,
+          const optimisticMessage = {
 
-          senderId: currentUserId,
+            id: tempId,
 
-          createdAt: new Date().toISOString(),
+            content,
 
-          isRead: false,
+            type,
 
-          deleted: false,
+            senderId:
+              currentUserId,
 
-          reactions: [],
+            createdAt:
+              new Date().toISOString(),
 
-          replyTo: replyTo
-            ? {
-                id: replyTo.id,
-                content: replyTo.content,
-              }
-            : null,
-        };
+            isRead: false,
 
-        // 🔥 optimistic add
-        setMessages((prev) => [...prev, optimisticMessage]);
+            deleted: false,
 
-        const payload = {
-          conversationId,
+            reactions: [],
 
-          content,
+            replyTo: replyTo
 
-          type,
-        };
+              ? {
+                  id: replyTo.id,
 
-        // 🔥 reply
-        if (replyTo?.id) {
-          payload.replyToId = replyTo.id;
+                  content:
+                    replyTo.content,
+                }
+
+              : null,
+          };
+
+          setMessages((prev) => [
+            ...prev,
+            optimisticMessage,
+          ]);
+
+          const payload = {
+
+            conversationId,
+
+            content,
+
+            type,
+          };
+
+          if (replyTo?.id) {
+
+            payload.replyToId =
+              replyTo.id;
+          }
+
+          const res =
+            await API.post(
+              "/messages",
+              payload
+            );
+
+          const realMessage =
+            res?.data?.data;
+
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === tempId
+
+                ? {
+                    ...realMessage,
+
+                    senderId:
+                      Number(
+                        realMessage.senderId
+                      ),
+
+                    reactions:
+                      realMessage.reactions ||
+                      [],
+
+                    replyTo:
+                      realMessage.replyTo
+
+                        ? {
+                            id:
+                              realMessage.replyTo.id,
+
+                            content:
+                              realMessage.replyTo.content,
+                          }
+
+                        : null,
+                  }
+
+                : m
+            )
+          );
+
+          setContacts((prev) =>
+            prev.map((c) =>
+              c.conversationId ===
+              conversationId
+
+                ? {
+                    ...c,
+
+                    lastMessage:
+                      content,
+
+                    lastMessageTime:
+                      new Date().toISOString(),
+                  }
+
+                : c
+            )
+          );
+
+          setReplyTo(null);
+
+        } catch (err) {
+
+          console.log(err);
+
+          toast.error(
+            "Failed to send message"
+          );
+
+          setMessages((prev) =>
+            prev.filter(
+              (m) =>
+                !String(
+                  m.id
+                ).startsWith("temp-")
+            )
+          );
+
+        } finally {
+
+          sendLock.current =
+            false;
+
+          setSending(false);
         }
-
-        const res = await API.post("/messages", payload);
-
-        const realMessage = res?.data?.data;
-
-        // 🔥 replace optimistic
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === tempId
-              ? {
-                  ...realMessage,
-
-                  senderId: Number(realMessage.senderId),
-
-                  reactions: realMessage.reactions || [],
-
-                  replyTo: realMessage.replyTo
-                    ? {
-                        id: realMessage.replyTo.id,
-                        content: realMessage.replyTo.content,
-                      }
-                    : null,
-                }
-              : m,
-          ),
-        );
-
-        // 🔥 sidebar update
-        setContacts((prev) =>
-          prev.map((c) =>
-            c.conversationId === conversationId
-              ? {
-                  ...c,
-
-                  lastMessage: content,
-
-                  lastMessageTime: new Date().toISOString(),
-                }
-              : c,
-          ),
-        );
-
-        // 🔥 clear reply
-        setReplyTo(null);
-      } catch (err) {
-        console.log(err);
-
-        toast.error("Failed to send message");
-
-        // 🔥 rollback
-        setMessages((prev) =>
-          prev.filter((m) => !String(m.id).startsWith("temp-")),
-        );
-      } finally {
-        sendLock.current = false;
-
-        setSending(false);
-      }
-    },
-    [replyTo],
-  );
+      },
+      [replyTo]
+    );
 
   // ===============================
   // 🔥 REACT TO MESSAGE
   // ===============================
-  const reactToMessage = useCallback(async (messageId, emoji) => {
-    try {
-      await API.post("/messages/react", {
-        messageId,
-        emoji,
-      });
+  const reactToMessage =
+    useCallback(async (
+      messageId,
+      emoji
+    ) => {
 
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== messageId) return m;
+      try {
 
-          const existing = m.reactions?.find((r) => r.isMe);
-
-          let updated = [...(m.reactions || [])];
-
-          // 🔥 remove
-          if (existing && existing.emoji === emoji) {
-            updated = updated.filter((r) => !r.isMe);
+        await API.post(
+          "/messages/react",
+          {
+            messageId,
+            emoji,
           }
+        );
 
-          // 🔥 update
-          else if (existing) {
-            updated = updated.map((r) =>
-              r.isMe
-                ? {
-                    ...r,
-                    emoji,
-                  }
-                : r,
-            );
-          }
+        setMessages((prev) =>
+          prev.map((m) => {
 
-          // 🔥 add
-          else {
-            updated.push({
-              id: Date.now(),
+            if (
+              m.id !== messageId
+            ) {
+              return m;
+            }
 
-              emoji,
+            const existing =
+              m.reactions?.find(
+                (r) => r.isMe
+              );
 
-              isMe: true,
-            });
-          }
+            let updated = [
+              ...(m.reactions || []),
+            ];
 
-          return {
-            ...m,
+            if (
+              existing &&
+              existing.emoji === emoji
+            ) {
 
-            reactions: updated,
-          };
-        }),
-      );
-    } catch (err) {
-      console.log(err);
+              updated =
+                updated.filter(
+                  (r) => !r.isMe
+                );
+            }
 
-      toast.error("Reaction failed");
-    }
-  }, []);
+            else if (existing) {
+
+              updated =
+                updated.map((r) =>
+                  r.isMe
+
+                    ? {
+                        ...r,
+                        emoji,
+                      }
+
+                    : r
+                );
+            }
+
+            else {
+
+              updated.push({
+                id: Date.now(),
+
+                emoji,
+
+                isMe: true,
+              });
+            }
+
+            return {
+              ...m,
+
+              reactions:
+                updated,
+            };
+          })
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Reaction failed"
+        );
+      }
+    }, []);
 
   // ===============================
   // 🔥 DELETE FOR ME
   // ===============================
-  const deleteForMe = useCallback(async (messageId) => {
-    try {
-      await API.delete(`/messages/me/${messageId}`);
+  const deleteForMe =
+    useCallback(async (
+      messageId
+    ) => {
 
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    } catch (err) {
-      console.log(err);
+      try {
 
-      toast.error("Delete failed");
-    }
-  }, []);
+        await API.delete(
+          `/messages/me/${messageId}`
+        );
+
+        setMessages((prev) =>
+          prev.filter(
+            (m) =>
+              m.id !== messageId
+          )
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Delete failed"
+        );
+      }
+    }, []);
 
   // ===============================
   // 🔥 DELETE FOR EVERYONE
   // ===============================
-  const deleteForEveryone = useCallback(async (messageId) => {
-    try {
-      await API.delete(`/messages/everyone/${messageId}`);
+  const deleteForEveryone =
+    useCallback(async (
+      messageId
+    ) => {
 
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? {
-                ...m,
+      try {
 
-                content: "This message was deleted",
+        await API.delete(
+          `/messages/everyone/${messageId}`
+        );
 
-                deleted: true,
-              }
-            : m,
-        ),
-      );
-    } catch (err) {
-      console.log(err);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === messageId
 
-      toast.error("Delete failed");
-    }
-  }, []);
+              ? {
+                  ...m,
+
+                  content:
+                    "This message was deleted",
+
+                  deleted: true,
+                }
+
+              : m
+          )
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Delete failed"
+        );
+      }
+    }, []);
 
   // ===============================
   // 🔥 CLEAR CHAT
   // ===============================
-  const clearChat = useCallback(async (conversationId) => {
-    try {
-      await API.delete(`/messages/clear/${conversationId}`);
+  const clearChat =
+    useCallback(async (
+      conversationId
+    ) => {
 
-      setMessages([]);
+      try {
 
-      toast.success("Chat cleared");
-    } catch (err) {
-      console.log(err);
+        await API.delete(
+          `/messages/clear/${conversationId}`
+        );
 
-      toast.error("Failed to clear chat");
-    }
-  }, []);
+        setMessages([]);
+
+        toast.success(
+          "Chat cleared"
+        );
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Failed to clear chat"
+        );
+      }
+    }, []);
 
   // ===============================
   // 🔥 MARK AS READ
   // ===============================
-  const markAsRead = useCallback(async (conversationId) => {
-    try {
-      await API.put(`/messages/read/${conversationId}`);
+  const markAsRead =
+    useCallback(async (
+      conversationId
+    ) => {
 
-      // 🔥 local
-      setMessages((prev) =>
-        prev.map((m) => ({
-          ...m,
+      try {
 
-          isRead: true,
-        })),
-      );
+        await API.put(
+          `/messages/read/${conversationId}`
+        );
 
-      // 🔥 unread clear
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.conversationId === conversationId
-            ? {
-                ...c,
+        setMessages((prev) =>
+          prev.map((m) => ({
+            ...m,
 
-                unreadCount: 0,
-              }
-            : c,
-        ),
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+            isRead: true,
+          }))
+        );
+
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.conversationId ===
+            conversationId
+
+              ? {
+                  ...c,
+
+                  unreadCount: 0,
+                }
+
+              : c
+          )
+        );
+
+      } catch (err) {
+
+        console.log(err);
+      }
+    }, []);
 
   // ===============================
   // 🔥 REFRESH CURRENT CHAT
   // ===============================
-  const refreshCurrentChat = useCallback(async () => {
-    if (conversation?.id) {
-      await fetchMessages(conversation.id);
-    }
-  }, [conversation, fetchMessages]);
+  const refreshCurrentChat =
+    useCallback(async () => {
+
+      if (conversation?.id) {
+
+        await fetchMessages(
+          conversation.id
+        );
+      }
+    }, [
+      conversation,
+      fetchMessages,
+    ]);
 
   // ===============================
   // 🔥 RESET CHAT
   // ===============================
   const resetChatState = () => {
+
     setSelectedChat(null);
 
     setConversation(null);
@@ -563,6 +880,7 @@ export const ChatProvider = ({ children }) => {
   return (
     <ChatContext.Provider
       value={{
+
         // 🔥 states
         contacts,
         selectedChat,
@@ -573,6 +891,10 @@ export const ChatProvider = ({ children }) => {
         sending,
         sidebarLoading,
         hasFetchedContacts,
+
+        // 🔥 NEW
+        activeFilter,
+        setActiveFilter,
 
         // 🔥 setters
         setReplyTo,
@@ -610,4 +932,5 @@ export const ChatProvider = ({ children }) => {
   );
 };
 
-export const useChat = () => useContext(ChatContext);
+export const useChat = () =>
+  useContext(ChatContext);

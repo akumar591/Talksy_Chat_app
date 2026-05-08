@@ -21,7 +21,7 @@ import LinkedDevices from "./components/Settings/LinkedDevices";
 // CHAT
 import ChatLayout from "./components/Chat/ChatLayout";
 import NewChat from "./components/Chat/NewChat";
-
+import GroupInfo from "./components/Chat/GroupInfo";
 // STATUS & CALL
 import StatusLayout from "./components/Status/StatusLayout";
 import CallLayout from "./components/Call/CallLayout";
@@ -310,6 +310,11 @@ function AppContent() {
             element={<NewGroup />}
           />
 
+          <Route
+           path="/group-info/:id"
+           element={<GroupInfo />}
+          />
+
           {/* USER */}
           <Route
             path="/user/:id"
@@ -381,11 +386,6 @@ function AppContent() {
           {/* GROUPS */}
           <Route
             path="/groups"
-            element={<ChatLayout />}
-          />
-
-          <Route
-            path="/groups/:id"
             element={<ChatLayout />}
           />
 

@@ -1,9 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 import { useChat } from "../../context/ChatContext";
 
-const Sidebar = ({ onSelectChat }) => {
+const Sidebar = ({
+  onSelectChat,
+}) => {
 
   const navigate = useNavigate();
 
@@ -14,6 +24,9 @@ const Sidebar = ({ onSelectChat }) => {
     fetchContacts,
     openConversation,
     sidebarLoading,
+
+    // 🔥 NEW
+    activeFilter,
   } = useChat();
 
   const [search, setSearch] =
@@ -33,31 +46,80 @@ const Sidebar = ({ onSelectChat }) => {
   // ===============================
   const filteredChats = useMemo(() => {
 
-    if (!search.trim()) {
+    let filtered = contacts;
 
-      return contacts;
+    // 🔥 GROUP FILTER
+    if (
+      activeFilter === "Groups"
+    ) {
+
+      filtered =
+        filtered.filter(
+          (chat) => chat.isGroup
+        );
     }
 
-    return contacts.filter((chat) =>
-      chat.name
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-    );
+    // 🔥 UNREAD FILTER
+    if (
+      activeFilter === "Unread"
+    ) {
 
-  }, [contacts, search]);
+      filtered =
+        filtered.filter(
+          (chat) =>
+            chat.unreadCount > 0
+        );
+    }
+
+    // 🔥 FAVORITES FILTER
+    if (
+      activeFilter === "Favorites"
+    ) {
+
+      filtered =
+        filtered.filter(
+          (chat) =>
+            chat.favorite
+        );
+    }
+
+    // 🔥 SEARCH
+    if (
+      search.trim()
+    ) {
+
+      filtered =
+        filtered.filter((chat) =>
+          chat.name
+            ?.toLowerCase()
+            .includes(
+              search.toLowerCase()
+            )
+        );
+    }
+
+    return filtered;
+
+  }, [
+    contacts,
+    search,
+    activeFilter,
+  ]);
 
   // ===============================
   // 🔥 FORMAT TIME
   // ===============================
-  const formatTime = (time) => {
+  const formatTime = (
+    time
+  ) => {
 
     if (!time) return "";
 
-    const date = new Date(time);
+    const date =
+      new Date(time);
 
-    const now = new Date();
+    const now =
+      new Date();
 
     const diff =
       now.getTime() -
@@ -89,46 +151,49 @@ const Sidebar = ({ onSelectChat }) => {
   // ===============================
   // 🔥 OPEN CHAT
   // ===============================
-  const handleClick = async (
-    chat
-  ) => {
+  const handleClick =
+    async (chat) => {
 
-    try {
+      try {
 
-      const conversation =
-        await openConversation(
-          chat
+        const conversation =
+          await openConversation(
+            chat
+          );
+
+        if (
+          !conversation
+        ) {
+          return;
+        }
+
+        const updatedChat = {
+
+          ...chat,
+
+          conversationId:
+            conversation.id,
+        };
+
+        onSelectChat &&
+          onSelectChat(
+            updatedChat
+          );
+
+        navigate(
+          `/chat/${chat.id}`
         );
 
-      if (!conversation) return;
+      } catch (err) {
 
-      const updatedChat = {
-
-        ...chat,
-
-        conversationId:
-          conversation.id,
-      };
-
-      onSelectChat &&
-        onSelectChat(
-          updatedChat
-        );
-
-      navigate(
-        `/chat/${chat.id}`
-      );
-
-    } catch (err) {
-
-      console.log(err);
-    }
-  };
+        console.log(err);
+      }
+    };
 
   return (
     <div className="w-full h-full bg-[var(--bg)]">
 
-      {/* 🔥 SEARCH (ONLY DESKTOP/TABLET) */}
+      {/* 🔥 SEARCH */}
       <div className="hidden md:block px-3 pt-3 pb-2">
 
         <input
@@ -233,8 +298,14 @@ const Sidebar = ({ onSelectChat }) => {
 
                     ${
                       isActive
-                        ? "bg-[var(--card)]"
-                        : "hover:bg-[var(--card)]/60"
+
+                        ? `
+                          bg-[var(--card)]
+                        `
+
+                        : `
+                          hover:bg-[var(--card)]/60
+                        `
                     }
                   `}
                 >
@@ -277,7 +348,7 @@ const Sidebar = ({ onSelectChat }) => {
                     )}
 
                     {/* 🔥 ONLINE */}
-                    {chat.online && (
+                    {chat.online && !chat.isGroup && (
 
                       <span
                         className="
@@ -301,7 +372,11 @@ const Sidebar = ({ onSelectChat }) => {
                     <div className="flex justify-between items-center gap-2">
 
                       <h3 className="font-medium truncate">
+
                         {chat.name}
+
+                        {chat.isGroup &&
+                          " 👥"}
                       </h3>
 
                       <span className="text-xs opacity-60 whitespace-nowrap">
@@ -346,6 +421,7 @@ const Sidebar = ({ onSelectChat }) => {
 
                       {/* 🔥 LAST SEEN */}
                       {!chat.online &&
+                        !chat.isGroup &&
                         chat.lastSeen &&
                         chat.unreadCount ===
                           0 && (
