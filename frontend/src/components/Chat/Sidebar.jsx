@@ -27,6 +27,11 @@ const Sidebar = ({
     contacts,
     fetchContacts,
     openConversation,
+
+    // 🔥 NEW
+    fetchMessages,
+    setConversation,
+
     sidebarLoading,
 
     // 🔥 FILTER
@@ -67,17 +72,23 @@ const Sidebar = ({
   const allChats =
     useMemo(() => {
 
-      // 🔥 format groups
+      // 🔥 FORMAT GROUPS
       const formattedGroups =
         groups.map((group) => ({
 
           id: group.id,
 
-          name: group.name,
+          name:
+            group.name || "Group",
 
-          avatar: group.avatar,
+          avatar:
+            group.avatar || "",
 
           isGroup: true,
+
+          // 🔥 IMPORTANT
+          conversationId:
+            group.conversationId,
 
           memberCount:
             group.memberCount || 0,
@@ -85,10 +96,12 @@ const Sidebar = ({
           unreadCount: 0,
 
           lastMessage:
+            group.lastMessage ||
             "Group chat",
 
           lastMessageTime:
-            group.updatedAt,
+            group.lastMessageTime ||
+            group.createdAt,
         }));
 
       return [
@@ -165,6 +178,33 @@ const Sidebar = ({
           );
       }
 
+      // 🔥 SORT LATEST
+      filtered.sort(
+        (a, b) => {
+
+          if (
+            !a.lastMessageTime
+          ) {
+            return 1;
+          }
+
+          if (
+            !b.lastMessageTime
+          ) {
+            return -1;
+          }
+
+          return (
+            new Date(
+              b.lastMessageTime
+            ) -
+            new Date(
+              a.lastMessageTime
+            )
+          );
+        }
+      );
+
       return filtered;
 
     }, [
@@ -232,8 +272,43 @@ const Sidebar = ({
           chat.isGroup
         ) {
 
+          // ❌ safety check
+          if (
+            !chat.conversationId
+          ) {
+
+            console.error(
+              "Group conversation not found"
+            );
+
+            return;
+          }
+
+          // 🔥 SAVE SELECTED GROUP
           setSelectedGroup(
             chat
+          );
+
+          // 🔥 CREATE GROUP CONVERSATION
+          const groupConversation = {
+
+            id:
+              chat.conversationId,
+
+            isGroup: true,
+
+            groupId:
+              chat.id,
+          };
+
+          // 🔥 SAVE ACTIVE CONVERSATION
+          setConversation(
+            groupConversation
+          );
+
+          // 🔥 FETCH GROUP MESSAGES
+          await fetchMessages(
+            chat.conversationId
           );
 
           onSelectChat &&
@@ -250,7 +325,7 @@ const Sidebar = ({
         }
 
         // ===============================
-        // 🔥 NORMAL CHAT
+        // 🔥 PRIVATE CHAT
         // ===============================
         const conversation =
           await openConversation(
@@ -386,7 +461,7 @@ const Sidebar = ({
               return (
 
                 <div
-                  key={chat.id}
+                  key={`${chat.isGroup ? "group" : "chat"}-${chat.id}`}
                   onClick={() =>
                     handleClick(chat)
                   }

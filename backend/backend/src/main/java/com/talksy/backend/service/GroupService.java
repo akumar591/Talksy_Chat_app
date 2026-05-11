@@ -3,7 +3,10 @@ package com.talksy.backend.service;
 import com.talksy.backend.dto.CreateGroupRequest;
 import com.talksy.backend.dto.GroupMemberResponse;
 import com.talksy.backend.dto.GroupResponse;
+
 import com.talksy.backend.entity.*;
+
+import com.talksy.backend.repository.ConversationRepository;
 import com.talksy.backend.repository.GroupMemberRepository;
 import com.talksy.backend.repository.GroupRepository;
 import com.talksy.backend.repository.UserRepository;
@@ -19,13 +22,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GroupService {
 
-    private final GroupRepository groupRepository;
+    private final GroupRepository
+            groupRepository;
 
     private final GroupMemberRepository
             groupMemberRepository;
 
     private final UserRepository
             userRepository;
+
+    // 🔥 NEW
+    private final ConversationRepository
+            conversationRepository;
 
     // ===============================
     // 🔥 CREATE GROUP
@@ -53,6 +61,22 @@ public class GroupService {
 
         Group savedGroup =
                 groupRepository.save(group);
+
+        // ===============================
+        // 🔥 CREATE GROUP CONVERSATION
+        // ===============================
+        Conversation conversation =
+                Conversation.builder()
+
+                        .group(savedGroup)
+
+                        .isGroup(true)
+
+                        .build();
+
+        conversationRepository.save(
+                conversation
+        );
 
         // 🔥 CREATOR = ADMIN
         GroupMember creatorMember =
@@ -165,7 +189,6 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // ❌ only creator
         if (
                 !group.getCreatedBy()
                         .getId()
@@ -194,7 +217,6 @@ public class GroupService {
 
     // ===============================
     // 🔥 ADD MEMBER
-    // CREATOR + ADMIN
     // ===============================
     public void addMember(
             Long groupId,
@@ -205,7 +227,6 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // ❌ permission check
         if (
                 !isCreator(group, currentUserId)
                         &&
@@ -220,7 +241,6 @@ public class GroupService {
         User member =
                 getUserOrThrow(memberId);
 
-        // ❌ already exists
         boolean exists =
                 groupMemberRepository
                         .findByGroupAndUser(
@@ -279,10 +299,8 @@ public class GroupService {
                                 )
                         );
 
-        // 🔥 creator
         if (isCreator(group, currentUserId)) {
 
-            // ❌ creator cannot remove self
             if (
                     targetUser.getId().equals(
                             currentUserId
@@ -300,10 +318,8 @@ public class GroupService {
             return;
         }
 
-        // 🔥 admin
         if (isAdmin(group, currentUserId)) {
 
-            // ❌ admin cannot remove admin
             if (
                     targetMember.getRole()
                             == GroupRole.ADMIN
@@ -327,7 +343,6 @@ public class GroupService {
 
     // ===============================
     // 🔥 MAKE ADMIN
-    // ONLY CREATOR
     // ===============================
     public void makeAdmin(
             Long groupId,
@@ -338,7 +353,6 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // ❌ only creator
         if (
                 !isCreator(group, currentUserId)
         ) {
@@ -372,7 +386,6 @@ public class GroupService {
 
     // ===============================
     // 🔥 REMOVE ADMIN
-    // ONLY CREATOR
     // ===============================
     public void removeAdmin(
             Long groupId,
@@ -383,7 +396,6 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // ❌ only creator
         if (
                 !isCreator(group, currentUserId)
         ) {
@@ -396,7 +408,6 @@ public class GroupService {
         User user =
                 getUserOrThrow(memberId);
 
-        // ❌ creator admin remove blocked
         if (
                 user.getId().equals(
                         group.getCreatedBy().getId()
@@ -429,7 +440,6 @@ public class GroupService {
 
     // ===============================
     // 🔥 DELETE GROUP
-    // ONLY CREATOR
     // ===============================
     public void deleteGroup(
             Long groupId,
@@ -462,7 +472,6 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // ❌ creator cannot leave
         if (
                 isCreator(group, currentUserId)
         ) {
@@ -553,8 +562,8 @@ public class GroupService {
     }
 
     // ===============================
-    // 🔥 CONVERT TO DTO
-    // ===============================
+// 🔥 CONVERT TO DTO
+// ===============================
     private GroupResponse convertToResponse(
             Group group
     ) {
@@ -564,7 +573,6 @@ public class GroupService {
                         group
                 );
 
-        // 🔥 FIXED MEMBER MAPPING
         List<GroupMemberResponse> members =
 
                 groupMembers.stream()
@@ -597,6 +605,14 @@ public class GroupService {
 
                         .collect(Collectors.toList());
 
+        // ===============================
+        // 🔥 GET GROUP CONVERSATION
+        // ===============================
+        Conversation conversation =
+                conversationRepository
+                        .findByGroup(group)
+                        .orElse(null);
+
         return GroupResponse.builder()
 
                 .id(group.getId())
@@ -606,6 +622,13 @@ public class GroupService {
                 .about(group.getAbout())
 
                 .avatar(group.getAvatar())
+
+                // 🔥 NEW
+                .conversationId(
+                        conversation != null
+                                ? conversation.getId()
+                                : null
+                )
 
                 .createdById(
                         group.getCreatedBy()

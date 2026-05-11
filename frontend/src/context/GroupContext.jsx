@@ -54,9 +54,54 @@ export const GroupProvider = ({
             "/groups/my"
           );
 
-        setGroups(
-          res.data || []
-        );
+        // 🔥 support both formats
+        const data =
+          res.data?.data ||
+          res.data ||
+          [];
+
+        // 🔥 map groups
+        const mapped =
+          data.map((group) => ({
+
+            id: group.id,
+
+            name:
+              group.name || "Group",
+
+            about:
+              group.about || "",
+
+            avatar:
+              group.avatar || "",
+
+            // 🔥 IMPORTANT
+            conversationId:
+              group.conversationId,
+
+            createdById:
+              group.createdById,
+
+            createdByName:
+              group.createdByName,
+
+            createdByAvatar:
+              group.createdByAvatar,
+
+            members:
+              group.members || [],
+
+            memberCount:
+              group.memberCount || 0,
+
+            createdAt:
+              group.createdAt,
+
+            // 🔥 NEW
+            isGroup: true,
+          }));
+
+        setGroups(mapped);
 
       } catch (error) {
 
@@ -86,11 +131,15 @@ export const GroupProvider = ({
             `/groups/${groupId}`
           );
 
+        const data =
+          res.data?.data ||
+          res.data;
+
         setGroupDetails(
-          res.data
+          data
         );
 
-        return res.data;
+        return data;
 
       } catch (error) {
 
@@ -124,7 +173,9 @@ export const GroupProvider = ({
 
         return {
           success: true,
-          data: res.data,
+          data:
+            res.data?.data ||
+            res.data,
         };
 
       } catch (error) {
@@ -171,7 +222,9 @@ export const GroupProvider = ({
 
         return {
           success: true,
-          data: res.data,
+          data:
+            res.data?.data ||
+            res.data,
         };
 
       } catch (error) {
@@ -209,6 +262,8 @@ export const GroupProvider = ({
         await fetchGroupById(
           groupId
         );
+
+        await fetchGroups();
 
         return {
           success: true,
@@ -249,6 +304,8 @@ export const GroupProvider = ({
         await fetchGroupById(
           groupId
         );
+
+        await fetchGroups();
 
         return {
           success: true,

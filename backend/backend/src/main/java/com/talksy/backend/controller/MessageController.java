@@ -6,6 +6,7 @@ import com.talksy.backend.repository.MessageReactionRepository;
 import com.talksy.backend.service.MessageService;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,75 +24,179 @@ public class MessageController {
     // 🔐 GET CURRENT USER
     // ===============================
     private User getCurrentUser() {
-        return (User) org.springframework.security.core.context.SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+
+        return (User)
+                org.springframework.security.core.context.SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getPrincipal();
     }
 
     // ===============================
     // 🔥 SEND MESSAGE
     // ===============================
     @PostMapping
-    public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<ApiResponse<?>> sendMessage(
+            @RequestBody Map<String, Object> body
+    ) {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             if (user == null) {
+
                 return ResponseEntity.status(401)
-                        .body(new ApiResponse<>(false, "Unauthorized", null));
+                        .body(
+                                new ApiResponse<>(
+                                        false,
+                                        "Unauthorized",
+                                        null
+                                )
+                        );
             }
 
             Long conversationId =
-                    Long.valueOf(body.get("conversationId").toString());
+                    Long.valueOf(
+                            body.get("conversationId")
+                                    .toString()
+                    );
 
             String content =
-                    body.get("content").toString();
+                    body.get("content")
+                            .toString();
 
             String type =
                     body.get("type") != null
-                            ? body.get("type").toString()
-                            : "TEXT";
+
+                            ?
+
+                            body.get("type")
+                                    .toString()
+
+                            :
+
+                            "TEXT";
 
             // 🔥 reply support
             Long replyToId =
                     body.get("replyToId") != null
-                            ? Long.valueOf(body.get("replyToId").toString())
-                            : null;
 
-            Message message = messageService.sendMessage(
-                    user.getId(),
-                    conversationId,
-                    content,
-                    type,
-                    replyToId
+                            ?
+
+                            Long.valueOf(
+                                    body.get("replyToId")
+                                            .toString()
+                            )
+
+                            :
+
+                            null;
+
+            Message message =
+                    messageService.sendMessage(
+                            user.getId(),
+                            conversationId,
+                            content,
+                            type,
+                            replyToId
+                    );
+
+            Map<String, Object> response =
+                    new HashMap<>();
+
+            response.put(
+                    "id",
+                    message.getId()
             );
 
-            Map<String, Object> response = new HashMap<>();
+            response.put(
+                    "content",
+                    content
+            );
 
-            response.put("id", message.getId());
-            response.put("content", content);
-            response.put("type", message.getType());
-            response.put("createdAt", message.getCreatedAt());
-            response.put("senderId", message.getSender().getId());
+            response.put(
+                    "type",
+                    message.getType()
+            );
+
+            response.put(
+                    "createdAt",
+                    message.getCreatedAt()
+            );
+
+            response.put(
+                    "senderId",
+                    message.getSender()
+                            .getId()
+            );
+
+            // 🔥 NEW
+            response.put(
+                    "senderName",
+                    message.getSender()
+                            .getName()
+            );
+
+            response.put(
+                    "senderAvatar",
+                    message.getSender()
+                            .getAvatar()
+            );
+
+            // 🔥 group support
+            response.put(
+                    "isGroup",
+                    message.getConversation()
+                            .getIsGroup()
+            );
 
             // 🔥 reply response
             if (message.getReplyTo() != null) {
 
-                Map<String, Object> reply = new HashMap<>();
+                Map<String, Object> reply =
+                        new HashMap<>();
 
-                reply.put("id", message.getReplyTo().getId());
-                reply.put("content", message.getReplyTo().getContent());
-                reply.put("senderId",
-                        message.getReplyTo().getSender().getId());
+                reply.put(
+                        "id",
+                        message.getReplyTo()
+                                .getId()
+                );
 
-                response.put("replyTo", reply);
+                reply.put(
+                        "content",
+                        message.getReplyTo()
+                                .getContent()
+                );
+
+                reply.put(
+                        "senderId",
+                        message.getReplyTo()
+                                .getSender()
+                                .getId()
+                );
+
+                // 🔥 NEW
+                reply.put(
+                        "senderName",
+                        message.getReplyTo()
+                                .getSender()
+                                .getName()
+                );
+
+                response.put(
+                        "replyTo",
+                        reply
+                );
             }
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, "Message sent", response)
+                    new ApiResponse<>(
+                            true,
+                            "Message sent",
+                            response
+                    )
             );
 
         } catch (Exception e) {
@@ -99,7 +204,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false, e.getMessage(), null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -113,49 +224,138 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             if (user == null) {
+
                 return ResponseEntity.status(401)
-                        .body(new ApiResponse<>(false, "Unauthorized", null));
+                        .body(
+                                new ApiResponse<>(
+                                        false,
+                                        "Unauthorized",
+                                        null
+                                )
+                        );
             }
 
             List<Message> messages =
-                    messageService.getMessages(user.getId(), conversationId);
+                    messageService.getMessages(
+                            user.getId(),
+                            conversationId
+                    );
 
             List<Map<String, Object>> response =
                     new ArrayList<>();
 
             for (Message m : messages) {
 
-                Conversation c = m.getConversation();
+                Conversation c =
+                        m.getConversation();
 
-                // 🔥 DELETE FOR ME
-                if (c.getUser1().getId().equals(user.getId())
-                        && m.isDeletedForUser1()) {
-                    continue;
+                // ===============================
+                // 🔥 PRIVATE CHAT DELETE LOGIC
+                // ===============================
+                if (!Boolean.TRUE.equals(c.getIsGroup())) {
+
+                    if (
+                            c.getUser1() != null
+
+                                    &&
+
+                                    c.getUser1()
+                                            .getId()
+                                            .equals(user.getId())
+
+                                    &&
+
+                                    m.isDeletedForUser1()
+                    ) {
+
+                        continue;
+                    }
+
+                    if (
+                            c.getUser2() != null
+
+                                    &&
+
+                                    c.getUser2()
+                                            .getId()
+                                            .equals(user.getId())
+
+                                    &&
+
+                                    m.isDeletedForUser2()
+                    ) {
+
+                        continue;
+                    }
                 }
 
-                if (c.getUser2().getId().equals(user.getId())
-                        && m.isDeletedForUser2()) {
-                    continue;
-                }
+                Map<String, Object> map =
+                        new HashMap<>();
 
-                Map<String, Object> map = new HashMap<>();
+                map.put(
+                        "id",
+                        m.getId()
+                );
 
-                map.put("id", m.getId());
-
-                // 🔥 deleted for everyone
+                // 🔥 deleted
                 if (m.isDeletedForEveryone()) {
-                    map.put("content", "This message was deleted");
+
+                    map.put(
+                            "content",
+                            "This message was deleted"
+                    );
+
                 } else {
-                    map.put("content", m.getContent());
+
+                    map.put(
+                            "content",
+                            m.getContent()
+                    );
                 }
 
-                map.put("type", m.getType());
-                map.put("createdAt", m.getCreatedAt());
-                map.put("senderId", m.getSender().getId());
-                map.put("isRead", m.isRead());
+                map.put(
+                        "type",
+                        m.getType()
+                );
+
+                map.put(
+                        "createdAt",
+                        m.getCreatedAt()
+                );
+
+                map.put(
+                        "senderId",
+                        m.getSender()
+                                .getId()
+                );
+
+                // 🔥 NEW
+                map.put(
+                        "senderName",
+                        m.getSender()
+                                .getName()
+                );
+
+                map.put(
+                        "senderAvatar",
+                        m.getSender()
+                                .getAvatar()
+                );
+
+                map.put(
+                        "isRead",
+                        m.isRead()
+                );
+
+                // 🔥 group info
+                map.put(
+                        "isGroup",
+                        c.getIsGroup()
+                );
 
                 // ===============================
                 // 🔥 REPLY DATA
@@ -165,20 +365,50 @@ public class MessageController {
                     Map<String, Object> reply =
                             new HashMap<>();
 
-                    reply.put("id", m.getReplyTo().getId());
+                    reply.put(
+                            "id",
+                            m.getReplyTo()
+                                    .getId()
+                    );
 
-                    if (m.getReplyTo().isDeletedForEveryone()) {
-                        reply.put("content",
-                                "This message was deleted");
+                    if (
+                            m.getReplyTo()
+                                    .isDeletedForEveryone()
+                    ) {
+
+                        reply.put(
+                                "content",
+                                "This message was deleted"
+                        );
+
                     } else {
-                        reply.put("content",
-                                m.getReplyTo().getContent());
+
+                        reply.put(
+                                "content",
+                                m.getReplyTo()
+                                        .getContent()
+                        );
                     }
 
-                    reply.put("senderId",
-                            m.getReplyTo().getSender().getId());
+                    reply.put(
+                            "senderId",
+                            m.getReplyTo()
+                                    .getSender()
+                                    .getId()
+                    );
 
-                    map.put("replyTo", reply);
+                    // 🔥 NEW
+                    reply.put(
+                            "senderName",
+                            m.getReplyTo()
+                                    .getSender()
+                                    .getName()
+                    );
+
+                    map.put(
+                            "replyTo",
+                            reply
+                    );
                 }
 
                 // ===============================
@@ -188,31 +418,42 @@ public class MessageController {
                         new ArrayList<>();
 
                 List<MessageReaction> reactionList =
-                        messageReactionRepository.findByMessage(m);
+                        messageReactionRepository
+                                .findByMessage(m);
 
                 for (MessageReaction r : reactionList) {
 
                     Map<String, Object> rMap =
                             new HashMap<>();
 
-                    rMap.put("userId",
-                            r.getUser().getId());
+                    rMap.put(
+                            "userId",
+                            r.getUser()
+                                    .getId()
+                    );
 
-                    rMap.put("emoji",
-                            r.getEmoji());
+                    rMap.put(
+                            "emoji",
+                            r.getEmoji()
+                    );
 
                     reactions.add(rMap);
                 }
 
-                map.put("reactions", reactions);
+                map.put(
+                        "reactions",
+                        reactions
+                );
 
                 response.add(map);
             }
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Messages fetched",
-                            response)
+                            response
+                    )
             );
 
         } catch (Exception e) {
@@ -220,9 +461,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -236,13 +481,19 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             if (user == null) {
+
                 return ResponseEntity.status(401)
-                        .body(new ApiResponse<>(false,
-                                "Unauthorized",
-                                null));
+                        .body(
+                                new ApiResponse<>(
+                                        false,
+                                        "Unauthorized",
+                                        null
+                                )
+                        );
             }
 
             messageService.markAsRead(
@@ -251,9 +502,11 @@ public class MessageController {
             );
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Messages marked as read",
-                            null)
+                            null
+                    )
             );
 
         } catch (Exception e) {
@@ -261,9 +514,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -277,7 +534,8 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             messageService.deleteForEveryone(
                     user.getId(),
@@ -285,9 +543,11 @@ public class MessageController {
             );
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Message deleted for everyone",
-                            null)
+                            null
+                    )
             );
 
         } catch (Exception e) {
@@ -295,9 +555,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -311,7 +575,8 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             messageService.deleteForMe(
                     user.getId(),
@@ -319,9 +584,11 @@ public class MessageController {
             );
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Message deleted for you",
-                            null)
+                            null
+                    )
             );
 
         } catch (Exception e) {
@@ -329,9 +596,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -345,7 +616,8 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             messageService.clearChat(
                     user.getId(),
@@ -353,9 +625,11 @@ public class MessageController {
             );
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Chat cleared",
-                            null)
+                            null
+                    )
             );
 
         } catch (Exception e) {
@@ -363,9 +637,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 
@@ -379,20 +657,30 @@ public class MessageController {
 
         try {
 
-            User user = getCurrentUser();
+            User user =
+                    getCurrentUser();
 
             if (user == null) {
+
                 return ResponseEntity.status(401)
-                        .body(new ApiResponse<>(false,
-                                "Unauthorized",
-                                null));
+                        .body(
+                                new ApiResponse<>(
+                                        false,
+                                        "Unauthorized",
+                                        null
+                                )
+                        );
             }
 
             Long messageId =
-                    Long.valueOf(body.get("messageId").toString());
+                    Long.valueOf(
+                            body.get("messageId")
+                                    .toString()
+                    );
 
             String emoji =
-                    body.get("emoji").toString();
+                    body.get("emoji")
+                            .toString();
 
             messageService.reactToMessage(
                     user.getId(),
@@ -401,9 +689,11 @@ public class MessageController {
             );
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(true,
+                    new ApiResponse<>(
+                            true,
                             "Reaction updated",
-                            null)
+                            null
+                    )
             );
 
         } catch (Exception e) {
@@ -411,9 +701,13 @@ public class MessageController {
             e.printStackTrace();
 
             return ResponseEntity.status(500)
-                    .body(new ApiResponse<>(false,
-                            e.getMessage(),
-                            null));
+                    .body(
+                            new ApiResponse<>(
+                                    false,
+                                    e.getMessage(),
+                                    null
+                            )
+                    );
         }
     }
 }

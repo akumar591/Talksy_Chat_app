@@ -230,7 +230,17 @@ function AppRoutes() {
     if (authLoading)
       return;
 
-    // 🔥 logged in restore
+    // 🔥 DON'T FORCE APP
+    // while auth flow active
+    if (
+      step === "otp" ||
+      step === "profile"
+    ) {
+
+      return;
+    }
+
+    // 🔥 restore app only
     if (
       user &&
       step !== "app"
@@ -242,6 +252,7 @@ function AppRoutes() {
   }, [
     user,
     authLoading,
+    step,
   ]);
 
   // =====================================

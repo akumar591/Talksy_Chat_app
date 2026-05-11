@@ -321,23 +321,47 @@ function OTP({
           currentUser
         );
 
-        // 🔥 IMPORTANT
-        // don't clear phone here
-        // profile refresh needs it
+        // 🔥 KEEP PHONE
+        // don't clear phone
 
-        // 🔥 ALWAYS GO PROFILE SETUP
-        localStorage.setItem(
-          "step",
-          "profile"
-        );
+        // 🔥 CHECK PROFILE
+        const hasProfile =
 
-        toast.success(
-          "OTP verified ✅"
-        );
+          currentUser?.name &&
+          currentUser?.avatar;
 
-        onVerify(
-          "profile"
-        );
+        // 🔥 EXISTING USER
+        if (hasProfile) {
+
+          localStorage.setItem(
+            "step",
+            "profile"
+          );
+
+          toast.success(
+            "Welcome back 🚀"
+          );
+
+          onVerify(
+            "profile"
+          );
+
+        } else {
+
+          // 🔥 NEW USER
+          localStorage.setItem(
+            "step",
+            "profile-setup"
+          );
+
+          toast.success(
+            "OTP verified ✅"
+          );
+
+          onVerify(
+            "profile-setup"
+          );
+        }
 
       } catch (err) {
 

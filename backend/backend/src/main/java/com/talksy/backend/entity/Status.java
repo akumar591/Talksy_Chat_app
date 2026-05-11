@@ -1,66 +1,73 @@
 package com.talksy.backend.entity;
 
 import jakarta.persistence.*;
+
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "conversations")
+@Table(name = "statuses")
+
 @Getter
 @Setter
+
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Builder
-public class Conversation {
+public class Status {
 
     // ===============================
     // 🔥 ID
     // ===============================
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
 
     // ===============================
-    // 🔥 PRIVATE CHAT USERS
+    // 🔥 STATUS OWNER
     // ===============================
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user1_id", nullable = true)
-    private User user1;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user2_id", nullable = true)
-    private User user2;
+    @JoinColumn(
+            name = "user_id",
+            nullable = false
+    )
+    private User user;
 
     // ===============================
-    // 🔥 GROUP SUPPORT
+    // 🔥 MEDIA
     // ===============================
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private Group group;
+    @Column(
+            columnDefinition = "TEXT"
+    )
+    private String mediaUrl;
 
-    // 🔥 identify conversation type
+    // ===============================
+    // 🔥 TYPE
+    // ===============================
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Boolean isGroup = false;
+    private StatusType type;
 
     // ===============================
-    // 🔥 LAST MESSAGE
+    // 🔥 CAPTION
     // ===============================
-    private String lastMessage;
-
-    private LocalDateTime lastMessageTime;
+    @Column(
+            columnDefinition = "TEXT"
+    )
+    private String caption;
 
     // ===============================
-    // 🔥 PRIVATE CHAT UNREAD COUNTS
+    // 🔥 EXPIRE TIME
     // ===============================
     @Column(nullable = false)
-    private Integer unreadCountUser1 = 0;
-
-    @Column(nullable = false)
-    private Integer unreadCountUser2 = 0;
+    private LocalDateTime expiresAt;
 
     // ===============================
-    // 🕒 TIMESTAMPS
+    // 🔥 TIMESTAMPS
     // ===============================
     private LocalDateTime createdAt;
 
@@ -76,18 +83,14 @@ public class Conversation {
                 LocalDateTime.now();
 
         this.createdAt = now;
+
         this.updatedAt = now;
 
-        if (unreadCountUser1 == null) {
-            unreadCountUser1 = 0;
-        }
+        // 🔥 AUTO EXPIRE
+        if (this.expiresAt == null) {
 
-        if (unreadCountUser2 == null) {
-            unreadCountUser2 = 0;
-        }
-
-        if (isGroup == null) {
-            isGroup = false;
+            this.expiresAt =
+                    now.plusHours(24);
         }
     }
 

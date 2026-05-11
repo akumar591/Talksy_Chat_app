@@ -2,7 +2,6 @@ package com.talksy.backend.service;
 
 import com.talksy.backend.entity.*;
 import com.talksy.backend.repository.*;
-
 import com.talksy.backend.util.CryptoUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -19,87 +18,164 @@ public class MessageService {
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
     private final MessageReactionRepository messageReactionRepository;
-
-    // 🔥 NEW
     private final ContactRepository contactRepository;
 
+    // 🔥 NEW
+    private final GroupMemberRepository groupMemberRepository;
+
     // ===============================
-    // 🔥 SEND MESSAGE (ENCRYPTED + REPLY)
+    // 🔥 SEND MESSAGE
     // ===============================
-    public Message sendMessage(Long senderId,
-                               Long conversationId,
-                               String content,
-                               String type,
-                               Long replyToId) {
+    public Message sendMessage(
+            Long senderId,
+            Long conversationId,
+            String content,
+            String type,
+            Long replyToId
+    ) {
 
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("Sender not found"));
 
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
-
-        // 🔒 SECURITY CHECK
-        if (!conversation.getUser1().getId().equals(senderId) &&
-                !conversation.getUser2().getId().equals(senderId)) {
-            throw new RuntimeException("You are not part of this conversation");
-        }
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new RuntimeException("Conversation not found"));
 
         // ===============================
-        // 🚫 BLOCK CHECK
+        // 🔥 GROUP CHAT
         // ===============================
-        Long receiverId;
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
 
-        if (conversation.getUser1().getId().equals(senderId)) {
+            Group group = conversation.getGroup();
 
-            receiverId = conversation.getUser2().getId();
+            boolean isMember =
+                    groupMemberRepository
+                            .findByGroupAndUser(
+                                    group,
+                                    sender
+                            )
+                            .isPresent();
 
-        } else {
+            if (!isMember) {
 
-            receiverId = conversation.getUser1().getId();
-        }
-
-        Optional<Contact> senderContact =
-                contactRepository.findByUserIdAndContactUser_Id(
-                        senderId,
-                        receiverId
+                throw new RuntimeException(
+                        "You are not a member of this group"
                 );
+            }
 
-        Optional<Contact> receiverContact =
-                contactRepository.findByUserIdAndContactUser_Id(
-                        receiverId,
-                        senderId
-                );
-
-        boolean blocked =
-                senderContact.map(Contact::isBlocked).orElse(false)
-                        ||
-                        receiverContact.map(Contact::isBlocked).orElse(false);
-
-        if (blocked) {
-
-            throw new RuntimeException(
-                    "Messaging not allowed"
-            );
         }
 
         // ===============================
-        // 🔥 REPLY MESSAGE SUPPORT
+        // 🔥 PRIVATE CHAT
+        // ===============================
+        else {
+
+            // 🔒 SECURITY CHECK
+            if (
+                    !conversation.getUser1()
+                            .getId()
+                            .equals(senderId)
+
+                            &&
+
+                            !conversation.getUser2()
+                                    .getId()
+                                    .equals(senderId)
+            ) {
+
+                throw new RuntimeException(
+                        "You are not part of this conversation"
+                );
+            }
+
+            // ===============================
+            // 🚫 BLOCK CHECK
+            // ===============================
+            Long receiverId;
+
+            if (
+                    conversation.getUser1()
+                            .getId()
+                            .equals(senderId)
+            ) {
+
+                receiverId =
+                        conversation.getUser2()
+                                .getId();
+
+            } else {
+
+                receiverId =
+                        conversation.getUser1()
+                                .getId();
+            }
+
+            Optional<Contact> senderContact =
+                    contactRepository
+                            .findByUserIdAndContactUser_Id(
+                                    senderId,
+                                    receiverId
+                            );
+
+            Optional<Contact> receiverContact =
+                    contactRepository
+                            .findByUserIdAndContactUser_Id(
+                                    receiverId,
+                                    senderId
+                            );
+
+            boolean blocked =
+                    senderContact
+                            .map(Contact::isBlocked)
+                            .orElse(false)
+
+                            ||
+
+                            receiverContact
+                                    .map(Contact::isBlocked)
+                                    .orElse(false);
+
+            if (blocked) {
+
+                throw new RuntimeException(
+                        "Messaging not allowed"
+                );
+            }
+        }
+
+        // ===============================
+        // 🔥 REPLY SUPPORT
         // ===============================
         Message replyTo = null;
 
         if (replyToId != null) {
 
-            replyTo = messageRepository.findById(replyToId)
-                    .orElseThrow(() -> new RuntimeException("Reply message not found"));
+            replyTo = messageRepository
+                    .findById(replyToId)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Reply message not found"
+                            ));
 
-            // 🔒 SECURITY
-            if (!replyTo.getConversation().getId().equals(conversationId)) {
-                throw new RuntimeException("Invalid reply message");
+            if (
+                    !replyTo.getConversation()
+                            .getId()
+                            .equals(conversationId)
+            ) {
+
+                throw new RuntimeException(
+                        "Invalid reply message"
+                );
             }
         }
 
-        // 🔐 ENCRYPT MESSAGE
-        String encryptedContent = CryptoUtil.encrypt(content);
+        // ===============================
+        // 🔐 ENCRYPT
+        // ===============================
+        String encryptedContent =
+                CryptoUtil.encrypt(content);
 
         Message message = Message.builder()
                 .conversation(conversation)
@@ -109,20 +185,37 @@ public class MessageService {
                 .replyTo(replyTo)
                 .build();
 
-        Message saved = messageRepository.save(message);
+        Message saved =
+                messageRepository.save(message);
 
-        // 🔥 update conversation
+        // ===============================
+        // 🔥 UPDATE CONVERSATION
+        // ===============================
         conversation.setLastMessage(content);
-        conversation.setLastMessageTime(saved.getCreatedAt());
 
-        if (conversation.getUser1().getId().equals(senderId)) {
-            conversation.setUnreadCountUser2(
-                    conversation.getUnreadCountUser2() + 1
-            );
-        } else {
-            conversation.setUnreadCountUser1(
-                    conversation.getUnreadCountUser1() + 1
-            );
+        conversation.setLastMessageTime(
+                saved.getCreatedAt()
+        );
+
+        // 🔥 PRIVATE UNREAD
+        if (!Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            if (
+                    conversation.getUser1()
+                            .getId()
+                            .equals(senderId)
+            ) {
+
+                conversation.setUnreadCountUser2(
+                        conversation.getUnreadCountUser2() + 1
+                );
+
+            } else {
+
+                conversation.setUnreadCountUser1(
+                        conversation.getUnreadCountUser1() + 1
+                );
+            }
         }
 
         conversationRepository.save(conversation);
@@ -131,46 +224,124 @@ public class MessageService {
     }
 
     // ===============================
-    // 🔥 GET MESSAGES (DECRYPTED)
+    // 🔥 GET MESSAGES
     // ===============================
-    public List<Message> getMessages(Long userId, Long conversationId) {
+    public List<Message> getMessages(
+            Long userId,
+            Long conversationId
+    ) {
 
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Conversation not found"
+                                ));
 
-        // 🔒 SECURITY CHECK
-        if (!conversation.getUser1().getId().equals(userId) &&
-                !conversation.getUser2().getId().equals(userId)) {
-            throw new RuntimeException("You are not part of this conversation");
+        // ===============================
+        // 🔥 GROUP SECURITY
+        // ===============================
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            User user =
+                    userRepository.findById(userId)
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "User not found"
+                                    ));
+
+            boolean isMember =
+                    groupMemberRepository
+                            .findByGroupAndUser(
+                                    conversation.getGroup(),
+                                    user
+                            )
+                            .isPresent();
+
+            if (!isMember) {
+
+                throw new RuntimeException(
+                        "You are not a member of this group"
+                );
+            }
         }
 
-        List<Message> messages = messageRepository
-                .findByConversationOrderByCreatedAtAsc(conversation);
+        // ===============================
+        // 🔥 PRIVATE SECURITY
+        // ===============================
+        else {
 
-        // 🔐 DECRYPT before sending
+            if (
+                    !conversation.getUser1()
+                            .getId()
+                            .equals(userId)
+
+                            &&
+
+                            !conversation.getUser2()
+                                    .getId()
+                                    .equals(userId)
+            ) {
+
+                throw new RuntimeException(
+                        "You are not part of this conversation"
+                );
+            }
+        }
+
+        List<Message> messages =
+                messageRepository
+                        .findByConversationOrderByCreatedAtAsc(
+                                conversation
+                        );
+
+        // ===============================
+        // 🔐 DECRYPT
+        // ===============================
         for (Message m : messages) {
 
             if (!m.isDeletedForEveryone()) {
 
                 try {
-                    m.setContent(CryptoUtil.decrypt(m.getContent()));
+
+                    m.setContent(
+                            CryptoUtil.decrypt(
+                                    m.getContent()
+                            )
+                    );
+
                 } catch (Exception e) {
-                    // fallback for old plain-text messages
-                    m.setContent(m.getContent());
+
+                    m.setContent(
+                            m.getContent()
+                    );
                 }
             }
 
-            // 🔥 decrypt reply message too
-            if (m.getReplyTo() != null &&
-                    !m.getReplyTo().isDeletedForEveryone()) {
+            // 🔥 reply decrypt
+            if (
+                    m.getReplyTo() != null
+
+                            &&
+
+                            !m.getReplyTo()
+                                    .isDeletedForEveryone()
+            ) {
 
                 try {
+
                     m.getReplyTo().setContent(
-                            CryptoUtil.decrypt(m.getReplyTo().getContent())
+                            CryptoUtil.decrypt(
+                                    m.getReplyTo()
+                                            .getContent()
+                            )
                     );
+
                 } catch (Exception e) {
+
                     m.getReplyTo().setContent(
-                            m.getReplyTo().getContent()
+                            m.getReplyTo()
+                                    .getContent()
                     );
                 }
             }
@@ -182,30 +353,66 @@ public class MessageService {
     // ===============================
     // 🔥 MARK AS READ
     // ===============================
-    public void markAsRead(Long userId, Long conversationId) {
+    public void markAsRead(
+            Long userId,
+            Long conversationId
+    ) {
 
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Conversation not found"
+                                ));
 
-        // 🔒 SECURITY CHECK
-        if (!conversation.getUser1().getId().equals(userId) &&
-                !conversation.getUser2().getId().equals(userId)) {
-            throw new RuntimeException("You are not part of this conversation");
+        // 🔥 GROUP CHAT
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            return;
         }
 
-        List<Message> messages = messageRepository
-                .findByConversationAndIsReadFalseAndSender_IdNot(conversation, userId);
+        // 🔥 PRIVATE CHAT
+        if (
+                !conversation.getUser1()
+                        .getId()
+                        .equals(userId)
+
+                        &&
+
+                        !conversation.getUser2()
+                                .getId()
+                                .equals(userId)
+        ) {
+
+            throw new RuntimeException(
+                    "You are not part of this conversation"
+            );
+        }
+
+        List<Message> messages =
+                messageRepository
+                        .findByConversationAndIsReadFalseAndSender_IdNot(
+                                conversation,
+                                userId
+                        );
 
         for (Message m : messages) {
+
             m.setRead(true);
         }
 
         messageRepository.saveAll(messages);
 
-        // 🔥 reset unread count
-        if (conversation.getUser1().getId().equals(userId)) {
+        if (
+                conversation.getUser1()
+                        .getId()
+                        .equals(userId)
+        ) {
+
             conversation.setUnreadCountUser1(0);
+
         } else {
+
             conversation.setUnreadCountUser2(0);
         }
 
@@ -215,18 +422,34 @@ public class MessageService {
     // ===============================
     // 🔥 DELETE FOR EVERYONE
     // ===============================
-    public void deleteForEveryone(Long userId, Long messageId) {
+    public void deleteForEveryone(
+            Long userId,
+            Long messageId
+    ) {
 
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Message not found"));
+        Message message =
+                messageRepository.findById(messageId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Message not found"
+                                ));
 
-        // 🔒 only sender can unsend
-        if (!message.getSender().getId().equals(userId)) {
-            throw new RuntimeException("Only sender can delete for everyone");
+        if (
+                !message.getSender()
+                        .getId()
+                        .equals(userId)
+        ) {
+
+            throw new RuntimeException(
+                    "Only sender can delete for everyone"
+            );
         }
 
         message.setDeletedForEveryone(true);
-        message.setContent("This message was deleted");
+
+        message.setContent(
+                "This message was deleted"
+        );
 
         messageRepository.save(message);
     }
@@ -234,22 +457,50 @@ public class MessageService {
     // ===============================
     // 🔥 DELETE FOR ME
     // ===============================
-    public void deleteForMe(Long userId, Long messageId) {
+    public void deleteForMe(
+            Long userId,
+            Long messageId
+    ) {
 
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Message not found"));
+        Message message =
+                messageRepository.findById(messageId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Message not found"
+                                ));
 
-        Conversation conversation = message.getConversation();
+        Conversation conversation =
+                message.getConversation();
 
-        // 🔒 security check
-        if (conversation.getUser1().getId().equals(userId)) {
+        // 🔥 GROUP CHAT
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            return;
+        }
+
+        // 🔥 PRIVATE CHAT
+        if (
+                conversation.getUser1()
+                        .getId()
+                        .equals(userId)
+        ) {
+
             message.setDeletedForUser1(true);
 
-        } else if (conversation.getUser2().getId().equals(userId)) {
+        } else if (
+
+                conversation.getUser2()
+                        .getId()
+                        .equals(userId)
+        ) {
+
             message.setDeletedForUser2(true);
 
         } else {
-            throw new RuntimeException("Unauthorized");
+
+            throw new RuntimeException(
+                    "Unauthorized"
+            );
         }
 
         messageRepository.save(message);
@@ -258,20 +509,42 @@ public class MessageService {
     // ===============================
     // 🔥 CLEAR CHAT
     // ===============================
-    public void clearChat(Long userId, Long conversationId) {
+    public void clearChat(
+            Long userId,
+            Long conversationId
+    ) {
 
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+        Conversation conversation =
+                conversationRepository.findById(conversationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Conversation not found"
+                                ));
 
-        List<Message> messages = messageRepository
-                .findByConversationOrderByCreatedAtAsc(conversation);
+        // 🔥 GROUP CHAT
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            return;
+        }
+
+        List<Message> messages =
+                messageRepository
+                        .findByConversationOrderByCreatedAtAsc(
+                                conversation
+                        );
 
         for (Message m : messages) {
 
-            if (conversation.getUser1().getId().equals(userId)) {
+            if (
+                    conversation.getUser1()
+                            .getId()
+                            .equals(userId)
+            ) {
+
                 m.setDeletedForUser1(true);
 
             } else {
+
                 m.setDeletedForUser2(true);
             }
         }
@@ -282,49 +555,117 @@ public class MessageService {
     // ===============================
     // 🔥 REACT TO MESSAGE
     // ===============================
-    public void reactToMessage(Long userId, Long messageId, String emoji) {
+    public void reactToMessage(
+            Long userId,
+            Long messageId,
+            String emoji
+    ) {
 
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Message not found"));
+        Message message =
+                messageRepository.findById(messageId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Message not found"
+                                ));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user =
+                userRepository.findById(userId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "User not found"
+                                ));
 
-        Conversation conversation = message.getConversation();
+        Conversation conversation =
+                message.getConversation();
 
-        // 🔒 SECURITY
-        if (!conversation.getUser1().getId().equals(userId) &&
-                !conversation.getUser2().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
+        // ===============================
+        // 🔥 GROUP SECURITY
+        // ===============================
+        if (Boolean.TRUE.equals(conversation.getIsGroup())) {
+
+            boolean isMember =
+                    groupMemberRepository
+                            .findByGroupAndUser(
+                                    conversation.getGroup(),
+                                    user
+                            )
+                            .isPresent();
+
+            if (!isMember) {
+
+                throw new RuntimeException(
+                        "Unauthorized"
+                );
+            }
         }
 
-        var existing = messageReactionRepository
-                .findByMessageAndUser(message, user);
+        // ===============================
+        // 🔥 PRIVATE SECURITY
+        // ===============================
+        else {
+
+            if (
+                    !conversation.getUser1()
+                            .getId()
+                            .equals(userId)
+
+                            &&
+
+                            !conversation.getUser2()
+                                    .getId()
+                                    .equals(userId)
+            ) {
+
+                throw new RuntimeException(
+                        "Unauthorized"
+                );
+            }
+        }
+
+        var existing =
+                messageReactionRepository
+                        .findByMessageAndUser(
+                                message,
+                                user
+                        );
 
         if (existing.isPresent()) {
 
-            MessageReaction reaction = existing.get();
+            MessageReaction reaction =
+                    existing.get();
 
-            // 🔥 same emoji → remove
-            if (reaction.getEmoji().equals(emoji)) {
-                messageReactionRepository.delete(reaction);
+            // 🔥 same emoji remove
+            if (
+                    reaction.getEmoji()
+                            .equals(emoji)
+            ) {
+
+                messageReactionRepository.delete(
+                        reaction
+                );
+
                 return;
             }
 
             // 🔥 update emoji
             reaction.setEmoji(emoji);
-            messageReactionRepository.save(reaction);
+
+            messageReactionRepository.save(
+                    reaction
+            );
 
         } else {
 
-            // 🔥 new reaction
-            MessageReaction reaction = MessageReaction.builder()
-                    .message(message)
-                    .user(user)
-                    .emoji(emoji)
-                    .build();
+            MessageReaction reaction =
+                    MessageReaction.builder()
+                            .message(message)
+                            .user(user)
+                            .emoji(emoji)
+                            .build();
 
-            messageReactionRepository.save(reaction);
+            messageReactionRepository.save(
+                    reaction
+            );
         }
     }
 }

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -46,7 +45,6 @@ public class JwtFilter extends OncePerRequestFilter {
             String path =
                     request.getServletPath();
 
-            // 🔥 refresh token endpoint bypass
             if (
                     path.equals("/api/auth/refresh-token")
             ) {
@@ -67,7 +65,7 @@ public class JwtFilter extends OncePerRequestFilter {
                             request
                     );
 
-            // 🔥 no token → continue
+            // 🔥 no token
             if (token == null) {
 
                 filterChain.doFilter(
@@ -96,7 +94,7 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             // ===============================
-            // ❌ INVALID / EXPIRED
+            // ❌ INVALID TOKEN
             // ===============================
             if (
                     !jwtService.isTokenValid(
@@ -135,16 +133,30 @@ public class JwtFilter extends OncePerRequestFilter {
                 userService.saveUser(user);
 
                 // ===============================
+                // ✅ CUSTOM USER DETAILS
+                // ===============================
+                CustomUserDetails
+                        customUserDetails =
+                        new CustomUserDetails(
+                                user
+                        );
+
+                // ===============================
                 // ✅ AUTHENTICATION
                 // ===============================
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                user,
+
+                                customUserDetails,
+
                                 null,
-                                Collections.emptyList()
+
+                                customUserDetails
+                                        .getAuthorities()
                         );
 
                 auth.setDetails(
+
                         new WebAuthenticationDetailsSource()
                                 .buildDetails(request)
                 );
@@ -174,7 +186,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     // ===============================
-    // 🍪 EXTRACT ACCESS TOKEN
+    // 🍪 EXTRACT TOKEN
     // ===============================
     private String extractTokenFromCookies(
             HttpServletRequest request
@@ -222,6 +234,7 @@ public class JwtFilter extends OncePerRequestFilter {
         );
 
         response.getWriter().write(
+
                 "{\"success\":false,\"message\":\""
                         + msg +
                         "\"}"

@@ -206,19 +206,32 @@ const NewGroup = () => {
 
         avatar: group.avatar,
 
+        // 🔥 FIXED
         members:
           selectedMembers.map(
-            (m) => m.id
+            (m) => Number(m.id)
           ),
 
-        admins,
+        // 🔥 FIXED
+        admins:
+          admins.map(
+            (id) => Number(id)
+          ),
       };
 
       // 🔥 CREATE API
-      await API.post(
-        "/groups/create",
-        payload
-      );
+      const res =
+        await API.post(
+          "/groups/create",
+          payload
+        );
+
+      if (!res?.data) {
+
+        throw new Error(
+          "Failed to create group"
+        );
+      }
 
       toast.success(
         "Group Created 🚀"
@@ -227,6 +240,8 @@ const NewGroup = () => {
       navigate("/");
 
     } catch (err) {
+
+      console.log(err);
 
       const msg =
         err.response?.data?.message ||

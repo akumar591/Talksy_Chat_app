@@ -1,54 +1,56 @@
 package com.talksy.backend.dto;
 
+import com.talksy.backend.entity.StatusType;
+
 import lombok.*;
 
 import java.time.LocalDateTime;
+
 import java.util.List;
 
 @Getter
 @Setter
+
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Builder
-public class GroupResponse {
+public class StatusResponse {
 
     // ===============================
-    // 🔥 GROUP ID
+    // 🔥 STATUS ID
     // ===============================
     private Long id;
 
     // ===============================
-    // 🔥 GROUP INFO
+    // 🔥 USER
     // ===============================
-    private String name;
+    private Long userId;
 
-    private String about;
+    private String name;
 
     private String avatar;
 
     // ===============================
-    // 🔥 CONVERSATION ID
+    // 🔥 MEDIA
     // ===============================
-    private Long conversationId;
+    private String media;
+
+    private StatusType type;
+
+    private String caption;
 
     // ===============================
-    // 🔥 CREATOR
+    // 🔥 VIEW
     // ===============================
-    private Long createdById;
+    private boolean seen;
 
-    private String createdByName;
-
-    private String createdByAvatar;
+    private List<StatusViewerResponse> views;
 
     // ===============================
-    // 🔥 MEMBERS
+    // 🔥 TIME
     // ===============================
-    private int memberCount;
+    private String time;
 
-    private List<GroupMemberResponse> members;
-
-    // ===============================
-    // 🕒 TIMESTAMPS
-    // ===============================
     private LocalDateTime createdAt;
 }

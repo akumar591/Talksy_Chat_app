@@ -43,7 +43,7 @@ export const ChatProvider = ({ children }) => {
   const [hasFetchedContacts, setHasFetchedContacts] =
     useState(false);
 
-  // 🔥 NEW
+  // 🔥 FILTER
   const [activeFilter, setActiveFilter] =
     useState("All");
 
@@ -238,7 +238,7 @@ export const ChatProvider = ({ children }) => {
               item.lastMessageTime ||
               null,
 
-            // 🔥 NEW
+            // 🔥 GROUP FLAG
             isGroup: false,
           })
         );
@@ -281,7 +281,7 @@ export const ChatProvider = ({ children }) => {
     }, [sidebarLoading]);
 
   // ===============================
-  // 🔥 OPEN CONVERSATION
+  // 🔥 OPEN PRIVATE CONVERSATION
   // ===============================
   const openConversation =
     useCallback(async (contact) => {
@@ -305,6 +305,7 @@ export const ChatProvider = ({ children }) => {
         }
 
         const updatedChat = {
+
           ...contact,
 
           conversationId:
@@ -383,6 +384,12 @@ export const ChatProvider = ({ children }) => {
 
             senderId:
               Number(msg.senderId),
+
+            senderName:
+              msg.senderName || "",
+
+            senderAvatar:
+              msg.senderAvatar || "",
 
             createdAt:
               msg.createdAt,
@@ -536,6 +543,12 @@ export const ChatProvider = ({ children }) => {
                       Number(
                         realMessage.senderId
                       ),
+
+                    senderName:
+                      realMessage.senderName || "",
+
+                    senderAvatar:
+                      realMessage.senderAvatar || "",
 
                     reactions:
                       realMessage.reactions ||
@@ -892,7 +905,7 @@ export const ChatProvider = ({ children }) => {
         sidebarLoading,
         hasFetchedContacts,
 
-        // 🔥 NEW
+        // 🔥 FILTER
         activeFilter,
         setActiveFilter,
 
@@ -900,6 +913,9 @@ export const ChatProvider = ({ children }) => {
         setReplyTo,
         setSelectedChat,
         setMessages,
+
+        // 🔥 NEW
+        setConversation,
 
         // 🔥 sidebar
         fetchContacts,
@@ -914,7 +930,7 @@ export const ChatProvider = ({ children }) => {
 
         clearChat,
 
-        // 🔥 NEW
+        // 🔥 contact actions
         toggleBlockContact,
         deleteContact,
 

@@ -16,13 +16,15 @@ import {
   FiUserPlus,
   FiMoreVertical,
   FiShield,
-  FiTrash2,
   FiLogOut,
 } from "react-icons/fi";
 
 import { useAuth } from "../../context/AuthContext";
 
 import { useGroup } from "../../context/GroupContext";
+
+// 🔥 NEW
+import AddMembersModal from "../Chat/AddMembersModal";
 
 const GroupInfo = () => {
 
@@ -54,6 +56,12 @@ const GroupInfo = () => {
 
   const [showMenu, setShowMenu] =
     useState(false);
+
+  // 🔥 NEW
+  const [
+    showAddMembersModal,
+    setShowAddMembersModal,
+  ] = useState(false);
 
   const menuRef =
     useRef(null);
@@ -408,6 +416,16 @@ const GroupInfo = () => {
                 {isAdmin && (
 
                   <button
+
+                    onClick={() => {
+
+                      setShowAddMembersModal(
+                        true
+                      );
+
+                      setShowMenu(false);
+                    }}
+
                     className="
                       w-full
 
@@ -658,6 +676,14 @@ const GroupInfo = () => {
           >
 
             <button
+
+              onClick={() => {
+
+                setShowAddMembersModal(
+                  true
+                );
+              }}
+
               className="
                 w-full
 
@@ -1026,6 +1052,21 @@ const GroupInfo = () => {
           </button>
         </div>
       </div>
+
+      {/* 🔥 ADD MEMBERS MODAL */}
+      {showAddMembersModal && (
+
+        <AddMembersModal
+
+          group={group}
+
+          onClose={() =>
+            setShowAddMembersModal(
+              false
+            )
+          }
+        />
+      )}
     </div>
   );
 };

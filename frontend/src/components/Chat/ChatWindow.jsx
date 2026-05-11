@@ -31,8 +31,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { useGroup } from "../../context/GroupContext";
-
-
+import AddMembersModal from "./AddMembersModal";
 
 const ChatWindow = ({ chat, onBack }) => {
   const navigate = useNavigate();
@@ -72,6 +71,7 @@ const ChatWindow = ({ chat, onBack }) => {
   const [showEmoji, setShowEmoji] = useState(false);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false);
 
   const [reactionMsgId, setReactionMsgId] = useState(null);
 
@@ -98,11 +98,9 @@ const ChatWindow = ({ chat, onBack }) => {
 
   const timerRef = useRef(null);
 
-  const emojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🙏",];
-
+  const emojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🙏"];
 
   const { leaveGroup, fetchGroupById, groupDetails } = useGroup();
-
 
   // ===============================
   // 🔥 SORT MESSAGES
@@ -150,15 +148,9 @@ const ChatWindow = ({ chat, onBack }) => {
   }, []);
 
   useEffect(() => {
-
-    if (
-      chat?.isGroup &&
-      chat?.id
-    ) {
-
+    if (chat?.isGroup && chat?.id) {
       fetchGroupById(chat.id);
     }
-
   }, [chat]);
 
   // ===============================
@@ -296,11 +288,8 @@ const ChatWindow = ({ chat, onBack }) => {
           <div
             onClick={() => {
               if (chat.isGroup) {
-
                 navigate(`/group-info/${chat.id}`);
-
               } else {
-
                 navigate(`/user/${chat.id}`);
               }
             }}
@@ -316,16 +305,16 @@ const ChatWindow = ({ chat, onBack }) => {
               {!chat.isGroup && chat.online && (
                 <span
                   className="
-                    absolute
-                    bottom-0
-                    right-0
-                    w-3
-                    h-3
-                    bg-green-500
-                    rounded-full
-                    border-2
-                    border-[var(--bg)]
-                  "
+              absolute
+              bottom-0
+              right-0
+              w-3
+              h-3
+              bg-green-500
+              rounded-full
+              border-2
+              border-[var(--bg)]
+            "
                 />
               )}
             </div>
@@ -334,19 +323,12 @@ const ChatWindow = ({ chat, onBack }) => {
               <h2 className="font-semibold truncate">{chat.name}</h2>
 
               <p className="text-xs opacity-60 truncate">
-
                 {isRecording
-
                   ? "Recording..."
-
                   : chat.isGroup
-
-                    ? `${chat.members?.length || 0} members`
-
+                    ? `${chat.memberCount || chat.members?.length || 0} members`
                     : chat.online
-
                       ? "online"
-
                       : "last seen recently"}
               </p>
             </div>
@@ -370,15 +352,15 @@ const ChatWindow = ({ chat, onBack }) => {
               })
             }
             className="
-              w-10
-              h-10
-              rounded-full
-              flex
-              items-center
-              justify-center
-              hover:bg-[var(--primary)]/10
-              transition
-            "
+        w-10
+        h-10
+        rounded-full
+        flex
+        items-center
+        justify-center
+        hover:bg-[var(--primary)]/10
+        transition
+      "
           >
             <FiVideo />
           </button>
@@ -398,15 +380,15 @@ const ChatWindow = ({ chat, onBack }) => {
               })
             }
             className="
-              w-10
-              h-10
-              rounded-full
-              flex
-              items-center
-              justify-center
-              hover:bg-[var(--primary)]/10
-              transition
-            "
+        w-10
+        h-10
+        rounded-full
+        flex
+        items-center
+        justify-center
+        hover:bg-[var(--primary)]/10
+        transition
+      "
           >
             <FiPhone />
           </button>
@@ -421,15 +403,15 @@ const ChatWindow = ({ chat, onBack }) => {
                 setShowMenu((prev) => !prev);
               }}
               className="
-      w-10
-      h-10
-      rounded-full
-      flex
-      items-center
-      justify-center
-      hover:bg-[var(--primary)]/10
-      transition
-    "
+          w-10
+          h-10
+          rounded-full
+          flex
+          items-center
+          justify-center
+          hover:bg-[var(--primary)]/10
+          transition
+        "
             >
               <FiMoreVertical />
             </button>
@@ -437,72 +419,63 @@ const ChatWindow = ({ chat, onBack }) => {
             {showMenu && (
               <div
                 className="
-        absolute
-        right-0
-        top-12
+            absolute
+            right-0
+            top-12
 
-        w-56
+            w-56
 
-        p-1.5
+            p-1.5
 
-        z-50
+            z-50
 
-        rounded-2xl
+            rounded-2xl
 
-        bg-[var(--card)]
+            bg-[var(--card)]
 
-        border
-        border-[var(--border)]
+            border
+            border-[var(--border)]
 
-        shadow-[0_12px_40px_rgba(0,0,0,0.35)]
+            shadow-[0_12px_40px_rgba(0,0,0,0.35)]
 
-        overflow-hidden
+            overflow-hidden
 
-        animate-menu
-      "
+            animate-menu
+          "
               >
-
                 {/* PROFILE / GROUP INFO */}
                 <div
                   onClick={() => {
-
                     if (chat.isGroup) {
-
                       navigate(`/group-info/${chat.id}`);
-
                     } else {
-
                       navigate(`/user/${chat.id}`);
                     }
 
                     setShowMenu(false);
                   }}
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          hover:bg-white/5
+              hover:bg-white/5
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiUser size={16} />
 
                   <span className="text-[13px] font-medium">
-
-                    {chat.isGroup
-                      ? "Group Info"
-                      : "View Profile"}
-
+                    {chat.isGroup ? "Group Info" : "View Profile"}
                   </span>
                 </div>
 
@@ -514,76 +487,72 @@ const ChatWindow = ({ chat, onBack }) => {
                     setShowMenu(false);
                   }}
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          hover:bg-white/5
+              hover:bg-white/5
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiImage size={16} />
 
-                  <span className="text-[13px] font-medium">
-                    Media & Files
-                  </span>
+                  <span className="text-[13px] font-medium">Media & Files</span>
                 </div>
 
                 {/* CHAT THEME */}
                 <div
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          hover:bg-white/5
+              hover:bg-white/5
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiEdit3 size={16} />
 
-                  <span className="text-[13px] font-medium">
-                    Chat Theme
-                  </span>
+                  <span className="text-[13px] font-medium">Chat Theme</span>
                 </div>
 
                 {/* WALLPAPER */}
                 <div
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          hover:bg-white/5
+              hover:bg-white/5
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiGrid size={16} />
 
@@ -595,22 +564,22 @@ const ChatWindow = ({ chat, onBack }) => {
                 {/* MUTE */}
                 <div
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          hover:bg-white/5
+              hover:bg-white/5
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiBellOff size={16} />
 
@@ -632,24 +601,24 @@ const ChatWindow = ({ chat, onBack }) => {
                         setShowMenu(false);
                       }}
                       className="
-              flex
-              items-center
-              gap-3
+                  flex
+                  items-center
+                  gap-3
 
-              px-3
-              py-2.5
+                  px-3
+                  py-2.5
 
-              rounded-xl
+                  rounded-xl
 
-              cursor-pointer
+                  cursor-pointer
 
-              text-yellow-400
+                  text-yellow-400
 
-              hover:bg-yellow-500/10
+                  hover:bg-yellow-500/10
 
-              transition-all
-              duration-200
-            "
+                  transition-all
+                  duration-200
+                "
                     >
                       {chat?.blocked ? (
                         <FiUnlock size={16} />
@@ -658,9 +627,7 @@ const ChatWindow = ({ chat, onBack }) => {
                       )}
 
                       <span className="text-[13px] font-medium">
-                        {chat?.blocked
-                          ? "Unblock Contact"
-                          : "Block Contact"}
+                        {chat?.blocked ? "Unblock Contact" : "Block Contact"}
                       </span>
                     </div>
                   </>
@@ -671,23 +638,28 @@ const ChatWindow = ({ chat, onBack }) => {
                   <>
                     {/* ADD MEMBERS */}
                     <div
+                      onClick={() => {
+                        setShowAddMembersModal(true);
+
+                        setShowMenu(false);
+                      }}
                       className="
-              flex
-              items-center
-              gap-3
+    flex
+    items-center
+    gap-3
 
-              px-3
-              py-2.5
+    px-3
+    py-2.5
 
-              rounded-xl
+    rounded-xl
 
-              cursor-pointer
+    cursor-pointer
 
-              hover:bg-white/5
+    hover:bg-white/5
 
-              transition-all
-              duration-200
-            "
+    transition-all
+    duration-200
+  "
                     >
                       <FiUserPlus size={16} />
 
@@ -698,25 +670,36 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     {/* LEAVE GROUP */}
                     <div
+                      onClick={async () => {
+                        try {
+                          await leaveGroup(chat.id);
+
+                          navigate("/");
+                        } catch (err) {
+                          console.log(err);
+                        }
+
+                        setShowMenu(false);
+                      }}
                       className="
-              flex
-              items-center
-              gap-3
+                  flex
+                  items-center
+                  gap-3
 
-              px-3
-              py-2.5
+                  px-3
+                  py-2.5
 
-              rounded-xl
+                  rounded-xl
 
-              cursor-pointer
+                  cursor-pointer
 
-              text-red-400
+                  text-red-400
 
-              hover:bg-red-500/10
+                  hover:bg-red-500/10
 
-              transition-all
-              duration-200
-            "
+                  transition-all
+                  duration-200
+                "
                     >
                       <FiLogOut size={16} />
 
@@ -735,30 +718,28 @@ const ChatWindow = ({ chat, onBack }) => {
                     setShowMenu(false);
                   }}
                   className="
-          flex
-          items-center
-          gap-3
+              flex
+              items-center
+              gap-3
 
-          px-3
-          py-2.5
+              px-3
+              py-2.5
 
-          rounded-xl
+              rounded-xl
 
-          cursor-pointer
+              cursor-pointer
 
-          text-red-400
+              text-red-400
 
-          hover:bg-red-500/10
+              hover:bg-red-500/10
 
-          transition-all
-          duration-200
-        "
+              transition-all
+              duration-200
+            "
                 >
                   <FiTrash2 size={16} />
 
-                  <span className="text-[13px] font-medium">
-                    Clear Chat
-                  </span>
+                  <span className="text-[13px] font-medium">Clear Chat</span>
                 </div>
 
                 {/* DELETE CONTACT */}
@@ -770,24 +751,24 @@ const ChatWindow = ({ chat, onBack }) => {
                       setShowMenu(false);
                     }}
                     className="
-            flex
-            items-center
-            gap-3
+                flex
+                items-center
+                gap-3
 
-            px-3
-            py-2.5
+                px-3
+                py-2.5
 
-            rounded-xl
+                rounded-xl
 
-            cursor-pointer
+                cursor-pointer
 
-            text-red-400
+                text-red-400
 
-            hover:bg-red-500/10
+                hover:bg-red-500/10
 
-            transition-all
-            duration-200
-          "
+                transition-all
+                duration-200
+              "
                   >
                     <FiUserX size={16} />
 
@@ -814,12 +795,9 @@ const ChatWindow = ({ chat, onBack }) => {
     space-y-4
   "
       >
-
         {/* 🔥 EMOJI CHECK */}
         {(() => {
-
           const isOnlyEmoji = (text = "") => {
-
             const emojiRegex =
               /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
 
@@ -827,24 +805,19 @@ const ChatWindow = ({ chat, onBack }) => {
           };
 
           return sortedMessages.map((msg) => {
-
-            const isMe =
-              Number(msg.senderId) === Number(user?.id);
+            const isMe = Number(msg.senderId) === Number(user?.id);
 
             return (
               <div
                 key={msg.id}
                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
               >
-
                 <div className="flex items-end gap-2 max-w-full">
-
                   {/* 🔥 GROUP AVATAR */}
                   {chat?.isGroup && !isMe && (
                     <img
                       src={
-                        msg.senderAvatar ||
-                        "https://i.pravatar.cc/150?img=3"
+                        msg.senderAvatar || "https://i.pravatar.cc/150?img=3"
                       }
                       alt={msg.senderName}
                       className="
@@ -858,17 +831,13 @@ const ChatWindow = ({ chat, onBack }) => {
                   )}
 
                   <div className="relative max-w-full">
-
                     {/* 🔥 MESSAGE */}
                     <div
                       onClick={() =>
                         setActiveMessageId(
-                          activeMessageId === msg.id
-                            ? null
-                            : msg.id
+                          activeMessageId === msg.id ? null : msg.id,
                         )
                       }
-
                       className={`
                   relative
                   w-fit
@@ -884,7 +853,6 @@ const ChatWindow = ({ chat, onBack }) => {
                   cursor-pointer
 
                   ${isOnlyEmoji(msg.content)
-
                           ? `
                       bg-transparent
                       px-1
@@ -892,7 +860,6 @@ const ChatWindow = ({ chat, onBack }) => {
                       shadow-none
                       border-none
                     `
-
                           : `
                       px-3
                       py-2
@@ -919,7 +886,6 @@ const ChatWindow = ({ chat, onBack }) => {
                         }
                 `}
                     >
-
                       {/* 🔥 GROUP SENDER NAME */}
                       {chat?.isGroup && !isMe && !msg.deleted && (
                         <p
@@ -960,10 +926,7 @@ const ChatWindow = ({ chat, onBack }) => {
                             }
                     `}
                         >
-
-                          <p className="font-medium opacity-70 mb-0.5">
-                            Reply
-                          </p>
+                          <p className="font-medium opacity-70 mb-0.5">Reply</p>
 
                           <p className="truncate opacity-80">
                             {msg.replyTo.content}
@@ -984,12 +947,10 @@ const ChatWindow = ({ chat, onBack }) => {
                     tracking-[0.1px]
 
                     ${isOnlyEmoji(msg.content)
-
                             ? `
                         text-[24px]
                         leading-none
                       `
-
                             : `
                         text-[13.5px]
                         leading-[1.4]
@@ -1001,11 +962,9 @@ const ChatWindow = ({ chat, onBack }) => {
                           wordBreak: "break-word",
                         }}
                       >
-
                         {msg.deleted
                           ? "🚫 This message was deleted"
                           : msg.content}
-
                       </div>
 
                       {/* 🔥 FOOTER */}
@@ -1017,22 +976,15 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     gap-1
 
-                    ${isOnlyEmoji(msg.content)
-                            ? "mt-0"
-                            : "mt-1"
-                          }
+                    ${isOnlyEmoji(msg.content) ? "mt-0" : "mt-1"}
                   `}
                       >
-
                         <span
                           className={`
                       text-[9px]
                       tracking-wide
 
-                      ${isMe
-                              ? "text-black/70"
-                              : "text-[var(--text)]/50"
-                            }
+                      ${isMe ? "text-black/70" : "text-[var(--text)]/50"}
                     `}
                         >
                           {formatTime(msg.createdAt)}
@@ -1066,12 +1018,8 @@ const ChatWindow = ({ chat, onBack }) => {
                       z-20
                     "
                         >
-
                           {msg.reactions.map((r, i) => (
-                            <span
-                              key={i}
-                              className="text-[12px]"
-                            >
+                            <span key={i} className="text-[12px]">
                               {r.emoji}
                             </span>
                           ))}
@@ -1094,7 +1042,6 @@ const ChatWindow = ({ chat, onBack }) => {
                     ${isMe ? "right-0" : "left-0"}
                   `}
                       >
-
                         {/* REPLY */}
                         <button
                           aria-label="Reply message"
@@ -1203,17 +1150,14 @@ const ChatWindow = ({ chat, onBack }) => {
                     ${isMe ? "right-0" : "left-0"}
                   `}
                       >
-
                         {emojis.map((e, i) => (
                           <span
                             key={i}
                             onClick={() => {
-
                               reactToMessage(msg.id, e);
 
                               setReactionMsgId(null);
                             }}
-
                             className="
                         cursor-pointer
                         hover:scale-125
@@ -1252,18 +1196,15 @@ const ChatWindow = ({ chat, onBack }) => {
                     ${isMe ? "right-0" : "left-0"}
                   `}
                       >
-
                         {/* DELETE FOR ME */}
                         <div
                           onClick={() => {
-
                             deleteForMe(msg.id);
 
                             setMessageMenuId(null);
 
                             setActiveMessageId(null);
                           }}
-
                           className="
                       px-4
                       py-2.5
@@ -1284,14 +1225,12 @@ const ChatWindow = ({ chat, onBack }) => {
                         {/* DELETE FOR EVERYONE */}
                         <div
                           onClick={() => {
-
                             deleteForEveryone(msg.id);
 
                             setMessageMenuId(null);
 
                             setActiveMessageId(null);
                           }}
-
                           className="
                       px-4
                       py-2.5
@@ -1707,8 +1646,8 @@ const ChatWindow = ({ chat, onBack }) => {
               aria-label="Record voice"
               onClick={handleMicClick}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${isRecording
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
+                  ? "bg-[var(--primary)] text-black"
+                  : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
                 }`}
             >
               <FiMic />
@@ -1716,6 +1655,26 @@ const ChatWindow = ({ chat, onBack }) => {
           )}
         </div>
       </div>
+
+      
+      {/* 🔥 ADD MEMBERS MODAL */}
+      {showAddMembersModal && (
+
+        <AddMembersModal
+
+          group={
+            groupDetails || chat
+          }
+
+          onClose={() =>
+            setShowAddMembersModal(
+              false
+            )
+          }
+        />
+      )}
+
+
     </div>
   );
 };
