@@ -9,248 +9,408 @@ import {
 
 import API from "../api/axios";
 
-const AuthContext = createContext();
+const AuthContext =
+  createContext();
 
-export const AuthProvider = ({ children }) => {
-  // ===============================
-  // ✅ INIT REF
-  // ===============================
-  const initializedRef = useRef(false);
+export const AuthProvider = ({
+  children,
+}) => {
 
   // ===============================
-  // ✅ PHONE
+  // 🔥 INIT REF
   // ===============================
-  const [phone, setPhoneState] = useState(() => {
-    return sessionStorage.getItem("phone") || null;
-  });
+  const initializedRef =
+    useRef(false);
 
-  const setPhone = (newPhone) => {
+  // ===============================
+  // 🔥 PHONE
+  // ===============================
+  const [phone, setPhoneState] =
+    useState(() => {
+
+      return (
+        sessionStorage.getItem(
+          "phone"
+        ) || null
+      );
+    });
+
+  const setPhone = (
+    newPhone
+  ) => {
+
     if (!newPhone) {
-      sessionStorage.removeItem("phone");
+
+      sessionStorage.removeItem(
+        "phone"
+      );
 
       setPhoneState(null);
 
       return;
     }
 
-    sessionStorage.setItem("phone", newPhone);
+    sessionStorage.setItem(
+      "phone",
+      newPhone
+    );
 
-    setPhoneState(newPhone);
+    setPhoneState(
+      newPhone
+    );
   };
 
   // ===============================
-  // ✅ EMAIL
+  // 🔥 EMAIL
   // ===============================
-  const [email, setEmailState] = useState(() => {
-    return sessionStorage.getItem("email") || null;
-  });
+  const [email, setEmailState] =
+    useState(() => {
 
-  const setEmail = (newEmail) => {
+      return (
+        sessionStorage.getItem(
+          "email"
+        ) || null
+      );
+    });
+
+  const setEmail = (
+    newEmail
+  ) => {
+
     if (!newEmail) {
-      sessionStorage.removeItem("email");
+
+      sessionStorage.removeItem(
+        "email"
+      );
 
       setEmailState(null);
 
       return;
     }
 
-    sessionStorage.setItem("email", newEmail);
+    sessionStorage.setItem(
+      "email",
+      newEmail
+    );
 
-    setEmailState(newEmail);
+    setEmailState(
+      newEmail
+    );
   };
 
   // ===============================
-  // ✅ USER
+  // 🔥 USER
   // ===============================
-  const [user, setUserState] = useState(null);
+  const [user, setUserState] =
+    useState(null);
 
   // ===============================
-  // ✅ AUTH LOADING
+  // 🔥 AUTH LOADING
   // ===============================
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] =
+    useState(true);
 
   // ===============================
-  // ✅ UPDATE USER
+  // 🔥 UPDATE USER
   // ===============================
-  const setUser = (newUser) => {
-    setUserState(newUser || null);
+  const setUser = (
+    newUser
+  ) => {
+
+    setUserState(
+      newUser || null
+    );
   };
 
   // ===============================
   // 🔥 FETCH USER
   // ===============================
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await API.get("/users/me", {
-        withCredentials: true,
-      });
+  const fetchUser =
+    useCallback(
+      async () => {
 
-      // 🔥 valid user
-      if (res?.data?.data) {
-        setUser(res.data.data);
+        try {
 
-        return res.data.data;
-      }
+          const res =
+            await API.get(
+              "/users/me",
+              {
+                withCredentials: true,
+              }
+            );
 
-      setUser(null);
+          // 🔥 valid user
+          if (
+            res?.data?.data
+          ) {
 
-      return null;
-    } catch (err) {
-      // 🔥 ignore 401
-      if (err.response?.status !== 401) {
-        console.log("Fetch user failed:", err);
-      }
+            setUser(
+              res.data.data
+            );
 
-      setUser(null);
+            // 🔥 logged in
+            localStorage.setItem(
+              "step",
+              "app"
+            );
 
-      return null;
-    }
-  }, []);
+            return res.data.data;
+          }
+
+          setUser(null);
+
+          return null;
+
+        } catch (err) {
+
+          // 🔥 ignore 401
+          if (
+            err.response
+              ?.status !== 401
+          ) {
+
+            console.log(
+              "Fetch user failed:",
+              err
+            );
+          }
+
+          setUser(null);
+
+          return null;
+        }
+      },
+      []
+    );
 
   // ===============================
   // 🔥 AUTO LOGIN
   // ===============================
   useEffect(() => {
-    // 🔥 prevent strict mode duplicate
-    if (initializedRef.current) {
+
+    // 🔥 strict mode safety
+    if (
+      initializedRef.current
+    ) {
+
       return;
     }
 
-    initializedRef.current = true;
+    initializedRef.current =
+      true;
 
-    const initAuth = async () => {
-      try {
-        await fetchUser();
-      } finally {
-        setAuthLoading(false);
-      }
-    };
+    const initAuth =
+      async () => {
+
+        try {
+
+          await fetchUser();
+
+        } finally {
+
+          setAuthLoading(
+            false
+          );
+        }
+      };
 
     initAuth();
+
   }, [fetchUser]);
 
   // ===============================
   // 🔥 REFRESH USER
   // ===============================
-  const refreshUser = async () => {
-    return await fetchUser();
-  };
+  const refreshUser =
+    async () => {
+
+      return await fetchUser();
+    };
 
   // ===============================
   // 🔥 VERIFY OTP
   // ===============================
-  const verifyOtpAndLogin = async (otp) => {
-    try {
-      await API.post(
-        "/auth/verify-otp",
-        {
-          phone,
-          otp,
-        },
-        {
-          withCredentials: true,
-        },
-      );
+  const verifyOtpAndLogin =
+    async (otp) => {
 
-      // 🔥 latest user
-      const latestUser = await fetchUser();
+      try {
 
-      // 🔥 clear temp session
-      sessionStorage.removeItem("phone");
+        await API.post(
+          "/auth/verify-otp",
+          {
+            phone,
+            otp,
+          },
+          {
+            withCredentials: true,
+          }
+        );
 
-      sessionStorage.removeItem("email");
+        // 🔥 latest user
+        const latestUser =
+          await fetchUser();
 
-      setPhoneState(null);
+        // 🔥 clear temp session
+        sessionStorage.removeItem(
+          "phone"
+        );
 
-      setEmailState(null);
+        sessionStorage.removeItem(
+          "email"
+        );
 
-      // 🔥 next flow
-      localStorage.setItem("step", "profile");
+        setPhoneState(
+          null
+        );
 
-      return latestUser;
-    } catch (err) {
-      console.log("OTP failed:", err);
+        setEmailState(
+          null
+        );
 
-      return null;
-    }
-  };
+        // 🔥 next flow
+        localStorage.setItem(
+          "step",
+          "profile"
+        );
+
+        return latestUser;
+
+      } catch (err) {
+
+        console.log(
+          "OTP failed:",
+          err
+        );
+
+        return null;
+      }
+    };
 
   // ===============================
   // 🔥 VERIFY EMAIL
   // ===============================
-  const verifyEmail = async (otp) => {
-    try {
-      await API.post("/auth/verify-email", {
-        phone,
-        email,
-        otp,
-      });
+  const verifyEmail =
+    async (otp) => {
 
-      // 🔥 latest profile
-      await fetchUser();
+      try {
 
-      sessionStorage.removeItem("email");
+        await API.post(
+          "/auth/verify-email",
+          {
+            phone,
+            email,
+            otp,
+          }
+        );
 
-      setEmailState(null);
+        // 🔥 latest profile
+        await fetchUser();
 
-      return true;
-    } catch (err) {
-      console.log("Email verify failed:", err);
+        sessionStorage.removeItem(
+          "email"
+        );
 
-      return false;
-    }
-  };
+        setEmailState(
+          null
+        );
+
+        return true;
+
+      } catch (err) {
+
+        console.log(
+          "Email verify failed:",
+          err
+        );
+
+        return false;
+      }
+    };
 
   // ===============================
   // 🔥 UPDATE USER
   // ===============================
-  const updateUserData = async (updatedFields = {}) => {
-    // 🔥 instant ui
-    const updatedUser = {
-      ...(user || {}),
-      ...updatedFields,
+  const updateUserData =
+    async (
+      updatedFields = {}
+    ) => {
+
+      // 🔥 instant ui
+      const updatedUser =
+        {
+          ...(user || {}),
+          ...updatedFields,
+        };
+
+      setUser(
+        updatedUser
+      );
+
+      // 🔥 backend sync
+      await fetchUser();
     };
-
-    setUser(updatedUser);
-
-    // 🔥 backend sync
-    await fetchUser();
-  };
 
   // ===============================
   // 🔥 LOGOUT
   // ===============================
-  const logout = async () => {
-    try {
-      await API.post(
-        "/auth/logout",
-        {},
-        {
-          withCredentials: true,
-        },
+  const logout =
+    async () => {
+
+      try {
+
+        await API.post(
+          "/auth/logout",
+          {},
+          {
+            withCredentials: true,
+          }
+        );
+
+      } catch (err) {
+
+        console.log(
+          "Logout API error:",
+          err
+        );
+      }
+
+      // 🔥 clear sessions
+      sessionStorage.removeItem(
+        "phone"
       );
-    } catch (err) {
-      console.log("Logout API error:", err);
-    }
 
-    // 🔥 clear sessions
-    sessionStorage.removeItem("phone");
+      sessionStorage.removeItem(
+        "email"
+      );
 
-    sessionStorage.removeItem("email");
+      // 🔥 clear splash
+      localStorage.removeItem(
+        "seenSplash"
+      );
 
-    // 🔥 reset flow
-    localStorage.setItem("step", "splash");
+      // 🔥 reset flow
+      localStorage.setItem(
+        "step",
+        "splash"
+      );
 
-    // 🔥 clear states
-    setPhoneState(null);
+      // 🔥 clear states
+      setPhoneState(
+        null
+      );
 
-    setEmailState(null);
+      setEmailState(
+        null
+      );
 
-    setUserState(null);
+      setUserState(
+        null
+      );
 
-    // 🔥 redirect
-    window.location.href = "/";
-  };
+      // 🔥 refresh safely
+      window.location.href =
+        "/";
+    };
 
   return (
     <AuthContext.Provider
@@ -267,7 +427,7 @@ export const AuthProvider = ({ children }) => {
         user,
         setUser,
 
-        // 🔥 auth loading
+        // 🔥 loading
         authLoading,
 
         // 🔥 auth
@@ -283,9 +443,15 @@ export const AuthProvider = ({ children }) => {
         logout,
       }}
     >
+
       {children}
+
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth =
+  () =>
+    useContext(
+      AuthContext
+    );

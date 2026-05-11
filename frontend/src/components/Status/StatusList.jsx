@@ -11,15 +11,18 @@ const statuses = [
     seen: false,
     time: "Just now",
   },
+
   {
     id: 2,
     name: "Aman Verma",
     avatar: "https://i.pravatar.cc/150?img=5",
-    media: "https://www.w3schools.com/html/mov_bbb.mp4",
+    media:
+      "https://www.w3schools.com/html/mov_bbb.mp4",
     type: "video",
     seen: false,
     time: "10 min ago",
   },
+
   {
     id: 3,
     name: "Sneha Kapoor",
@@ -29,6 +32,7 @@ const statuses = [
     seen: false,
     time: "Today, 2:30 PM",
   },
+
   {
     id: 4,
     name: "Karan Mehta",
@@ -38,6 +42,7 @@ const statuses = [
     seen: true,
     time: "Today, 12:10 PM",
   },
+
   {
     id: 5,
     name: "Priya Singh",
@@ -48,65 +53,353 @@ const statuses = [
     time: "Yesterday",
   },
 
-  ...Array.from({ length: 15 }, (_, i) => ({
-    id: i + 6,
-    name:
-      ["Rohit", "Neha", "Arjun", "Simran", "Vikas"][i % 5] +
-      " " +
-      ["Kumar", "Jain", "Singh", "Verma"][i % 4],
-    avatar: `https://i.pravatar.cc/150?img=${i + 10}`,
-    media: `https://picsum.photos/40${i}/70${i}`,
-    type: "image",
-    seen: i > 7,
-    time: i < 5 ? "Today" : "Yesterday",
-  })),
+  ...Array.from(
+    { length: 15 },
+    (_, i) => ({
+      id: i + 6,
+
+      name:
+        [
+          "Rohit",
+          "Neha",
+          "Arjun",
+          "Simran",
+          "Vikas",
+        ][i % 5] +
+        " " +
+        [
+          "Kumar",
+          "Jain",
+          "Singh",
+          "Verma",
+        ][i % 4],
+
+      avatar: `https://i.pravatar.cc/150?img=${
+        i + 10
+      }`,
+
+      media: `https://picsum.photos/40${i}/70${i}`,
+
+      type: "image",
+
+      seen: i > 7,
+
+      time:
+        i < 5
+          ? "Today"
+          : "Yesterday",
+    })
+  ),
 ];
 
 /* 🔥 MAIN COMPONENT */
-const StatusList = ({ onOpen }) => {
-  const recent = statuses.filter((s) => !s.seen);
-  const viewed = statuses.filter((s) => s.seen);
+const StatusList = ({
+  onOpen,
+  onAddStatus,
+  userStatuses = [],
+}) => {
+
+  // 🔥 MERGE
+  const allStatuses = [
+    ...userStatuses,
+    ...statuses,
+  ];
+
+  // 🔥 FILTERS
+  const recent = allStatuses.filter(
+    (s) => !s.seen
+  );
+
+  const viewed = allStatuses.filter(
+    (s) => s.seen
+  );
 
   return (
     <div className="w-full h-full bg-[var(--bg)]">
 
-      <div className="h-full overflow-y-auto px-2 pt-3 md:pt-2 pb-2 md:pb-2 mb-3 md:mb-0 hide-scrollbar space-y-3">
+      <div
+        className="
+          h-full
+          overflow-y-auto
 
-        {/* MY STATUS */}
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer active:scale-[0.98] md:hover:bg-[var(--card)]/60 transition">
-          <div className="w-12 h-12 rounded-full border-2 border-[var(--primary)] flex items-center justify-center text-lg font-bold">
-            +
+          px-2
+
+          pt-3 md:pt-2
+
+          pb-2
+
+          hide-scrollbar
+
+          space-y-3
+        "
+      >
+
+        {/* 🔥 MY STATUS */}
+        {userStatuses.length > 0 ? (
+
+          <div
+            onClick={() =>
+              onOpen({
+                statuses:
+                  userStatuses,
+                index: 0,
+              })
+            }
+            className="
+              flex items-center
+              gap-3
+
+              px-3 py-3
+
+              rounded-2xl
+
+              cursor-pointer
+
+              active:scale-[0.98]
+
+              md:hover:bg-[var(--card)]/60
+
+              transition
+            "
+          >
+
+            {/* 🔥 AVATAR */}
+            <div className="relative">
+
+              {/* 🔥 STORY RING */}
+              <div
+                className="
+                  p-[2px]
+                  rounded-full
+
+                  bg-gradient-to-tr
+                  from-[var(--primary)]
+                  to-blue-500
+                "
+              >
+
+                <img
+                  src={
+                    userStatuses[0]
+                      ?.media
+                  }
+                  className="
+                    w-14 h-14
+                    rounded-full
+                    object-cover
+
+                    border-2
+                    border-[var(--bg)]
+                  "
+                />
+
+              </div>
+
+              {/* 🔥 ADD BUTTON */}
+              <button
+                type="button"
+                onClick={(e) => {
+
+                  e.stopPropagation();
+
+                  onAddStatus();
+                }}
+                className="
+                  absolute
+                  -bottom-1
+                  -right-1
+
+                  w-6 h-6
+
+                  rounded-full
+
+                  bg-[var(--primary)]
+
+                  text-white
+
+                  flex items-center
+                  justify-center
+
+                  text-sm
+                  font-bold
+
+                  border-2
+                  border-[var(--bg)]
+
+                  shadow-lg
+
+                  cursor-pointer
+                "
+              >
+                +
+              </button>
+
+            </div>
+
+            {/* 🔥 INFO */}
+            <div className="flex-1 min-w-0">
+
+              <div className="flex items-center gap-2">
+
+                <p className="font-semibold text-sm">
+                  You
+                </p>
+
+                <span
+                  className="
+                    text-[10px]
+
+                    px-2 py-[2px]
+
+                    rounded-full
+
+                    bg-[var(--primary)]/15
+                    text-[var(--primary)]
+                  "
+                >
+                  Active
+                </span>
+
+              </div>
+
+              <p className="text-xs opacity-60 mt-1">
+                Tap to view your
+                status
+              </p>
+
+            </div>
+
           </div>
 
-          <div>
-            <p className="font-medium text-sm">My Status</p>
-            <p className="text-xs opacity-60">Tap to add status</p>
-          </div>
-        </div>
+        ) : (
 
-        {/* RECENT */}
-        {recent.length > 0 && (
-          <Section title="Recent Updates" list={recent} onOpen={onOpen} />
+          <div
+            onClick={() =>
+              onAddStatus()
+            }
+            className="
+              flex items-center
+              gap-3
+
+              px-3 py-3
+
+              rounded-2xl
+
+              cursor-pointer
+
+              active:scale-[0.98]
+
+              md:hover:bg-[var(--card)]/60
+
+              transition
+            "
+          >
+
+            {/* 🔥 AVATAR */}
+            <div className="relative">
+
+              <img
+                src="https://i.pravatar.cc/150?img=12"
+                className="
+                  w-14 h-14
+                  rounded-full
+                  object-cover
+
+                  border-2
+                  border-[var(--primary)]
+                "
+              />
+
+              {/* 🔥 PLUS */}
+              <div
+                className="
+                  absolute
+                  -bottom-1
+                  -right-1
+
+                  w-6 h-6
+
+                  rounded-full
+
+                  bg-[var(--primary)]
+
+                  text-white
+
+                  flex items-center
+                  justify-center
+
+                  text-sm
+                  font-bold
+
+                  border-2
+                  border-[var(--bg)]
+
+                  shadow-lg
+                "
+              >
+                +
+              </div>
+
+            </div>
+
+            {/* 🔥 TEXT */}
+            <div>
+
+              <p className="font-semibold text-sm">
+                My Status
+              </p>
+
+              <p className="text-xs opacity-60 mt-1">
+                Tap to add status
+                update
+              </p>
+
+            </div>
+
+          </div>
+
         )}
 
-        {/* VIEWED */}
+        {/* 🔥 RECENT */}
+        {recent.length > 0 && (
+          <Section
+            title="Recent Updates"
+            list={recent}
+            onOpen={onOpen}
+          />
+        )}
+
+        {/* 🔥 VIEWED */}
         {viewed.length > 0 && (
-          <Section title="Viewed Updates" list={viewed} onOpen={onOpen} viewed />
+          <Section
+            title="Viewed Updates"
+            list={viewed}
+            onOpen={onOpen}
+            viewed
+          />
         )}
 
       </div>
+
     </div>
   );
 };
 
 export default StatusList;
 
-
-
 /* 🔥 SECTION */
-const Section = ({ title, list, onOpen, viewed }) => (
+const Section = ({
+  title,
+  list,
+  onOpen,
+  viewed,
+}) => (
+
   <div>
-    <p className="text-xs opacity-60 px-3 mb-1">{title}</p>
+
+    <p className="text-xs opacity-60 px-3 mb-1">
+      {title}
+    </p>
 
     {list.map((s, index) => (
       <StatusItem
@@ -118,48 +411,102 @@ const Section = ({ title, list, onOpen, viewed }) => (
         viewed={viewed}
       />
     ))}
+
   </div>
 );
 
-
-
 /* 🔥 STATUS ITEM */
-const StatusItem = ({ s, index, fullList, onOpen, viewed }) => {
+const StatusItem = ({
+  s,
+  index,
+  fullList,
+  onOpen,
+  viewed,
+}) => {
+
   return (
     <div
       onClick={() =>
         onOpen({
           statuses: fullList,
-          index: index,
+          index,
         })
       }
-      className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer active:scale-[0.98] md:hover:bg-[var(--card)]/60 transition"
+      className="
+        flex items-center
+        gap-3
+
+        px-3 py-3
+
+        rounded-xl
+
+        cursor-pointer
+
+        active:scale-[0.98]
+
+        md:hover:bg-[var(--card)]/60
+
+        transition
+      "
     >
-      {/* AVATAR */}
+
+      {/* 🔥 AVATAR */}
       <div
-        className={`p-[2px] rounded-full ${
-          viewed
-            ? "bg-gray-500/40"
-            : "bg-gradient-to-tr from-[var(--primary)] to-blue-500"
-        }`}
+        className={`
+          p-[2px]
+          rounded-full
+
+          ${
+            viewed
+              ? "bg-gray-500/40"
+              : "bg-gradient-to-tr from-[var(--primary)] to-blue-500"
+          }
+        `}
       >
+
         <img
           src={s.avatar}
-          className="w-12 h-12 rounded-full object-cover"
+          className="
+            w-12 h-12
+            rounded-full
+            object-cover
+          "
         />
+
       </div>
 
-      {/* INFO */}
+      {/* 🔥 INFO */}
       <div className="flex-1 min-w-0">
+
         <div className="flex justify-between items-center">
-          <p className="font-medium truncate text-sm">{s.name}</p>
-          <span className="text-[10px] opacity-60">{s.time}</span>
+
+          <p className="font-medium truncate text-sm">
+            {s.name}
+          </p>
+
+          <span className="text-[10px] opacity-60">
+            {s.time}
+          </span>
+
         </div>
 
         <p className="text-xs opacity-60">
-          {s.type === "video" ? "🎥 Video" : "📷 Photo"}
+
+          {s.type === "video"
+            ? "🎥 Video"
+            : "📷 Photo"}
+
         </p>
+
+        {/* 🔥 CAPTION */}
+        {s.caption && (
+          <p className="text-xs opacity-50 truncate mt-1">
+            {s.caption}
+          </p>
+        )}
+
       </div>
+
     </div>
   );
 };

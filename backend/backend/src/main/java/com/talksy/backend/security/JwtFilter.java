@@ -3,9 +3,12 @@ package com.talksy.backend.security;
 import com.talksy.backend.entity.User;
 import com.talksy.backend.repository.TokenBlacklistRepository;
 import com.talksy.backend.service.UserService;
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -20,74 +23,181 @@ import java.util.Collections;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final TokenBlacklistRepository blacklistRepo;
-    private final UserService userService;
+
+    private final TokenBlacklistRepository
+            blacklistRepo;
+
+    private final UserService
+            userService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    )
             throws ServletException, IOException {
 
         try {
 
-            String token = extractTokenFromCookies(request);
+            // ===============================
+            // 🔥 BYPASS PUBLIC AUTH APIs
+            // ===============================
+            String path =
+                    request.getServletPath();
 
-            if (token != null) {
+            // 🔥 refresh token endpoint bypass
+            if (
+                    path.equals("/api/auth/refresh-token")
+            ) {
 
-                // ❌ blacklist check
-                if (blacklistRepo.existsByToken(token)) {
-                    sendError(response, "Token is blacklisted");
-                    return;
-                }
+                filterChain.doFilter(
+                        request,
+                        response
+                );
 
-                // ❌ invalid / expired
-                if (!jwtService.isTokenValid(token)) {
-                    sendError(response, "Invalid or expired token");
-                    return;
-                }
+                return;
+            }
 
-                // ✅ extract user
-                String phone = jwtService.extractPhone(token);
-                User user = userService.getByPhone(phone);
+            // ===============================
+            // 🍪 ACCESS TOKEN
+            // ===============================
+            String token =
+                    extractTokenFromCookies(
+                            request
+                    );
 
-                if (user != null) {
+            // 🔥 no token → continue
+            if (token == null) {
 
-                    // 🔥 NEW: Activity tracking (SAFE ADDITION)
-                    user.markOnline(); // sets online + lastActiveAt
-                    userService.saveUser(user);
+                filterChain.doFilter(
+                        request,
+                        response
+                );
 
-                    // ✅ authentication set
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    user,
-                                    null,
-                                    Collections.emptyList()
-                            );
+                return;
+            }
 
-                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            // ===============================
+            // ❌ BLACKLIST CHECK
+            // ===============================
+            if (
+                    blacklistRepo.existsByToken(
+                            token
+                    )
+            ) {
 
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
+                sendError(
+                        response,
+                        "Token is blacklisted"
+                );
+
+                return;
+            }
+
+            // ===============================
+            // ❌ INVALID / EXPIRED
+            // ===============================
+            if (
+                    !jwtService.isTokenValid(
+                            token
+                    )
+            ) {
+
+                sendError(
+                        response,
+                        "Invalid or expired token"
+                );
+
+                return;
+            }
+
+            // ===============================
+            // ✅ EXTRACT USER
+            // ===============================
+            String phone =
+                    jwtService.extractPhone(
+                            token
+                    );
+
+            User user =
+                    userService.getByPhone(
+                            phone
+                    );
+
+            if (user != null) {
+
+                // ===============================
+                // 🔥 ACTIVITY TRACKING
+                // ===============================
+                user.markOnline();
+
+                userService.saveUser(user);
+
+                // ===============================
+                // ✅ AUTHENTICATION
+                // ===============================
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                Collections.emptyList()
+                        );
+
+                auth.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(auth);
             }
 
         } catch (Exception e) {
-            sendError(response, "Unauthorized");
+
+            sendError(
+                    response,
+                    "Unauthorized"
+            );
+
             return;
         }
 
-        filterChain.doFilter(request, response);
+        // ===============================
+        // ✅ CONTINUE FILTER CHAIN
+        // ===============================
+        filterChain.doFilter(
+                request,
+                response
+        );
     }
 
     // ===============================
-    // 🍪 Extract token
+    // 🍪 EXTRACT ACCESS TOKEN
     // ===============================
-    private String extractTokenFromCookies(HttpServletRequest request) {
+    private String extractTokenFromCookies(
+            HttpServletRequest request
+    ) {
 
-        if (request.getCookies() == null) return null;
+        if (
+                request.getCookies() == null
+        ) {
 
-        for (Cookie cookie : request.getCookies()) {
-            if ("accessToken".equals(cookie.getName())) {
+            return null;
+        }
+
+        for (
+                Cookie cookie
+                : request.getCookies()
+        ) {
+
+            if (
+                    "accessToken".equals(
+                            cookie.getName()
+                    )
+            ) {
+
                 return cookie.getValue();
             }
         }
@@ -96,15 +206,25 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     // ===============================
-    // ❌ Error response
+    // ❌ ERROR RESPONSE
     // ===============================
-    private void sendError(HttpServletResponse response, String msg) throws IOException {
+    private void sendError(
+            HttpServletResponse response,
+            String msg
+    ) throws IOException {
 
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+        response.setStatus(
+                HttpServletResponse.SC_UNAUTHORIZED
+        );
+
+        response.setContentType(
+                "application/json"
+        );
 
         response.getWriter().write(
-                "{\"success\":false,\"message\":\"" + msg + "\"}"
+                "{\"success\":false,\"message\":\""
+                        + msg +
+                        "\"}"
         );
     }
 }

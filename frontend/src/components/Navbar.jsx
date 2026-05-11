@@ -95,6 +95,8 @@ const Navbar = () => {
     "/chat/",
     "/new-chat",
     "/new-group",
+    "/group/",
+    "/group-info",
     "/status",
     "/call",
     "/user/",
@@ -108,7 +110,7 @@ const Navbar = () => {
     "/settings/two-step",
     "/settings/help",
     "/settings/change-number",
-    "/linked-devices",
+    "/linked-devices", 
   ];
 
   /* 🔥 HIDE NAVBAR */
@@ -179,6 +181,12 @@ const Navbar = () => {
                 onClick={() => { setActiveFilter("All"); navigate("/");}} />
 
               <NavItem
+                icon={<FiUserPlus />}
+                label="New-chat"
+                onClick={() => navigate("/new-chat")}
+              />
+
+              <NavItem
                 icon={<FiUsers />}
                 label="Status"
                 onClick={() => navigate("/status")}
@@ -201,11 +209,6 @@ const Navbar = () => {
                 onClick={() => navigate("/new-group")}
               />
 
-              <NavItem
-                icon={<FiUserPlus />}
-                label="New-chat"
-                onClick={() => navigate("/new-chat")}
-              />
             </div>
 
             {/* RIGHT SIDE */}

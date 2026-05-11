@@ -1,31 +1,32 @@
 package com.talksy.backend.controller;
 
 import lombok.RequiredArgsConstructor;
-import com.talksy.backend.entity.OtpType;
-import com.talksy.backend.service.OtpService;
-import com.talksy.backend.entity.User;
-import com.talksy.backend.security.JwtService;
-import com.talksy.backend.entity.TokenBlacklist;
-import com.talksy.backend.repository.TokenBlacklistRepository;
-import com.talksy.backend.service.UserService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.talksy.backend.entity.RefreshToken;
-import com.talksy.backend.repository.RefreshTokenRepository;
-import com.talksy.backend.payload.ApiResponse;
 
 import com.talksy.backend.dto.*;
-import jakarta.validation.Valid;
+import com.talksy.backend.entity.OtpType;
+import com.talksy.backend.entity.RefreshToken;
+import com.talksy.backend.entity.TokenBlacklist;
+import com.talksy.backend.entity.User;
+import com.talksy.backend.payload.ApiResponse;
+import com.talksy.backend.repository.RefreshTokenRepository;
+import com.talksy.backend.repository.TokenBlacklistRepository;
+import com.talksy.backend.security.JwtService;
+import com.talksy.backend.service.OtpService;
+import com.talksy.backend.service.UserService;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.Cookie;
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,27 +34,51 @@ import java.util.Map;
 public class AuthController {
 
     private final OtpService otpService;
+
     private final UserService userService;
+
     private final JwtService jwtService;
-    private final TokenBlacklistRepository blacklistRepo;
-    private final RefreshTokenRepository refreshRepo;
+
+    private final TokenBlacklistRepository
+            blacklistRepo;
+
+    private final RefreshTokenRepository
+            refreshRepo;
 
     // ===============================
     // SEND PHONE OTP
     // ===============================
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<?>> sendOtp(@Valid @RequestBody SendOtpRequest req) {
+    public ResponseEntity<ApiResponse<?>> sendOtp(
+            @Valid @RequestBody SendOtpRequest req
+    ) {
 
         String phone = req.getPhone();
 
-        if (phone == null || !phone.matches("^[6-9]\\d{9}$")) {
-            throw new RuntimeException("Invalid phone");
+        if (
+                phone == null
+                        ||
+                        !phone.matches(
+                                "^[6-9]\\d{9}$"
+                        )
+        ) {
+
+            throw new RuntimeException(
+                    "Invalid phone"
+            );
         }
 
-        otpService.sendOtp(phone, OtpType.PHONE);
+        otpService.sendOtp(
+                phone,
+                OtpType.PHONE
+        );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "OTP sent", null)
+                new ApiResponse<>(
+                        true,
+                        "OTP sent",
+                        null
+                )
         );
     }
 
@@ -61,68 +86,168 @@ public class AuthController {
     // VERIFY PHONE OTP
     // ===============================
     @PostMapping("/verify-otp")
-    public ResponseEntity<ApiResponse<?>> verifyOtp(@Valid @RequestBody VerifyOtpRequest req,
-                                                    HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<?>> verifyOtp(
 
-        String phone = req.getPhone();
-        String otp = req.getOtp();
+            @Valid
+            @RequestBody
+            VerifyOtpRequest req,
 
-        if (phone == null || otp == null) {
-            throw new RuntimeException("Phone and OTP required");
+            HttpServletResponse response
+    ) {
+
+        String phone =
+                req.getPhone();
+
+        String otp =
+                req.getOtp();
+
+        if (
+                phone == null
+                        ||
+                        otp == null
+        ) {
+
+            throw new RuntimeException(
+                    "Phone and OTP required"
+            );
         }
 
-        boolean valid = otpService.verifyOtp(phone, otp, OtpType.PHONE);
+        boolean valid =
+                otpService.verifyOtp(
+                        phone,
+                        otp,
+                        OtpType.PHONE
+                );
 
         if (!valid) {
-            throw new RuntimeException("Invalid OTP");
+
+            throw new RuntimeException(
+                    "Invalid OTP"
+            );
         }
 
-        User user = userService.getByPhone(phone);
+        User user =
+                userService.getByPhone(
+                        phone
+                );
+
         boolean isNewUser = false;
 
+        // 🔥 new user
         if (user == null) {
+
             user = new User();
+
             user.setPhone(phone);
+
             isNewUser = true;
         }
 
         user.setPhoneVerified(true);
-        user = userService.saveUser(user);
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        user =
+                userService.saveUser(user);
 
-        RefreshToken rt = new RefreshToken();
+        // ===============================
+        // 🔥 TOKENS
+        // ===============================
+        String accessToken =
+                jwtService.generateAccessToken(
+                        user
+                );
+
+        String refreshToken =
+                jwtService.generateRefreshToken(
+                        user
+                );
+
+        // ===============================
+        // 🔥 SAVE REFRESH TOKEN
+        // ===============================
+        RefreshToken rt =
+                new RefreshToken();
+
         rt.setToken(refreshToken);
+
         rt.setUserId(user.getId());
-        rt.setExpiry(LocalDateTime.now().plusDays(7));
+
+        rt.setExpiry(
+                LocalDateTime.now()
+                        .plusDays(7)
+        );
+
         refreshRepo.save(rt);
 
-        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(15 * 60)
-                .build();
+        // ===============================
+        // 🍪 ACCESS COOKIE
+        // ===============================
+        ResponseCookie accessCookie =
+                ResponseCookie.from(
+                                "accessToken",
+                                accessToken
+                        )
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(7 * 24 * 60 * 60)
-                .build();
+                        .httpOnly(true)
 
-        response.addHeader("Set-Cookie", accessCookie.toString());
-        response.addHeader("Set-Cookie", refreshCookie.toString());
+                        .secure(false)
 
-        Map<String, Object> data = new HashMap<>();
+                        .path("/")
+
+                        .sameSite("Lax")
+
+                        .maxAge(15 * 60)
+
+                        .build();
+
+        // ===============================
+        // 🍪 REFRESH COOKIE
+        // ===============================
+        ResponseCookie refreshCookie =
+                ResponseCookie.from(
+                                "refreshToken",
+                                refreshToken
+                        )
+
+                        .httpOnly(true)
+
+                        .secure(false)
+
+                        .path("/")
+
+                        .sameSite("Lax")
+
+                        .maxAge(
+                                7 * 24 * 60 * 60
+                        )
+
+                        .build();
+
+        response.addHeader(
+                "Set-Cookie",
+                accessCookie.toString()
+        );
+
+        response.addHeader(
+                "Set-Cookie",
+                refreshCookie.toString()
+        );
+
+        // ===============================
+        // 🔥 RESPONSE
+        // ===============================
+        Map<String, Object> data =
+                new HashMap<>();
+
         data.put("user", user);
+
         data.put("isNewUser", isNewUser);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Login successful", data)
+                new ApiResponse<>(
+                        true,
+                        "Login successful",
+                        data
+                )
         );
     }
 
@@ -130,18 +255,40 @@ public class AuthController {
     // SEND EMAIL OTP
     // ===============================
     @PostMapping("/send-email-otp")
-    public ResponseEntity<ApiResponse<?>> sendEmailOtp(@Valid @RequestBody SendEmailOtpRequest req) {
+    public ResponseEntity<ApiResponse<?>> sendEmailOtp(
 
-        String email = req.getEmail();
+            @Valid
+            @RequestBody
+            SendEmailOtpRequest req
+    ) {
 
-        if (email == null || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-            throw new RuntimeException("Invalid email");
+        String email =
+                req.getEmail();
+
+        if (
+                email == null
+                        ||
+                        !email.matches(
+                                "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                        )
+        ) {
+
+            throw new RuntimeException(
+                    "Invalid email"
+            );
         }
 
-        otpService.sendOtp(email, OtpType.EMAIL);
+        otpService.sendOtp(
+                email,
+                OtpType.EMAIL
+        );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Email OTP sent", null)
+                new ApiResponse<>(
+                        true,
+                        "Email OTP sent",
+                        null
+                )
         );
     }
 
@@ -149,39 +296,81 @@ public class AuthController {
     // VERIFY EMAIL OTP
     // ===============================
     @PostMapping("/verify-email")
-    public ResponseEntity<ApiResponse<?>> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
+    public ResponseEntity<ApiResponse<?>> verifyEmail(
 
-        String phone = req.getPhone();
-        String email = req.getEmail();
-        String otp = req.getOtp();
+            @Valid
+            @RequestBody
+            VerifyEmailRequest req
+    ) {
 
-        if (phone == null || email == null || otp == null) {
-            throw new RuntimeException("Phone, Email and OTP required");
+        String phone =
+                req.getPhone();
+
+        String email =
+                req.getEmail();
+
+        String otp =
+                req.getOtp();
+
+        if (
+                phone == null
+                        ||
+                        email == null
+                        ||
+                        otp == null
+        ) {
+
+            throw new RuntimeException(
+                    "Phone, Email and OTP required"
+            );
         }
 
-        User user = userService.getByPhone(phone);
+        User user =
+                userService.getByPhone(
+                        phone
+                );
 
         if (user == null) {
-            throw new RuntimeException("User not found");
+
+            throw new RuntimeException(
+                    "User not found"
+            );
         }
 
         if (!user.isPhoneVerified()) {
-            throw new RuntimeException("Verify phone first");
+
+            throw new RuntimeException(
+                    "Verify phone first"
+            );
         }
 
-        boolean valid = otpService.verifyOtp(email, otp, OtpType.EMAIL);
+        boolean valid =
+                otpService.verifyOtp(
+                        email,
+                        otp,
+                        OtpType.EMAIL
+                );
 
         if (!valid) {
-            throw new RuntimeException("Invalid OTP");
+
+            throw new RuntimeException(
+                    "Invalid OTP"
+            );
         }
 
         user.setEmail(email);
+
         user.setEmailVerified(true);
 
-        User saved = userService.saveUser(user);
+        User saved =
+                userService.saveUser(user);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Email verified", saved)
+                new ApiResponse<>(
+                        true,
+                        "Email verified",
+                        saved
+                )
         );
     }
 
@@ -189,44 +378,91 @@ public class AuthController {
     // PROFILE UPDATE
     // ===============================
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody ProfileSetupRequest req) {
+    public ResponseEntity<ApiResponse<?>> register(
 
-        if (req.getPhone() == null || req.getPhone().isBlank()) {
-            throw new RuntimeException("Phone required");
+            @Valid
+            @RequestBody
+            ProfileSetupRequest req
+    ) {
+
+        if (
+                req.getPhone() == null
+                        ||
+                        req.getPhone().isBlank()
+        ) {
+
+            throw new RuntimeException(
+                    "Phone required"
+            );
         }
 
-        String phone = req.getPhone().trim();
+        String phone =
+                req.getPhone().trim();
 
-        User user = userService.getByPhone(phone);
+        User user =
+                userService.getByPhone(
+                        phone
+                );
 
         if (user == null) {
-            throw new RuntimeException("User not found");
+
+            throw new RuntimeException(
+                    "User not found"
+            );
         }
 
         if (!user.isPhoneVerified()) {
-            throw new RuntimeException("Verify phone first");
+
+            throw new RuntimeException(
+                    "Verify phone first"
+            );
         }
 
         if (!user.isEmailVerified()) {
-            throw new RuntimeException("Verify email first");
+
+            throw new RuntimeException(
+                    "Verify email first"
+            );
         }
 
-        if (req.getName() != null && !req.getName().isBlank()) {
-            user.setName(req.getName().trim());
+        if (
+                req.getName() != null
+                        &&
+                        !req.getName().isBlank()
+        ) {
+
+            user.setName(
+                    req.getName().trim()
+            );
         }
 
         if (req.getBio() != null) {
-            user.setBio(req.getBio().trim());
+
+            user.setBio(
+                    req.getBio().trim()
+            );
         }
 
-        if (req.getAvatar() != null && !req.getAvatar().isBlank()) {
-            user.setAvatar(req.getAvatar().trim());
+        if (
+                req.getAvatar() != null
+                        &&
+                        !req.getAvatar().isBlank()
+        ) {
+
+            user.setAvatar(
+                    req.getAvatar().trim()
+            );
         }
 
-        User updated = userService.saveUser(user);
+        User updated =
+                userService.saveUser(user);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Profile updated", updated)
+                new ApiResponse<>(
+                        true,
+                        "Profile updated",
+                        updated
+                )
         );
     }
 
@@ -234,38 +470,87 @@ public class AuthController {
     // LOGOUT
     // ===============================
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<?>> logout(
 
-        String token = extractToken(request, "accessToken");
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+
+        String token =
+                extractToken(
+                        request,
+                        "accessToken"
+                );
 
         if (token != null) {
-            TokenBlacklist black = new TokenBlacklist();
+
+            TokenBlacklist black =
+                    new TokenBlacklist();
+
             black.setToken(token);
-            black.setExpiry(LocalDateTime.now().plusMinutes(15));
+
+            black.setExpiry(
+                    LocalDateTime.now()
+                            .plusMinutes(15)
+            );
+
             blacklistRepo.save(black);
         }
 
-        ResponseCookie clearAccess = ResponseCookie.from("accessToken", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(0)
-                .build();
+        // 🍪 clear access
+        ResponseCookie clearAccess =
+                ResponseCookie.from(
+                                "accessToken",
+                                ""
+                        )
 
-        ResponseCookie clearRefresh = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(0)
-                .build();
+                        .httpOnly(true)
 
-        response.addHeader("Set-Cookie", clearAccess.toString());
-        response.addHeader("Set-Cookie", clearRefresh.toString());
+                        .secure(false)
+
+                        .path("/")
+
+                        .sameSite("Lax")
+
+                        .maxAge(0)
+
+                        .build();
+
+        // 🍪 clear refresh
+        ResponseCookie clearRefresh =
+                ResponseCookie.from(
+                                "refreshToken",
+                                ""
+                        )
+
+                        .httpOnly(true)
+
+                        .secure(false)
+
+                        .path("/")
+
+                        .sameSite("Lax")
+
+                        .maxAge(0)
+
+                        .build();
+
+        response.addHeader(
+                "Set-Cookie",
+                clearAccess.toString()
+        );
+
+        response.addHeader(
+                "Set-Cookie",
+                clearRefresh.toString()
+        );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Logout successful", null)
+                new ApiResponse<>(
+                        true,
+                        "Logout successful",
+                        null
+                )
         );
     }
 
@@ -273,45 +558,170 @@ public class AuthController {
     // REFRESH TOKEN
     // ===============================
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<?>> refresh(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<?>> refresh(
 
-        String refreshToken = extractToken(request, "refreshToken");
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
 
-        Optional<RefreshToken> stored = refreshRepo.findByToken(refreshToken);
+        // ===============================
+        // 🍪 GET REFRESH TOKEN
+        // ===============================
+        String refreshToken =
+                extractToken(
+                        request,
+                        "refreshToken"
+                );
 
-        if (stored.isEmpty()) {
-            throw new RuntimeException("Invalid refresh token");
+        if (
+                refreshToken == null
+        ) {
+
+            throw new RuntimeException(
+                    "Refresh token missing"
+            );
         }
 
-        String phone = jwtService.extractPhone(refreshToken);
-        User user = userService.getByPhone(phone);
+        // ===============================
+        // 🔥 DB CHECK
+        // ===============================
+        Optional<RefreshToken> stored =
+                refreshRepo.findByToken(
+                        refreshToken
+                );
 
-        String newAccess = jwtService.generateAccessToken(user);
+        if (
+                stored.isEmpty()
+        ) {
 
-        ResponseCookie cookie = ResponseCookie.from("accessToken", newAccess)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .sameSite("Lax")
-                .maxAge(15 * 60)
-                .build();
+            throw new RuntimeException(
+                    "Invalid refresh token"
+            );
+        }
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        // ===============================
+        // 🔥 EXPIRY CHECK
+        // ===============================
+        if (
+                stored.get()
+                        .getExpiry()
+                        .isBefore(
+                                LocalDateTime.now()
+                        )
+        ) {
+
+            refreshRepo.delete(
+                    stored.get()
+            );
+
+            throw new RuntimeException(
+                    "Refresh token expired"
+            );
+        }
+
+        // ===============================
+        // 🔥 JWT VALIDATION
+        // ===============================
+        if (
+                !jwtService.isValid(
+                        refreshToken
+                )
+        ) {
+
+            throw new RuntimeException(
+                    "Invalid JWT refresh token"
+            );
+        }
+
+        // ===============================
+        // 🔥 USER
+        // ===============================
+        String phone =
+                jwtService.extractPhone(
+                        refreshToken
+                );
+
+        User user =
+                userService.getByPhone(
+                        phone
+                );
+
+        if (user == null) {
+
+            throw new RuntimeException(
+                    "User not found"
+            );
+        }
+
+        // ===============================
+        // 🔥 NEW ACCESS TOKEN
+        // ===============================
+        String newAccess =
+                jwtService.generateAccessToken(
+                        user
+                );
+
+        // ===============================
+        // 🍪 NEW ACCESS COOKIE
+        // ===============================
+        ResponseCookie cookie =
+                ResponseCookie.from(
+                                "accessToken",
+                                newAccess
+                        )
+
+                        .httpOnly(true)
+
+                        .secure(false)
+
+                        .path("/")
+
+                        .sameSite("Lax")
+
+                        .maxAge(15 * 60)
+
+                        .build();
+
+        response.addHeader(
+                "Set-Cookie",
+                cookie.toString()
+        );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Token refreshed", null)
+                new ApiResponse<>(
+                        true,
+                        "Token refreshed",
+                        null
+                )
         );
     }
 
     // ===============================
-    // EXTRACT TOKEN
+    // 🍪 EXTRACT TOKEN
     // ===============================
-    private String extractToken(HttpServletRequest request, String name) {
+    private String extractToken(
+            HttpServletRequest request,
+            String name
+    ) {
 
-        if (request.getCookies() == null) return null;
+        if (
+                request.getCookies() == null
+        ) {
 
-        for (Cookie cookie : request.getCookies()) {
-            if (name.equals(cookie.getName())) {
+            return null;
+        }
+
+        for (
+                Cookie cookie
+                : request.getCookies()
+        ) {
+
+            if (
+                    name.equals(
+                            cookie.getName()
+                    )
+            ) {
+
                 return cookie.getValue();
             }
         }

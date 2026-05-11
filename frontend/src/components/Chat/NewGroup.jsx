@@ -12,13 +12,11 @@ import {
 
 import { useAuth } from "../../context/AuthContext";
 
-const users = [
-  { id: 1, name: "Rahul", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: 2, name: "Amit", avatar: "https://i.pravatar.cc/150?img=2" },
-  { id: 3, name: "Priya", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: 4, name: "Neha", avatar: "https://i.pravatar.cc/150?img=4" },
-  { id: 5, name: "Arjun", avatar: "https://i.pravatar.cc/150?img=5" },
-];
+import { useChat } from "../../context/ChatContext";
+
+import API from "../../api/axios";
+
+import toast from "react-hot-toast";
 
 const NewGroup = () => {
 
@@ -26,10 +24,16 @@ const NewGroup = () => {
 
   const { user } = useAuth();
 
+  // 🔥 REAL CONTACTS
+  const { contacts } = useChat();
+
+  const [loading, setLoading] =
+    useState(false);
+
   const [group, setGroup] = useState({
     name: "",
     about: "",
-    image: null,
+    avatar: "",
   });
 
   const [preview, setPreview] =
@@ -100,33 +104,81 @@ const NewGroup = () => {
   // ===============================
   // 🔥 HANDLE IMAGE
   // ===============================
-  const handleImage = (e) => {
+  const handleImage = async (e) => {
 
     const file =
       e.target.files[0];
 
     if (!file) return;
 
-    setGroup({
-      ...group,
-      image: file,
-    });
-
+    // 🔥 PREVIEW
     setPreview(
       URL.createObjectURL(file)
     );
+
+    try {
+
+      const formData =
+        new FormData();
+
+      formData.append(
+        "file",
+        file
+      );
+
+      formData.append(
+        "type",
+        "profile"
+      );
+
+      // 🔥 UPLOAD API
+      const res =
+        await API.post(
+
+          "/file/upload",
+
+          formData,
+
+          {
+            headers: {
+              "Content-Type":
+                "multipart/form-data",
+            },
+          }
+        );
+
+      // 🔥 SAVE URL
+      setGroup((prev) => ({
+
+        ...prev,
+
+        avatar: res.data.data,
+      }));
+
+      toast.success(
+        "Image uploaded ✅"
+      );
+
+    } catch (err) {
+
+      toast.error(
+        "Upload failed ❌"
+      );
+    }
   };
 
   // ===============================
   // 🔥 CREATE GROUP
   // ===============================
-  const handleCreate = () => {
+  const handleCreate = async () => {
 
     if (
       !group.name.trim()
     ) {
 
-      alert("Group name required");
+      toast.error(
+        "Group name required"
+      );
 
       return;
     }
@@ -135,40 +187,57 @@ const NewGroup = () => {
       selectedMembers.length === 0
     ) {
 
-      alert(
+      toast.error(
         "Select at least 1 member"
       );
 
       return;
     }
 
-    const payload = {
+    try {
 
-      name: group.name,
+      setLoading(true);
 
-      about: group.about,
+      const payload = {
 
-      image: group.image,
+        name: group.name,
 
-      members:
-        selectedMembers.map(
-          (m) => m.id
-        ),
+        about: group.about,
 
-      admins: [
-        user?.id,
-        ...admins,
-      ],
-    };
+        avatar: group.avatar,
 
-    console.log(
-      "GROUP PAYLOAD:",
-      payload
-    );
+        members:
+          selectedMembers.map(
+            (m) => m.id
+          ),
 
-    alert("Group Created 🚀");
+        admins,
+      };
 
-    navigate("/");
+      // 🔥 CREATE API
+      await API.post(
+        "/groups/create",
+        payload
+      );
+
+      toast.success(
+        "Group Created 🚀"
+      );
+
+      navigate("/");
+
+    } catch (err) {
+
+      const msg =
+        err.response?.data?.message ||
+        "Failed to create group";
+
+      toast.error(msg);
+
+    } finally {
+
+      setLoading(false);
+    }
   };
 
   // ===============================
@@ -313,10 +382,10 @@ const NewGroup = () => {
 
                 <div className="w-11 h-11 rounded-full overflow-hidden bg-[var(--card)]">
 
-                  {user?.profilePic ? (
+                  {user?.avatar ? (
 
                     <img
-                      src={user.profilePic}
+                      src={user.avatar}
                       alt="admin"
                       className="w-full h-full object-cover"
                     />
@@ -412,7 +481,7 @@ const NewGroup = () => {
           {/* USERS */}
           <div className="p-2">
 
-            {users.map((u) => {
+            {contacts?.map((u) => {
 
               const isSelected =
                 selectedMembers.find(
@@ -444,16 +513,15 @@ const NewGroup = () => {
                       justify-center
                       transition
 
-                      ${
-                        isSelected
+                      ${isSelected
 
-                          ? `
+                        ? `
                             bg-[var(--primary)]
                             border-[var(--primary)]
                             text-black
                           `
 
-                          : `
+                        : `
                             border-[var(--border)]
                           `
                       }
@@ -480,7 +548,7 @@ const NewGroup = () => {
                     </p>
 
                     <p className="text-xs opacity-60">
-                      Available
+                      {u.bio || "Available"}
                     </p>
                   </div>
 
@@ -499,20 +567,19 @@ const NewGroup = () => {
                         border
                         transition
 
-                        ${
-                          isAdmin
+                        ${isAdmin
 
-                            ? `
+                          ? `
                               bg-[var(--primary)]
                               border-[var(--primary)]
                               text-black
                             `
 
-                            : `
+                          : `
                               border-[var(--border)]
                               opacity-70
                             `
-                        }1
+                        }
                       `}
                     >
 
@@ -532,9 +599,13 @@ const NewGroup = () => {
 
           <button
             onClick={handleCreate}
-            className="w-full py-3 rounded-2xl bg-[var(--primary)] text-black font-semibold shadow-lg active:scale-[0.99] transition"
+            disabled={loading}
+            className="w-full py-3 rounded-2xl bg-[var(--primary)] text-black font-semibold shadow-lg active:scale-[0.99] transition disabled:opacity-50"
           >
-            Create Group
+
+            {loading
+              ? "Creating..."
+              : "Create Group"}
           </button>
         </div>
       </div>

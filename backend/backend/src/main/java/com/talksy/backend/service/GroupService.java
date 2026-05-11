@@ -38,9 +38,7 @@ public class GroupService {
         User creator =
                 getUserOrThrow(currentUserId);
 
-        // ===============================
         // 🔥 CREATE GROUP
-        // ===============================
         Group group = Group.builder()
 
                 .name(request.getName())
@@ -56,9 +54,7 @@ public class GroupService {
         Group savedGroup =
                 groupRepository.save(group);
 
-        // ===============================
         // 🔥 CREATOR = ADMIN
-        // ===============================
         GroupMember creatorMember =
                 GroupMember.builder()
 
@@ -74,9 +70,7 @@ public class GroupService {
                 creatorMember
         );
 
-        // ===============================
         // 🔥 ADD MEMBERS
-        // ===============================
         List<Long> memberIds =
                 request.getMembers();
 
@@ -171,7 +165,7 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // 🔥 only creator
+        // ❌ only creator
         if (
                 !group.getCreatedBy()
                         .getId()
@@ -211,7 +205,7 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // 🔥 permission check
+        // ❌ permission check
         if (
                 !isCreator(group, currentUserId)
                         &&
@@ -226,7 +220,7 @@ public class GroupService {
         User member =
                 getUserOrThrow(memberId);
 
-        // 🔥 already exists
+        // ❌ already exists
         boolean exists =
                 groupMemberRepository
                         .findByGroupAndUser(
@@ -344,7 +338,7 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // 🔥 only creator
+        // ❌ only creator
         if (
                 !isCreator(group, currentUserId)
         ) {
@@ -389,7 +383,7 @@ public class GroupService {
         Group group =
                 getGroupOrThrow(groupId);
 
-        // 🔥 only creator
+        // ❌ only creator
         if (
                 !isCreator(group, currentUserId)
         ) {
@@ -499,7 +493,6 @@ public class GroupService {
     // ===============================
     // 🔥 HELPERS
     // ===============================
-
     private Group getGroupOrThrow(
             Long groupId
     ) {
@@ -529,7 +522,6 @@ public class GroupService {
     // ===============================
     // 🔥 ROLE CHECKS
     // ===============================
-
     private boolean isCreator(
             Group group,
             Long userId
@@ -567,18 +559,19 @@ public class GroupService {
             Group group
     ) {
 
-        List<GroupMember> members =
+        List<GroupMember> groupMembers =
                 groupMemberRepository.findByGroup(
                         group
                 );
 
-        List<GroupMemberResponse> memberResponses =
-                members.stream()
+        // 🔥 FIXED MEMBER MAPPING
+        List<GroupMemberResponse> members =
+
+                groupMembers.stream()
 
                         .map(member ->
 
-                                GroupMemberResponse
-                                        .builder()
+                                GroupMemberResponse.builder()
 
                                         .id(
                                                 member.getUser()
@@ -630,11 +623,11 @@ public class GroupService {
                 )
 
                 .memberCount(
-                        memberResponses.size()
+                        members.size()
                 )
 
                 .members(
-                        memberResponses
+                        members
                 )
 
                 .createdAt(

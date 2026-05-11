@@ -30,6 +30,9 @@ import EmojiPicker from "emoji-picker-react";
 import { useSettings } from "../../context/SettingsContext";
 import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
+import { useGroup } from "../../context/GroupContext";
+
+
 
 const ChatWindow = ({ chat, onBack }) => {
   const navigate = useNavigate();
@@ -98,6 +101,9 @@ const ChatWindow = ({ chat, onBack }) => {
   const emojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🙏",];
 
 
+  const { leaveGroup, fetchGroupById, groupDetails } = useGroup();
+
+
   // ===============================
   // 🔥 SORT MESSAGES
   // ===============================
@@ -142,6 +148,18 @@ const ChatWindow = ({ chat, onBack }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+
+    if (
+      chat?.isGroup &&
+      chat?.id
+    ) {
+
+      fetchGroupById(chat.id);
+    }
+
+  }, [chat]);
 
   // ===============================
   // 🔥 CLOSE MENUS

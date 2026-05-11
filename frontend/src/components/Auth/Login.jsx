@@ -1,89 +1,125 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
 import { motion } from "framer-motion";
+
 import { assets } from "../../assets/assets";
+
 import API from "../../api/axios";
+
 import toast from "react-hot-toast";
+
 import { useAuth } from "../../context/AuthContext";
 
 function Login({ onLogin }) {
 
-  const [phone, setPhoneInput] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [phone, setPhoneInput] =
+    useState("");
 
-  const { setPhone } = useAuth();
+  const [isFocused, setIsFocused] =
+    useState(false);
 
-  const cleanPhone = phone.replace(/\D/g, "");
-  const isValid = /^[6-9]\d{9}$/.test(cleanPhone);
+  const [loading, setLoading] =
+    useState(false);
 
-  // 🔥 RESET WRONG STEP
-  useEffect(() => {
+  const { setPhone } =
+    useAuth();
 
-    const step = localStorage.getItem("step");
+  const cleanPhone =
+    phone.replace(/\D/g, "");
 
-    if (step === "otp") {
-      localStorage.setItem("step", "login");
-    }
+  const isValid =
+    /^[6-9]\d{9}$/.test(
+      cleanPhone
+    );
 
-  }, []);
-
+  // ===============================
   // 🔥 LOGIN
-  const handleLogin = async () => {
+  // ===============================
+  const handleLogin =
+    async () => {
 
-    if (!isValid || loading) return;
+      if (
+        !isValid ||
+        loading
+      )
+        return;
 
-    try {
+      try {
 
-      setLoading(true);
+        setLoading(true);
 
-      const finalPhone = cleanPhone.trim();
+        const finalPhone =
+          cleanPhone.trim();
 
-      await API.post("/auth/send-otp", {
-        phone: finalPhone,
-      });
+        await API.post(
+          "/auth/send-otp",
+          {
+            phone:
+              finalPhone,
+          }
+        );
 
-      // 🔥 SAVE PHONE
-      setPhone(finalPhone);
+        // 🔥 SAVE PHONE
+        setPhone(
+          finalPhone
+        );
 
-      // 🔥 LOCAL STEP
-      localStorage.setItem("step", "otp");
+        // 🔥 SAVE STEP
+        localStorage.setItem(
+          "step",
+          "otp"
+        );
 
-      toast.success("OTP sent successfully ✅");
+        toast.success(
+          "OTP sent successfully ✅"
+        );
 
-      onLogin();
+        onLogin();
 
-    } catch (err) {
+      } catch (err) {
 
-      const msg =
-        err.response?.data?.message ||
-        "Server not reachable ❌";
+        const msg =
+          err.response?.data
+            ?.message ||
+          "Server not reachable ❌";
 
-      toast.error(msg);
+        toast.error(msg);
 
-    } finally {
+      } finally {
 
-      setLoading(false);
-    }
-  };
+        setLoading(false);
+      }
+    };
 
+  // ===============================
   // 🔥 ENTER
-  const handleKeyDown = (e) => {
+  // ===============================
+  const handleKeyDown = (
+    e
+  ) => {
 
     if (
-      e.key === "Enter" &&
+      e.key ===
+        "Enter" &&
       isValid &&
       !loading
     ) {
+
       handleLogin();
     }
   };
 
+  // ===============================
   // 🔥 INPUT
-  const handleChange = (e) => {
+  // ===============================
+  const handleChange = (
+    e
+  ) => {
 
-    const value = e.target.value
-      .replace(/\D/g, "")
-      .slice(0, 10);
+    const value =
+      e.target.value
+        .replace(/\D/g, "")
+        .slice(0, 10);
 
     setPhoneInput(value);
   };
@@ -107,18 +143,26 @@ function Login({ onLogin }) {
           src={assets.Logo}
           alt="logo"
           className="w-28 sm:w-32 mb-6 opacity-80"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: -20,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
         />
 
         {/* TITLE */}
         <motion.p className="text-white/60 text-md mb-2">
-          Enter your phone number to continue
+          Enter your phone number
+          to continue
         </motion.p>
 
         {/* SUBTITLE */}
         <motion.p className="text-white/30 text-xs mb-10">
-          We'll send you a verification code (OTP)
+          We'll send you a
+          verification code (OTP)
         </motion.p>
 
         {/* INPUT */}
@@ -126,7 +170,13 @@ function Login({ onLogin }) {
 
           <div className="flex items-center justify-center gap-2 w-[240px] text-lg tracking-[4px]">
 
-            <span className={cleanPhone ? "text-white" : "text-white/40"}>
+            <span
+              className={
+                cleanPhone
+                  ? "text-white"
+                  : "text-white/40"
+              }
+            >
               +91
             </span>
 
@@ -138,12 +188,25 @@ function Login({ onLogin }) {
               inputMode="numeric"
               autoComplete="tel-national"
               disabled={loading}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onKeyDown={handleKeyDown}
-              onChange={handleChange}
+              onFocus={() =>
+                setIsFocused(
+                  true
+                )
+              }
+              onBlur={() =>
+                setIsFocused(
+                  false
+                )
+              }
+              onKeyDown={
+                handleKeyDown
+              }
+              onChange={
+                handleChange
+              }
               className="bg-transparent focus:outline-none text-white w-[160px] text-left placeholder:text-white/10 disabled:opacity-50"
             />
+
           </div>
 
           {/* LINE */}
@@ -152,26 +215,50 @@ function Login({ onLogin }) {
             <motion.div
               className="h-full bg-gradient-to-r from-[#00c896] to-[#0ea5e9]"
               animate={{
-                width: cleanPhone || isFocused ? "100%" : "0%",
+                width:
+                  cleanPhone ||
+                  isFocused
+                    ? "100%"
+                    : "0%",
               }}
-              transition={{ duration: 0.3 }}
+              transition={{
+                duration: 0.3,
+              }}
             />
+
           </div>
 
           {/* ERROR */}
-          {cleanPhone.length > 0 && !isValid && (
-            <p className="text-red-400 text-xs mt-2">
-              Enter valid 10-digit number
-            </p>
-          )}
+          {cleanPhone.length >
+            0 &&
+            !isValid && (
+              <p className="text-red-400 text-xs mt-2">
+                Enter valid
+                10-digit number
+              </p>
+            )}
+
         </div>
 
         {/* BUTTON */}
         <motion.button
-          onClick={handleLogin}
-          disabled={!isValid || loading}
-          whileTap={{ scale: isValid ? 0.92 : 1 }}
-          whileHover={{ scale: isValid ? 1.05 : 1 }}
+          onClick={
+            handleLogin
+          }
+          disabled={
+            !isValid ||
+            loading
+          }
+          whileTap={{
+            scale: isValid
+              ? 0.92
+              : 1,
+          }}
+          whileHover={{
+            scale: isValid
+              ? 1.05
+              : 1,
+          }}
           className={`mt-8 flex items-center justify-center gap-3 transition-all ${(!isValid || loading) && "cursor-not-allowed"}`}
         >
 
@@ -188,11 +275,17 @@ function Login({ onLogin }) {
             ) : (
               "→"
             )}
+
           </div>
 
-          <span className={`${isValid ? "text-white" : "text-white/30"} text-sm`}>
-            {loading ? "Sending..." : "Continue"}
+          <span
+            className={`${isValid ? "text-white" : "text-white/30"} text-sm`}
+          >
+            {loading
+              ? "Sending..."
+              : "Continue"}
           </span>
+
         </motion.button>
 
         {/* FOOTER */}
@@ -201,6 +294,7 @@ function Login({ onLogin }) {
         </p>
 
       </div>
+
     </div>
   );
 }

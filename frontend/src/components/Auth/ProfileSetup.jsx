@@ -1,30 +1,75 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+} from "react";
+
 import { motion } from "framer-motion";
+
 import { assets } from "../../assets/assets";
+
 import API from "../../api/axios";
+
 import toast from "react-hot-toast";
+
 import { useAuth } from "../../context/AuthContext";
 
-function ProfileSetup({ onComplete }) {
+function ProfileSetup({
+  onComplete,
+}) {
 
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [email, setEmail] = useState("");
+  // =====================================
+  // 🔥 STATES
+  // =====================================
+  const [name, setName] =
+    useState("");
 
-  const [preview, setPreview] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [uploadedUrl, setUploadedUrl] = useState(null);
+  const [bio, setBio] =
+    useState("");
 
-  const [errors, setErrors] = useState({});
+  const [email, setEmail] =
+    useState("");
 
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [sendingOTP, setSendingOTP] = useState(false);
+  const [preview, setPreview] =
+    useState(null);
 
-  const [otp, setOtp] = useState("");
-  const [generatedOTP, setGeneratedOTP] = useState(false);
+  const [
+    imageFile,
+    setImageFile,
+  ] = useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [
+    uploadedUrl,
+    setUploadedUrl,
+  ] = useState(null);
 
+  const [errors, setErrors] =
+    useState({});
+
+  const [
+    emailVerified,
+    setEmailVerified,
+  ] = useState(false);
+
+  const [
+    sendingOTP,
+    setSendingOTP,
+  ] = useState(false);
+
+  const [otp, setOtp] =
+    useState("");
+
+  const [
+    generatedOTP,
+    setGeneratedOTP,
+  ] = useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  // =====================================
+  // 🔥 AUTH
+  // =====================================
   const {
     user,
     setUser,
@@ -32,360 +77,524 @@ function ProfileSetup({ onComplete }) {
     fetchUser,
   } = useAuth();
 
+  // =====================================
+  // 🔥 STRICT MODE SAFETY
+  // =====================================
+  const initializedRef =
+    useRef(false);
+
+  // =====================================
   // 🔥 ACCESS SAFETY
+  // =====================================
   useEffect(() => {
 
-    if (!phone && !user) {
+    // 🔥 prevent strict mode duplicate
+    if (
+      initializedRef.current
+    ) {
+
+      return;
+    }
+
+    initializedRef.current =
+      true;
+
+    // 🔥 restore safety
+    const savedPhone =
+      sessionStorage.getItem(
+        "phone"
+      );
+
+    // 🔥 no access
+    if (
+      !phone &&
+      !savedPhone &&
+      !user
+    ) {
 
       localStorage.setItem(
         "step",
         "login"
       );
 
-      onComplete?.("login");
+      onComplete?.(
+        "login"
+      );
+
+      return;
     }
 
-  }, [phone, user]);
+    // 🔥 keep profile step
+    localStorage.setItem(
+      "step",
+      "profile"
+    );
 
-  // 🔥 PREFILL OLD USER
+  }, [
+    phone,
+    user,
+    onComplete,
+  ]);
+
+  // =====================================
+  // 🔥 PREFILL USER
+  // =====================================
   useEffect(() => {
 
-    if (user) {
+    if (!user)
+      return;
 
-      setName(user.name || "");
-      setBio(user.bio || "");
-      setEmail(user.email || "");
-      setPreview(user.avatar || null);
+    setName(
+      user.name || ""
+    );
 
-      if (user.email) {
-        setEmailVerified(true);
-      }
+    setBio(
+      user.bio || ""
+    );
+
+    setEmail(
+      user.email || ""
+    );
+
+    setPreview(
+      user.avatar || null
+    );
+
+    // 🔥 already verified
+    if (user.email) {
+
+      setEmailVerified(
+        true
+      );
     }
 
   }, [user]);
 
+  // =====================================
   // 🔥 MEMORY LEAK FIX
+  // =====================================
   useEffect(() => {
 
     return () => {
 
       if (
         preview &&
-        preview.startsWith("blob:")
+        preview.startsWith(
+          "blob:"
+        )
       ) {
 
-        URL.revokeObjectURL(preview);
+        URL.revokeObjectURL(
+          preview
+        );
       }
     };
 
   }, [preview]);
 
+  // =====================================
   // 🔥 VALIDATION
+  // =====================================
   const validate = () => {
 
     let newErrors = {};
 
-    if (name.trim().length < 3) {
-      newErrors.name = "Enter valid name";
-    }
-
+    // 🔥 NAME
     if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      name.trim()
+        .length < 3
     ) {
-      newErrors.email = "Enter valid email";
+
+      newErrors.name =
+        "Enter valid name";
     }
 
-    if (bio.trim().length < 3) {
-      newErrors.bio = "Write something about you";
+    // 🔥 EMAIL
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email
+      )
+    ) {
+
+      newErrors.email =
+        "Enter valid email";
     }
 
-    setErrors(newErrors);
+    // 🔥 BIO
+    if (
+      bio.trim()
+        .length < 3
+    ) {
+
+      newErrors.bio =
+        "Write something about you";
+    }
+
+    setErrors(
+      newErrors
+    );
 
     return (
-      Object.keys(newErrors).length === 0
+      Object.keys(
+        newErrors
+      ).length === 0
     );
   };
 
+  // =====================================
   // 🔥 IMAGE
-  const handleImage = async (e) => {
+  // =====================================
+  const handleImage =
+    async (e) => {
 
-    const file = e.target.files[0];
+      const file =
+        e.target.files[0];
 
-    if (!file) return;
+      if (!file)
+        return;
 
-    // 🔥 IMAGE VALIDATION
-    if (
-      !file.type.startsWith("image/")
-    ) {
+      // 🔥 TYPE
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
 
-      toast.error(
-        "Only image allowed ❌"
+        toast.error(
+          "Only image allowed ❌"
+        );
+
+        return;
+      }
+
+      // 🔥 SIZE
+      if (
+        file.size >
+        5 *
+          1024 *
+          1024
+      ) {
+
+        toast.error(
+          "Image must be under 5MB"
+        );
+
+        return;
+      }
+
+      // 🔥 CLEAN OLD
+      if (
+        preview &&
+        preview.startsWith(
+          "blob:"
+        )
+      ) {
+
+        URL.revokeObjectURL(
+          preview
+        );
+      }
+
+      const localPreview =
+        URL.createObjectURL(
+          file
+        );
+
+      setImageFile(file);
+
+      setPreview(
+        localPreview
       );
 
-      return;
-    }
+      try {
 
-    // 🔥 SIZE LIMIT
-    if (
-      file.size >
-      5 * 1024 * 1024
-    ) {
+        const formData =
+          new FormData();
 
-      toast.error(
-        "Image must be under 5MB"
-      );
+        formData.append(
+          "file",
+          file
+        );
 
-      return;
-    }
+        formData.append(
+          "type",
+          "profile"
+        );
 
-    // 🔥 CLEAN OLD PREVIEW
-    if (
-      preview &&
-      preview.startsWith("blob:")
-    ) {
+        const res =
+          await API.post(
+            "/file/upload",
+            formData,
+            {
+              headers: {
+                "Content-Type":
+                  "multipart/form-data",
+              },
+            }
+          );
 
-      URL.revokeObjectURL(preview);
-    }
+        const url =
+          res.data.data;
 
-    const localPreview =
-      URL.createObjectURL(file);
+        setUploadedUrl(
+          url
+        );
 
-    setImageFile(file);
-    setPreview(localPreview);
+        toast.success(
+          "Image uploaded ✅"
+        );
 
-    try {
+      } catch (err) {
 
-      const formData =
-        new FormData();
+        const msg =
+          err.response
+            ?.data
+            ?.message ||
+          "Image upload failed";
 
-      formData.append("file", file);
-      formData.append("type", "profile");
+        toast.error(msg);
+      }
+    };
 
-      const res = await API.post(
-        "/file/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type":
-              "multipart/form-data",
-          },
-        }
-      );
-
-      const url = res.data.data;
-
-      setUploadedUrl(url);
-
-      toast.success(
-        "Image uploaded ✅"
-      );
-
-    } catch (err) {
-
-      const msg =
-        err.response?.data?.message ||
-        "Image upload failed";
-
-      toast.error(msg);
-    }
-  };
-
+  // =====================================
   // 🔥 SEND EMAIL OTP
-  const sendOTP = async () => {
+  // =====================================
+  const sendOTP =
+    async () => {
 
-    if (
-      sendingOTP ||
-      loading
-    ) return;
+      if (
+        sendingOTP ||
+        loading
+      )
+        return;
 
-    setErrors({});
+      setErrors({});
 
-    if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
+      // 🔥 EMAIL VALIDATION
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+          email
+        )
+      ) {
 
-      setErrors({
-        email: "Enter valid email",
-      });
+        setErrors({
+          email:
+            "Enter valid email",
+        });
 
-      return;
-    }
+        return;
+      }
 
-    try {
+      try {
 
-      setSendingOTP(true);
+        setSendingOTP(
+          true
+        );
 
-      await API.post(
-        "/auth/send-email-otp",
-        { email }
-      );
+        await API.post(
+          "/auth/send-email-otp",
+          {
+            email,
+          }
+        );
 
-      setGeneratedOTP(true);
+        setGeneratedOTP(
+          true
+        );
 
-      setOtp("");
+        setOtp("");
 
-      toast.success(
-        "OTP sent to email ✅"
-      );
+        toast.success(
+          "OTP sent to email ✅"
+        );
 
-    } catch (err) {
+      } catch (err) {
 
-      const msg =
-        err.response?.data?.message ||
-        "Failed to send OTP";
+        const msg =
+          err.response
+            ?.data
+            ?.message ||
+          "Failed to send OTP";
 
-      setErrors({
-        email: msg,
-      });
+        setErrors({
+          email: msg,
+        });
 
-      toast.error(msg);
+        toast.error(msg);
 
-    } finally {
+      } finally {
 
-      setSendingOTP(false);
-    }
-  };
+        setSendingOTP(
+          false
+        );
+      }
+    };
 
+  // =====================================
   // 🔥 VERIFY EMAIL OTP
-  const verifyOTP = async () => {
+  // =====================================
+  const verifyOTP =
+    async () => {
 
-    if (
-      otp.trim().length < 6
-    ) {
+      if (
+        otp.trim()
+          .length < 6
+      ) {
 
-      toast.error(
-        "Enter valid OTP"
-      );
+        toast.error(
+          "Enter valid OTP"
+        );
 
-      return;
-    }
+        return;
+      }
 
-    try {
+      try {
 
-      await API.post(
-        "/auth/verify-email",
-        {
-          phone,
-          email,
-          otp,
-        }
-      );
+        await API.post(
+          "/auth/verify-email",
+          {
+            phone,
+            email,
+            otp,
+          }
+        );
 
-      setEmailVerified(true);
+        setEmailVerified(
+          true
+        );
 
-      setOtp("");
+        setOtp("");
 
-      toast.success(
-        "Email verified ✅"
-      );
+        toast.success(
+          "Email verified ✅"
+        );
 
-    } catch (err) {
+      } catch (err) {
 
-      const msg =
-        err.response?.data?.message ||
-        "Verification failed";
+        const msg =
+          err.response
+            ?.data
+            ?.message ||
+          "Verification failed";
 
-      setOtp("");
+        setOtp("");
 
-      setErrors({
-        email: msg,
-      });
+        setErrors({
+          email: msg,
+        });
 
-      toast.error(msg);
-    }
-  };
+        toast.error(msg);
+      }
+    };
 
+  // =====================================
   // 🔥 SUBMIT PROFILE
-  const handleSubmit = async () => {
+  // =====================================
+  const handleSubmit =
+    async () => {
 
-    if (
-      loading ||
-      !validate()
-    ) return;
+      // 🔥 duplicate safety
+      if (
+        loading ||
+        !validate()
+      ) {
 
-    // 🔥 EMAIL VERIFY
-    if (!emailVerified) {
+        return;
+      }
 
-      setErrors({
-        email:
-          "Please verify your email",
-      });
+      // 🔥 email verify
+      if (
+        !emailVerified
+      ) {
 
-      return;
-    }
+        setErrors({
+          email:
+            "Please verify your email",
+        });
 
-    // 🔥 WAIT IMAGE
-    if (
-      imageFile &&
-      !uploadedUrl
-    ) {
+        return;
+      }
 
-      toast.error(
-        "Please wait, image uploading..."
-      );
+      // 🔥 wait upload
+      if (
+        imageFile &&
+        !uploadedUrl
+      ) {
 
-      return;
-    }
+        toast.error(
+          "Please wait, image uploading..."
+        );
 
-    try {
+        return;
+      }
 
-      setLoading(true);
+      try {
 
-      const avatarUrl =
-        uploadedUrl || preview;
+        setLoading(true);
 
-      const res = await API.post(
-        "/auth/register",
-        {
-          phone,
-          name: name.trim(),
-          bio: bio.trim(),
-          email: email.trim(),
-          avatar: avatarUrl,
-        }
-      );
+        const avatarUrl =
+          uploadedUrl ||
+          preview;
 
-      const updatedUser =
-        res.data.data;
+        const res =
+          await API.post(
+            "/auth/register",
+            {
+              phone,
+              name: name.trim(),
+              bio: bio.trim(),
+              email:
+                email.trim(),
+              avatar:
+                avatarUrl,
+            }
+          );
 
-      // 🔥 FAST UI UPDATE
-      setUser((prev) => ({
-        ...prev,
-        ...updatedUser,
-      }));
+        const updatedUser =
+          res.data.data;
 
-      // 🔥 FETCH LATEST USER
-      await fetchUser();
+        // 🔥 fast ui
+        setUser(
+          (prev) => ({
+            ...prev,
+            ...updatedUser,
+          })
+        );
 
-      // 🔥 SAVE STEP
-      localStorage.setItem(
-        "step",
-        "app"
-      );
+        // 🔥 latest user
+        await fetchUser();
 
-      toast.success(
-        "Profile updated 🎉"
-      );
+        // 🔥 IMPORTANT
+        localStorage.setItem(
+          "step",
+          "app"
+        );
 
-      onComplete?.();
+        toast.success(
+          "Profile updated 🎉"
+        );
 
-    } catch (err) {
+        onComplete?.();
 
-      const msg =
-        err.response?.data?.message ||
-        "Something went wrong";
+      } catch (err) {
 
-      toast.error(msg);
+        const msg =
+          err.response
+            ?.data
+            ?.message ||
+          "Something went wrong";
 
-      setErrors({
-        email: msg,
-      });
+        toast.error(msg);
 
-    } finally {
+        setErrors({
+          email: msg,
+        });
 
-      setLoading(false);
-    }
-  };
+      } finally {
+
+        setLoading(false);
+      }
+    };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#0b0f1a] text-white relative overflow-hidden">
@@ -405,8 +614,14 @@ function ProfileSetup({ onComplete }) {
         <motion.img
           src={assets.Logo}
           className="w-24 mb-8 opacity-80"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: -20,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
         />
 
         {/* IMAGE */}
@@ -429,15 +644,20 @@ function ProfileSetup({ onComplete }) {
                   Image
                 </span>
               )}
+
             </div>
 
             <input
               type="file"
               hidden
               accept="image/*"
-              onChange={handleImage}
+              onChange={
+                handleImage
+              }
             />
+
           </label>
+
         </div>
 
         {/* FORM */}
@@ -450,16 +670,21 @@ function ProfileSetup({ onComplete }) {
               placeholder="Your Name *"
               value={name}
               onChange={(e) =>
-                setName(e.target.value)
+                setName(
+                  e.target.value
+                )
               }
               className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#00c896] w-full"
             />
 
             {errors.name && (
               <p className="text-red-400 text-xs mt-1">
-                {errors.name}
+                {
+                  errors.name
+                }
               </p>
             )}
+
           </div>
 
           {/* EMAIL */}
@@ -472,30 +697,45 @@ function ProfileSetup({ onComplete }) {
                 value={email}
                 onChange={(e) => {
 
-                  setEmail(e.target.value);
+                  setEmail(
+                    e.target
+                      .value
+                  );
 
-                  setEmailVerified(false);
+                  setEmailVerified(
+                    false
+                  );
 
-                  setGeneratedOTP(false);
+                  setGeneratedOTP(
+                    false
+                  );
                 }}
                 className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#0ea5e9] w-full"
               />
 
               <button
-                onClick={sendOTP}
-                disabled={sendingOTP}
+                onClick={
+                  sendOTP
+                }
+                disabled={
+                  sendingOTP
+                }
                 className="text-xs px-2 py-1 border border-white/20 rounded hover:bg-white/10 cursor-pointer disabled:opacity-50"
               >
 
                 {sendingOTP
                   ? "Sending..."
                   : "Verify"}
+
               </button>
+
             </div>
 
             {errors.email && (
               <p className="text-red-400 text-xs mt-1">
-                {errors.email}
+                {
+                  errors.email
+                }
               </p>
             )}
 
@@ -509,17 +749,23 @@ function ProfileSetup({ onComplete }) {
                   placeholder="OTP"
                   value={otp}
                   onChange={(e) =>
-                    setOtp(e.target.value)
+                    setOtp(
+                      e.target
+                        .value
+                    )
                   }
                   className="bg-transparent border-b border-white/20 pb-1 outline-none"
                 />
 
                 <button
-                  onClick={verifyOTP}
+                  onClick={
+                    verifyOTP
+                  }
                   className="text-xs border px-2 rounded cursor-pointer"
                 >
                   OK
                 </button>
+
               </div>
             )}
 
@@ -529,6 +775,7 @@ function ProfileSetup({ onComplete }) {
                 Verified ✅
               </p>
             )}
+
           </div>
 
           {/* BIO */}
@@ -538,25 +785,37 @@ function ProfileSetup({ onComplete }) {
               placeholder="About *"
               value={bio}
               onChange={(e) =>
-                setBio(e.target.value)
+                setBio(
+                  e.target.value
+                )
               }
               className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#0ea5e9] w-full"
             />
 
             {errors.bio && (
               <p className="text-red-400 text-xs mt-1">
-                {errors.bio}
+                {
+                  errors.bio
+                }
               </p>
             )}
+
           </div>
+
         </div>
 
         {/* SUBMIT */}
         <motion.button
-          onClick={handleSubmit}
+          onClick={
+            handleSubmit
+          }
           disabled={loading}
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.02 }}
+          whileTap={{
+            scale: 0.95,
+          }}
+          whileHover={{
+            scale: 1.02,
+          }}
           className={`mt-10 w-full max-w-sm py-3 rounded-full font-medium cursor-pointer transition ${
             loading
               ? "bg-white/10 text-white/30"
@@ -567,9 +826,11 @@ function ProfileSetup({ onComplete }) {
           {loading
             ? "Saving..."
             : "Continue"}
+
         </motion.button>
 
       </div>
+
     </div>
   );
 }

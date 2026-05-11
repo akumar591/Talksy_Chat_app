@@ -11,13 +11,17 @@ import {
 
 import { useChat } from "../../context/ChatContext";
 
+import { useGroup } from "../../context/GroupContext";
+
 const Sidebar = ({
   onSelectChat,
 }) => {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const location = useLocation();
+  const location =
+    useLocation();
 
   const {
     contacts,
@@ -25,9 +29,16 @@ const Sidebar = ({
     openConversation,
     sidebarLoading,
 
-    // 🔥 NEW
+    // 🔥 FILTER
     activeFilter,
   } = useChat();
+
+  // 🔥 GROUP CONTEXT
+  const {
+    groups,
+    fetchGroups,
+    setSelectedGroup,
+  } = useGroup();
 
   const [search, setSearch] =
     useState("");
@@ -42,69 +53,125 @@ const Sidebar = ({
   }, []);
 
   // ===============================
-  // 🔥 FILTER CONTACTS
+  // 🔥 FETCH GROUPS
   // ===============================
-  const filteredChats = useMemo(() => {
+  useEffect(() => {
 
-    let filtered = contacts;
+    fetchGroups();
 
-    // 🔥 GROUP FILTER
-    if (
-      activeFilter === "Groups"
-    ) {
+  }, []);
 
-      filtered =
-        filtered.filter(
-          (chat) => chat.isGroup
-        );
-    }
+  // ===============================
+  // 🔥 MERGE CONTACTS + GROUPS
+  // ===============================
+  const allChats =
+    useMemo(() => {
 
-    // 🔥 UNREAD FILTER
-    if (
-      activeFilter === "Unread"
-    ) {
+      // 🔥 format groups
+      const formattedGroups =
+        groups.map((group) => ({
 
-      filtered =
-        filtered.filter(
-          (chat) =>
-            chat.unreadCount > 0
-        );
-    }
+          id: group.id,
 
-    // 🔥 FAVORITES FILTER
-    if (
-      activeFilter === "Favorites"
-    ) {
+          name: group.name,
 
-      filtered =
-        filtered.filter(
-          (chat) =>
-            chat.favorite
-        );
-    }
+          avatar: group.avatar,
 
-    // 🔥 SEARCH
-    if (
-      search.trim()
-    ) {
+          isGroup: true,
 
-      filtered =
-        filtered.filter((chat) =>
-          chat.name
-            ?.toLowerCase()
-            .includes(
-              search.toLowerCase()
-            )
-        );
-    }
+          memberCount:
+            group.memberCount || 0,
 
-    return filtered;
+          unreadCount: 0,
 
-  }, [
-    contacts,
-    search,
-    activeFilter,
-  ]);
+          lastMessage:
+            "Group chat",
+
+          lastMessageTime:
+            group.updatedAt,
+        }));
+
+      return [
+        ...contacts,
+        ...formattedGroups,
+      ];
+
+    }, [
+      contacts,
+      groups,
+    ]);
+
+  // ===============================
+  // 🔥 FILTER CHATS
+  // ===============================
+  const filteredChats =
+    useMemo(() => {
+
+      let filtered =
+        allChats;
+
+      // 🔥 GROUP FILTER
+      if (
+        activeFilter ===
+        "Groups"
+      ) {
+
+        filtered =
+          filtered.filter(
+            (chat) =>
+              chat.isGroup
+          );
+      }
+
+      // 🔥 UNREAD FILTER
+      if (
+        activeFilter ===
+        "Unread"
+      ) {
+
+        filtered =
+          filtered.filter(
+            (chat) =>
+              chat.unreadCount > 0
+          );
+      }
+
+      // 🔥 FAVORITES FILTER
+      if (
+        activeFilter ===
+        "Favorites"
+      ) {
+
+        filtered =
+          filtered.filter(
+            (chat) =>
+              chat.favorite
+          );
+      }
+
+      // 🔥 SEARCH
+      if (
+        search.trim()
+      ) {
+
+        filtered =
+          filtered.filter(
+            (chat) =>
+              chat.name
+                ?.toLowerCase()
+                .includes(
+                  search.toLowerCase()
+                )
+          );
+      }
+
+      return filtered;
+
+    }, [
+      allChats,
+      search,
+      activeFilter,
+    ]);
 
   // ===============================
   // 🔥 FORMAT TIME
@@ -128,7 +195,9 @@ const Sidebar = ({
     const oneDay =
       24 * 60 * 60 * 1000;
 
-    if (diff < oneDay) {
+    if (
+      diff < oneDay
+    ) {
 
       return date.toLocaleTimeString(
         [],
@@ -149,13 +218,40 @@ const Sidebar = ({
   };
 
   // ===============================
-  // 🔥 OPEN CHAT
+  // 🔥 OPEN CHAT / GROUP
   // ===============================
   const handleClick =
     async (chat) => {
 
       try {
 
+        // ===============================
+        // 🔥 GROUP CHAT
+        // ===============================
+        if (
+          chat.isGroup
+        ) {
+
+          setSelectedGroup(
+            chat
+          );
+
+          onSelectChat &&
+            onSelectChat({
+              ...chat,
+              isGroup: true,
+            });
+
+          navigate(
+            `/group/${chat.id}`
+          );
+
+          return;
+        }
+
+        // ===============================
+        // 🔥 NORMAL CHAT
+        // ===============================
         const conversation =
           await openConversation(
             chat
@@ -164,6 +260,7 @@ const Sidebar = ({
         if (
           !conversation
         ) {
+
           return;
         }
 
@@ -220,7 +317,7 @@ const Sidebar = ({
         />
       </div>
 
-      {/* 🔥 SCROLL AREA */}
+      {/* 🔥 SCROLL */}
       <div className="h-full md:h-[calc(100%-80px)] overflow-y-auto overflow-x-hidden px-2 pb-20 md:pb-2 hide-scrollbar">
 
         {/* 🔥 LOADING */}
@@ -260,7 +357,8 @@ const Sidebar = ({
 
         {/* 🔥 EMPTY */}
         {!sidebarLoading &&
-          filteredChats.length === 0 && (
+          filteredChats.length ===
+            0 && (
 
             <div className="h-full flex items-center justify-center opacity-60 text-sm">
 
@@ -276,8 +374,14 @@ const Sidebar = ({
             (chat) => {
 
               const isActive =
+
                 location.pathname ===
-                `/chat/${chat.id}`;
+                  `/chat/${chat.id}`
+
+                ||
+
+                location.pathname ===
+                  `/group/${chat.id}`;
 
               return (
 
@@ -348,22 +452,23 @@ const Sidebar = ({
                     )}
 
                     {/* 🔥 ONLINE */}
-                    {chat.online && !chat.isGroup && (
+                    {chat.online &&
+                      !chat.isGroup && (
 
-                      <span
-                        className="
-                          absolute
-                          bottom-0
-                          right-0
-                          w-3
-                          h-3
-                          bg-green-500
-                          rounded-full
-                          border-[2px]
-                          border-[var(--bg)]
-                        "
-                      />
-                    )}
+                        <span
+                          className="
+                            absolute
+                            bottom-0
+                            right-0
+                            w-3
+                            h-3
+                            bg-green-500
+                            rounded-full
+                            border-[2px]
+                            border-[var(--bg)]
+                          "
+                        />
+                      )}
                   </div>
 
                   {/* 🔥 INFO */}
@@ -391,10 +496,13 @@ const Sidebar = ({
 
                       <p className="text-sm opacity-70 truncate">
 
-                        {chat.lastMessage &&
-                        chat.lastMessage.trim() !== ""
-                          ? chat.lastMessage
-                          : "Start conversation"}
+                        {chat.isGroup
+                          ? `${chat.memberCount} members`
+                          : chat.lastMessage &&
+                            chat.lastMessage.trim() !==
+                              ""
+                            ? chat.lastMessage
+                            : "Start conversation"}
                       </p>
 
                       {/* 🔥 UNREAD */}

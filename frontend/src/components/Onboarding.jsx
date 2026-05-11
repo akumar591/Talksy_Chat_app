@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  useState,
+  useRef,
+} from "react";
+
 import {
   motion,
   AnimatePresence,
@@ -8,18 +12,27 @@ import { assets } from "../assets/assets";
 
 const slides = [
   {
-    title: "Welcome to Talksy",
-    desc: "Fast • Secure • Private Conversations",
+    title:
+      "Welcome to Talksy",
+
+    desc:
+      "Fast • Secure • Private Conversations",
   },
 
   {
-    title: "Chat Freely",
-    desc: "Express yourself with confidence and ease",
+    title:
+      "Chat Freely",
+
+    desc:
+      "Express yourself with confidence and ease",
   },
 
   {
-    title: "Your Privacy Matters",
-    desc: "End-to-end security built to protect your conversations",
+    title:
+      "Your Privacy Matters",
+
+    desc:
+      "End-to-end security built to protect your conversations",
   },
 ];
 
@@ -27,40 +40,79 @@ function Onboarding({
   onFinish,
 }) {
 
+  // =====================================
+  // 🔥 SLIDE INDEX
+  // =====================================
   const [index, setIndex] =
     useState(0);
 
+  // =====================================
   // 🔥 ANIMATION LOCK
+  // =====================================
   const [
     animating,
     setAnimating,
   ] = useState(false);
 
+  // =====================================
+  // 🔥 FINISH LOCK
+  // =====================================
+  const finishedRef =
+    useRef(false);
+
+  // =====================================
   // 🔥 NEXT
+  // =====================================
   const next = () => {
 
-    // 🔥 prevent spam click
-    if (animating) return;
+    // 🔥 animation safety
+    if (animating)
+      return;
 
+    // 🔥 duplicate finish safety
+    if (
+      finishedRef.current
+    )
+      return;
+
+    // =====================================
+    // 🔥 NEXT SLIDE
+    // =====================================
     if (
       index <
       slides.length - 1
     ) {
 
       setIndex(
-        (prev) => prev + 1
-      );
-    }
-
-    else {
-
-      localStorage.setItem(
-        "seenOnboarding",
-        "true"
+        (prev) =>
+          prev + 1
       );
 
-      onFinish();
+      return;
     }
+
+    // =====================================
+    // 🔥 FINISH FLOW
+    // =====================================
+
+    finishedRef.current =
+      true;
+
+    // 🔥 onboarding completed
+    localStorage.setItem(
+      "seenOnboarding",
+      "true"
+    );
+
+    // 🔥 IMPORTANT
+    // save login step instantly
+    localStorage.setItem(
+      "step",
+      "login"
+    );
+
+    // 🔥 continue app flow
+    onFinish();
   };
 
   return (
@@ -178,10 +230,14 @@ function Onboarding({
               duration: 0.3,
             }}
             onAnimationStart={() =>
-              setAnimating(true)
+              setAnimating(
+                true
+              )
             }
             onAnimationComplete={() =>
-              setAnimating(false)
+              setAnimating(
+                false
+              )
             }
           >
 
@@ -256,7 +312,9 @@ function Onboarding({
             scale: 1.02,
           }}
           onClick={next}
-          disabled={animating}
+          disabled={
+            animating
+          }
           className="
             w-[85%]
 
@@ -289,6 +347,7 @@ function Onboarding({
         </motion.button>
 
       </div>
+
     </div>
   );
 }

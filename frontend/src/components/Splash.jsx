@@ -1,18 +1,52 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
 import { motion } from "framer-motion";
+
 import { assets } from "../assets/assets";
 
-function Splash({ onFinish }) {
+function Splash({
+  onFinish,
+}) {
 
+  // ===============================
+  // 🔥 PREVENT DOUBLE CALL
+  // ===============================
+  const calledRef =
+    useRef(false);
+
+  // ===============================
+  // 🔥 SPLASH TIMER
+  // ===============================
   useEffect(() => {
 
-    const timer = setTimeout(() => {
+    // 🔥 already executed
+    if (calledRef.current)
+      return;
 
-      onFinish();
+    const timer =
+      setTimeout(() => {
 
-    }, 2600);
+        // 🔥 avoid duplicate navigation
+        if (
+          calledRef.current
+        )
+          return;
 
-    return () => clearTimeout(timer);
+        calledRef.current =
+          true;
+
+        // 🔥 mark splash seen
+        localStorage.setItem(
+          "seenSplash",
+          "true"
+        );
+
+        onFinish();
+
+      }, 2600);
+
+    return () =>
+      clearTimeout(timer);
 
   }, [onFinish]);
 
@@ -121,7 +155,8 @@ function Splash({ onFinish }) {
             delay: 0.4,
           }}
         >
-          Speak Freely. Chat Boldly.
+          Speak Freely.
+          Chat Boldly.
         </motion.p>
 
         {/* ⚡ PREMIUM LOADER */}
@@ -155,18 +190,23 @@ function Splash({ onFinish }) {
               x: "-100%",
             }}
             animate={{
-              x: ["-100%", "100%"],
+              x: [
+                "-100%",
+                "100%",
+              ],
             }}
             transition={{
               duration: 1.5,
               ease: "easeInOut",
-              repeat: Infinity,
+              repeat:
+                Infinity,
             }}
           />
 
         </div>
 
       </div>
+
     </div>
   );
 }
