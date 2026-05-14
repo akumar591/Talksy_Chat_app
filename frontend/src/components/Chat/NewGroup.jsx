@@ -1,5 +1,11 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import {
   FiArrowLeft,
@@ -10,78 +16,120 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { useAuth } from "../../context/AuthContext";
+import {
+  useAuth,
+} from "../../context/AuthContext";
 
-import { useChat } from "../../context/ChatContext";
+import {
+  useChat,
+} from "../../context/ChatContext";
 
 import API from "../../api/axios";
 
 import toast from "react-hot-toast";
 
+import ImageCropper from "../Common/ImageCropper";
+
 const NewGroup = () => {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const { user } = useAuth();
+  const { user } =
+    useAuth();
 
   // 🔥 REAL CONTACTS
-  const { contacts } = useChat();
+  const { contacts } =
+    useChat();
 
   const [loading, setLoading] =
     useState(false);
 
-  const [group, setGroup] = useState({
-    name: "",
-    about: "",
-    avatar: "",
-  });
+  const [group, setGroup] =
+    useState({
+      name: "",
+      about: "",
+      avatar: "",
+    });
 
   const [preview, setPreview] =
     useState(null);
 
-  const [selectedMembers, setSelectedMembers] =
-    useState([]);
+  const [
+    selectedMembers,
+    setSelectedMembers,
+  ] = useState([]);
 
   const [admins, setAdmins] =
     useState([]);
 
+  // =====================================
+  // 🔥 CROPPER
+  // =====================================
+  const [
+    showCropper,
+    setShowCropper,
+  ] = useState(false);
+
+  const [crop, setCrop] =
+    useState({
+      x: 0,
+      y: 0,
+    });
+
+  const [zoom, setZoom] =
+    useState(1);
+
   // ===============================
   // 🔥 TOGGLE MEMBER
   // ===============================
-  const toggleMember = (selectedUser) => {
+  const toggleMember = (
+    selectedUser
+  ) => {
 
     const exists =
       selectedMembers.find(
-        (u) => u.id === selectedUser.id
+        (u) =>
+          u.id ===
+          selectedUser.id
       );
 
     if (exists) {
 
-      setSelectedMembers((prev) =>
-        prev.filter(
-          (u) => u.id !== selectedUser.id
-        )
+      setSelectedMembers(
+        (prev) =>
+          prev.filter(
+            (u) =>
+              u.id !==
+              selectedUser.id
+          )
       );
 
       setAdmins((prev) =>
         prev.filter(
-          (id) => id !== selectedUser.id
+          (id) =>
+            id !==
+            selectedUser.id
         )
       );
 
       return;
     }
 
-    setSelectedMembers((prev) => [
-      ...prev,
-      selectedUser,
-    ]);
+    setSelectedMembers(
+      (prev) => [
+        ...prev,
+        selectedUser,
+      ]
+    );
   };
 
   // ===============================
   // 🔥 TOGGLE ADMIN
   // ===============================
-  const toggleAdmin = (id) => {
+  const toggleAdmin = (
+    id
+  ) => {
 
     const exists =
       admins.includes(id);
@@ -89,7 +137,9 @@ const NewGroup = () => {
     if (exists) {
 
       setAdmins((prev) =>
-        prev.filter((a) => a !== id)
+        prev.filter(
+          (a) => a !== id
+        )
       );
 
       return;
@@ -104,171 +154,173 @@ const NewGroup = () => {
   // ===============================
   // 🔥 HANDLE IMAGE
   // ===============================
-  const handleImage = async (e) => {
+  const handleImage =
+    async (e) => {
 
-    const file =
-      e.target.files[0];
+      const file =
+        e.target.files[0];
 
-    if (!file) return;
+      if (!file)
+        return;
 
-    // 🔥 PREVIEW
-    setPreview(
-      URL.createObjectURL(file)
-    );
+      // 🔥 TYPE CHECK
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
 
-    try {
-
-      const formData =
-        new FormData();
-
-      formData.append(
-        "file",
-        file
-      );
-
-      formData.append(
-        "type",
-        "profile"
-      );
-
-      // 🔥 UPLOAD API
-      const res =
-        await API.post(
-
-          "/file/upload",
-
-          formData,
-
-          {
-            headers: {
-              "Content-Type":
-                "multipart/form-data",
-            },
-          }
+        toast.error(
+          "Only image allowed ❌"
         );
 
-      // 🔥 SAVE URL
-      setGroup((prev) => ({
+        return;
+      }
 
-        ...prev,
+      // 🔥 SIZE CHECK
+      if (
+        file.size >
+        5 *
+          1024 *
+          1024
+      ) {
 
-        avatar: res.data.data,
-      }));
+        toast.error(
+          "Image must be under 5MB"
+        );
 
-      toast.success(
-        "Image uploaded ✅"
+        return;
+      }
+
+      // 🔥 PREVIEW
+      const localPreview =
+        URL.createObjectURL(
+          file
+        );
+
+      setPreview(
+        localPreview
       );
 
-    } catch (err) {
-
-      toast.error(
-        "Upload failed ❌"
+      // 🔥 OPEN CROPPER
+      setShowCropper(
+        true
       );
-    }
-  };
+    };
 
   // ===============================
   // 🔥 CREATE GROUP
   // ===============================
-  const handleCreate = async () => {
+  const handleCreate =
+    async () => {
 
-    if (
-      !group.name.trim()
-    ) {
+      if (
+        !group.name.trim()
+      ) {
 
-      toast.error(
-        "Group name required"
-      );
-
-      return;
-    }
-
-    if (
-      selectedMembers.length === 0
-    ) {
-
-      toast.error(
-        "Select at least 1 member"
-      );
-
-      return;
-    }
-
-    try {
-
-      setLoading(true);
-
-      const payload = {
-
-        name: group.name,
-
-        about: group.about,
-
-        avatar: group.avatar,
-
-        // 🔥 FIXED
-        members:
-          selectedMembers.map(
-            (m) => Number(m.id)
-          ),
-
-        // 🔥 FIXED
-        admins:
-          admins.map(
-            (id) => Number(id)
-          ),
-      };
-
-      // 🔥 CREATE API
-      const res =
-        await API.post(
-          "/groups/create",
-          payload
+        toast.error(
+          "Group name required"
         );
 
-      if (!res?.data) {
-
-        throw new Error(
-          "Failed to create group"
-        );
+        return;
       }
 
-      toast.success(
-        "Group Created 🚀"
-      );
+      if (
+        selectedMembers.length ===
+        0
+      ) {
 
-      navigate("/");
+        toast.error(
+          "Select at least 1 member"
+        );
 
-    } catch (err) {
+        return;
+      }
 
-      console.log(err);
+      try {
 
-      const msg =
-        err.response?.data?.message ||
-        "Failed to create group";
+        setLoading(true);
 
-      toast.error(msg);
+        const payload = {
 
-    } finally {
+          name:
+            group.name,
 
-      setLoading(false);
-    }
-  };
+          about:
+            group.about,
+
+          avatar:
+            group.avatar,
+
+          // 🔥 FIXED
+          members:
+            selectedMembers.map(
+              (m) =>
+                Number(m.id)
+            ),
+
+          // 🔥 FIXED
+          admins:
+            admins.map(
+              (id) =>
+                Number(id)
+            ),
+        };
+
+        // 🔥 CREATE API
+        const res =
+          await API.post(
+            "/groups/create",
+            payload
+          );
+
+        if (!res?.data) {
+
+          throw new Error(
+            "Failed to create group"
+          );
+        }
+
+        toast.success(
+          "Group Created 🚀"
+        );
+
+        navigate("/");
+
+      } catch (err) {
+
+        console.log(err);
+
+        const msg =
+          err.response?.data
+            ?.message ||
+          "Failed to create group";
+
+        toast.error(msg);
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
 
   // ===============================
   // 🔥 ADMIN USERS
   // ===============================
-  const adminUsers = useMemo(() => {
+  const adminUsers =
+    useMemo(() => {
 
-    return selectedMembers.filter(
-      (m) =>
-        admins.includes(m.id)
-    );
+      return selectedMembers.filter(
+        (m) =>
+          admins.includes(
+            m.id
+          )
+      );
 
-  }, [
-    selectedMembers,
-    admins,
-  ]);
+    }, [
+      selectedMembers,
+      admins,
+    ]);
 
   return (
     <div className="fixed inset-0 md:top-16 bg-[var(--bg)] text-[var(--text)] overflow-hidden">
@@ -280,7 +332,9 @@ const NewGroup = () => {
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg)]">
 
           <button
-            onClick={() => navigate(-1)}
+            onClick={() =>
+              navigate(-1)
+            }
             className="text-xl"
           >
             <FiArrowLeft />
@@ -313,7 +367,9 @@ const NewGroup = () => {
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={handleImage}
+                  onChange={
+                    handleImage
+                  }
                 />
 
                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[var(--border)] bg-[var(--card)] flex items-center justify-center">
@@ -356,7 +412,9 @@ const NewGroup = () => {
                   onChange={(e) =>
                     setGroup({
                       ...group,
-                      name: e.target.value,
+                      name:
+                        e.target
+                          .value,
                     })
                   }
                   className="w-full bg-transparent border-b border-[var(--border)] outline-none py-2 text-sm"
@@ -369,7 +427,9 @@ const NewGroup = () => {
                   onChange={(e) =>
                     setGroup({
                       ...group,
-                      about: e.target.value,
+                      about:
+                        e.target
+                          .value,
                     })
                   }
                   className="w-full resize-none bg-transparent border-b border-[var(--border)] outline-none py-2 text-xs opacity-80"
@@ -400,7 +460,9 @@ const NewGroup = () => {
                   {user?.avatar ? (
 
                     <img
-                      src={user.avatar}
+                      src={
+                        user.avatar
+                      }
                       alt="admin"
                       className="w-full h-full object-cover"
                     />
@@ -409,7 +471,9 @@ const NewGroup = () => {
 
                     <div className="w-full h-full flex items-center justify-center font-semibold">
 
-                      {user?.name?.[0] || "U"}
+                      {user?.name?.[0] ||
+                        "U"}
+
                     </div>
                   )}
                 </div>
@@ -417,7 +481,8 @@ const NewGroup = () => {
                 <div>
 
                   <p className="text-sm font-medium">
-                    {user?.name || "You"}
+                    {user?.name ||
+                      "You"}
                   </p>
 
                   <p className="text-xs opacity-60">
@@ -433,47 +498,60 @@ const NewGroup = () => {
             </div>
 
             {/* EXTRA ADMINS */}
-            {adminUsers.length > 0 && (
+            {adminUsers.length >
+              0 && (
 
               <div className="space-y-2">
 
-                {adminUsers.map((admin) => (
+                {adminUsers.map(
+                  (admin) => (
 
-                  <div
-                    key={admin.id}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]"
-                  >
-
-                    <div className="flex items-center gap-3">
-
-                      <img
-                        src={admin.avatar}
-                        alt={admin.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-
-                      <div>
-
-                        <p className="text-sm">
-                          {admin.name}
-                        </p>
-
-                        <p className="text-[11px] opacity-60">
-                          Group Admin
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        toggleAdmin(admin.id)
+                    <div
+                      key={
+                        admin.id
                       }
-                      className="text-red-400"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]"
                     >
-                      <FiX />
-                    </button>
-                  </div>
-                ))}
+
+                      <div className="flex items-center gap-3">
+
+                        <img
+                          src={
+                            admin.avatar
+                          }
+                          alt={
+                            admin.name
+                          }
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+
+                        <div>
+
+                          <p className="text-sm">
+                            {
+                              admin.name
+                            }
+                          </p>
+
+                          <p className="text-[11px] opacity-60">
+                            Group Admin
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          toggleAdmin(
+                            admin.id
+                          )
+                        }
+                        className="text-red-400"
+                      >
+                        <FiX />
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -489,100 +567,56 @@ const NewGroup = () => {
 
               Selected Members:
               {" "}
-              {selectedMembers.length}
+              {
+                selectedMembers.length
+              }
+
             </p>
           </div>
 
           {/* USERS */}
           <div className="p-2">
 
-            {contacts?.map((u) => {
+            {contacts?.map(
+              (u) => {
 
-              const isSelected =
-                selectedMembers.find(
-                  (m) => m.id === u.id
-                );
+                const isSelected =
+                  selectedMembers.find(
+                    (m) =>
+                      m.id ===
+                      u.id
+                  );
 
-              const isAdmin =
-                admins.includes(u.id);
+                const isAdmin =
+                  admins.includes(
+                    u.id
+                  );
 
-              return (
+                return (
 
-                <div
-                  key={u.id}
-                  className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-[var(--card)] transition"
-                >
-
-                  {/* SELECT */}
-                  <button
-                    onClick={() =>
-                      toggleMember(u)
-                    }
-                    className={`
-                      w-5
-                      h-5
-                      rounded-md
-                      border
-                      flex
-                      items-center
-                      justify-center
-                      transition
-
-                      ${isSelected
-
-                        ? `
-                            bg-[var(--primary)]
-                            border-[var(--primary)]
-                            text-black
-                          `
-
-                        : `
-                            border-[var(--border)]
-                          `
-                      }
-                    `}
+                  <div
+                    key={u.id}
+                    className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-[var(--card)] transition"
                   >
 
-                    {isSelected && (
-                      <FiCheck size={12} />
-                    )}
-                  </button>
-
-                  {/* AVATAR */}
-                  <img
-                    src={u.avatar}
-                    alt={u.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-
-                  {/* INFO */}
-                  <div className="flex-1">
-
-                    <p className="text-sm font-medium">
-                      {u.name}
-                    </p>
-
-                    <p className="text-xs opacity-60">
-                      {u.bio || "Available"}
-                    </p>
-                  </div>
-
-                  {/* ADMIN */}
-                  {isSelected && (
-
+                    {/* SELECT */}
                     <button
                       onClick={() =>
-                        toggleAdmin(u.id)
+                        toggleMember(
+                          u
+                        )
                       }
                       className={`
-                        px-3
-                        py-1.5
-                        rounded-full
-                        text-[11px]
+                        w-5
+                        h-5
+                        rounded-md
                         border
+                        flex
+                        items-center
+                        justify-center
                         transition
 
-                        ${isAdmin
+                        ${isSelected
 
                           ? `
                               bg-[var(--primary)]
@@ -592,20 +626,81 @@ const NewGroup = () => {
 
                           : `
                               border-[var(--border)]
-                              opacity-70
                             `
                         }
                       `}
                     >
 
-                      {isAdmin
-                        ? "Admin"
-                        : "Make Admin"}
+                      {isSelected && (
+                        <FiCheck size={12} />
+                      )}
                     </button>
-                  )}
-                </div>
-              );
-            })}
+
+                    {/* AVATAR */}
+                    <img
+                      src={
+                        u.avatar
+                      }
+                      alt={u.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+
+                    {/* INFO */}
+                    <div className="flex-1">
+
+                      <p className="text-sm font-medium">
+                        {u.name}
+                      </p>
+
+                      <p className="text-xs opacity-60">
+                        {u.bio ||
+                          "Available"}
+                      </p>
+                    </div>
+
+                    {/* ADMIN */}
+                    {isSelected && (
+
+                      <button
+                        onClick={() =>
+                          toggleAdmin(
+                            u.id
+                          )
+                        }
+                        className={`
+                          px-3
+                          py-1.5
+                          rounded-full
+                          text-[11px]
+                          border
+                          transition
+
+                          ${isAdmin
+
+                            ? `
+                                bg-[var(--primary)]
+                                border-[var(--primary)]
+                                text-black
+                              `
+
+                            : `
+                                border-[var(--border)]
+                                opacity-70
+                              `
+                          }
+                        `}
+                      >
+
+                        {isAdmin
+                          ? "Admin"
+                          : "Make Admin"}
+
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+            )}
           </div>
         </div>
 
@@ -613,7 +708,9 @@ const NewGroup = () => {
         <div className="shrink-0 p-4 border-t border-[var(--border)] bg-[var(--bg)]">
 
           <button
-            onClick={handleCreate}
+            onClick={
+              handleCreate
+            }
             disabled={loading}
             className="w-full py-3 rounded-2xl bg-[var(--primary)] text-black font-semibold shadow-lg active:scale-[0.99] transition disabled:opacity-50"
           >
@@ -621,9 +718,157 @@ const NewGroup = () => {
             {loading
               ? "Creating..."
               : "Create Group"}
+
           </button>
         </div>
       </div>
+
+      {/* ===================================== */}
+      {/* 🔥 CROPPER */}
+      {/* ===================================== */}
+      {showCropper &&
+        preview && (
+
+        <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
+
+          <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+
+            <ImageCropper
+              image={preview}
+              crop={crop}
+              setCrop={setCrop}
+              zoom={zoom}
+              setZoom={setZoom}
+              aspect={1 / 1}
+              cropShape="round"
+              showGrid={false}
+
+              onCropDone={
+                async (
+                  croppedFile
+                ) => {
+
+                  try {
+
+                    if (
+                      !croppedFile
+                    ) {
+
+                      return;
+                    }
+
+                    setLoading(
+                      true
+                    );
+
+                    // 🔥 NEW PREVIEW
+                    const croppedPreview =
+                      URL.createObjectURL(
+                        croppedFile
+                      );
+
+                    setPreview(
+                      croppedPreview
+                    );
+
+                    // 🔥 CLOSE CROPPER
+                    setShowCropper(
+                      false
+                    );
+
+                    // 🔥 UPLOAD
+                    const formData =
+                      new FormData();
+
+                    formData.append(
+                      "file",
+                      croppedFile
+                    );
+
+                    formData.append(
+                      "type",
+                      "profile"
+                    );
+
+                    const uploadRes =
+                      await API.post(
+                        "/file/upload",
+                        formData,
+                        {
+                          headers:
+                            {
+                              "Content-Type":
+                                "multipart/form-data",
+                            },
+                        }
+                      );
+
+                    // 🔥 FINAL URL
+                    const imageUrl =
+                      uploadRes
+                        .data
+                        ?.data
+                        ?.url ||
+                      "";
+
+                    if (
+                      !imageUrl
+                    ) {
+
+                      toast.error(
+                        "Image upload failed"
+                      );
+
+                      return;
+                    }
+
+                    // 🔥 SAVE URL
+                    setGroup(
+                      (
+                        prev
+                      ) => ({
+                        ...prev,
+                        avatar:
+                          imageUrl,
+                      })
+                    );
+
+                    toast.success(
+                      "Image uploaded ✅"
+                    );
+
+                  } catch (
+                    err
+                  ) {
+
+                    console.log(
+                      err
+                    );
+
+                    const msg =
+                      err.response
+                        ?.data
+                        ?.message ||
+                      "Upload failed ❌";
+
+                    toast.error(
+                      msg
+                    );
+
+                  } finally {
+
+                    setLoading(
+                      false
+                    );
+                  }
+                }
+              }
+            />
+
+          </div>
+
+        </div>
+      )}
     </div>
   );
 };

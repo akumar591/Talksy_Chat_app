@@ -14,6 +14,8 @@ import toast from "react-hot-toast";
 
 import { useAuth } from "../../context/AuthContext";
 
+import ImageCropper from "../Common/ImageCropper";
+
 function ProfileSetup({
   onComplete,
 }) {
@@ -34,14 +36,9 @@ function ProfileSetup({
     useState(null);
 
   const [
-    imageFile,
-    setImageFile,
-  ] = useState(null);
-
-  const [
     uploadedUrl,
     setUploadedUrl,
-  ] = useState(null);
+  ] = useState("");
 
   const [errors, setErrors] =
     useState({});
@@ -68,11 +65,25 @@ function ProfileSetup({
     useState(false);
 
   // =====================================
+  // 🔥 CROPPER STATES
+  // =====================================
+  const [showCropper, setShowCropper] =
+    useState(false);
+
+  const [crop, setCrop] =
+    useState({
+      x: 0,
+      y: 0,
+    });
+
+  const [zoom, setZoom] =
+    useState(1);
+
+  // =====================================
   // 🔥 AUTH
   // =====================================
   const {
     user,
-    setUser,
     phone,
     fetchUser,
   } = useAuth();
@@ -88,7 +99,6 @@ function ProfileSetup({
   // =====================================
   useEffect(() => {
 
-    // 🔥 prevent strict mode duplicate
     if (
       initializedRef.current
     ) {
@@ -99,13 +109,11 @@ function ProfileSetup({
     initializedRef.current =
       true;
 
-    // 🔥 restore safety
     const savedPhone =
       sessionStorage.getItem(
         "phone"
       );
 
-    // 🔥 no access
     if (
       !phone &&
       !savedPhone &&
@@ -124,7 +132,6 @@ function ProfileSetup({
       return;
     }
 
-    // 🔥 keep profile step
     localStorage.setItem(
       "step",
       "profile"
@@ -160,7 +167,6 @@ function ProfileSetup({
       user.avatar || null
     );
 
-    // 🔥 already verified
     if (user.email) {
 
       setEmailVerified(
@@ -171,7 +177,7 @@ function ProfileSetup({
   }, [user]);
 
   // =====================================
-  // 🔥 MEMORY LEAK FIX
+  // 🔥 CLEANUP
   // =====================================
   useEffect(() => {
 
@@ -199,7 +205,6 @@ function ProfileSetup({
 
     let newErrors = {};
 
-    // 🔥 NAME
     if (
       name.trim()
         .length < 3
@@ -209,7 +214,6 @@ function ProfileSetup({
         "Enter valid name";
     }
 
-    // 🔥 EMAIL
     if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         email
@@ -220,7 +224,6 @@ function ProfileSetup({
         "Enter valid email";
     }
 
-    // 🔥 BIO
     if (
       bio.trim()
         .length < 3
@@ -242,7 +245,7 @@ function ProfileSetup({
   };
 
   // =====================================
-  // 🔥 IMAGE
+  // 🔥 IMAGE SELECT
   // =====================================
   const handleImage =
     async (e) => {
@@ -271,8 +274,8 @@ function ProfileSetup({
       if (
         file.size >
         5 *
-          1024 *
-          1024
+        1024 *
+        1024
       ) {
 
         toast.error(
@@ -295,69 +298,27 @@ function ProfileSetup({
         );
       }
 
+      // 🔥 PREVIEW
       const localPreview =
         URL.createObjectURL(
           file
         );
 
-      setImageFile(file);
-
       setPreview(
         localPreview
       );
 
-      try {
+      // 🔥 RESET OLD URL
+      setUploadedUrl("");
 
-        const formData =
-          new FormData();
-
-        formData.append(
-          "file",
-          file
-        );
-
-        formData.append(
-          "type",
-          "profile"
-        );
-
-        const res =
-          await API.post(
-            "/file/upload",
-            formData,
-            {
-              headers: {
-                "Content-Type":
-                  "multipart/form-data",
-              },
-            }
-          );
-
-        const url =
-          res.data.data;
-
-        setUploadedUrl(
-          url
-        );
-
-        toast.success(
-          "Image uploaded ✅"
-        );
-
-      } catch (err) {
-
-        const msg =
-          err.response
-            ?.data
-            ?.message ||
-          "Image upload failed";
-
-        toast.error(msg);
-      }
+      // 🔥 OPEN CROPPER
+      setShowCropper(
+        true
+      );
     };
 
   // =====================================
-  // 🔥 SEND EMAIL OTP
+  // 🔥 SEND OTP
   // =====================================
   const sendOTP =
     async () => {
@@ -370,7 +331,6 @@ function ProfileSetup({
 
       setErrors({});
 
-      // 🔥 EMAIL VALIDATION
       if (
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
           email
@@ -431,7 +391,7 @@ function ProfileSetup({
     };
 
   // =====================================
-  // 🔥 VERIFY EMAIL OTP
+  // 🔥 VERIFY OTP
   // =====================================
   const verifyOTP =
     async () => {
@@ -488,12 +448,11 @@ function ProfileSetup({
     };
 
   // =====================================
-  // 🔥 SUBMIT PROFILE
+  // 🔥 SUBMIT
   // =====================================
   const handleSubmit =
     async () => {
 
-      // 🔥 duplicate safety
       if (
         loading ||
         !validate()
@@ -502,7 +461,6 @@ function ProfileSetup({
         return;
       }
 
-      // 🔥 email verify
       if (
         !emailVerified
       ) {
@@ -515,56 +473,47 @@ function ProfileSetup({
         return;
       }
 
-      // 🔥 wait upload
-      if (
-        imageFile &&
-        !uploadedUrl
-      ) {
-
-        toast.error(
-          "Please wait, image uploading..."
-        );
-
-        return;
-      }
-
       try {
 
         setLoading(true);
 
+        // 🔥 ONLY STRING URL
         const avatarUrl =
-          uploadedUrl ||
-          preview;
+          typeof uploadedUrl ===
+            "string"
+
+            ? uploadedUrl
+
+            : "";
+
+        console.log(
+          "FINAL AVATAR:",
+          avatarUrl
+        );
 
         const res =
           await API.post(
             "/auth/register",
             {
               phone,
-              name: name.trim(),
-              bio: bio.trim(),
+
+              name:
+                name.trim(),
+
+              bio:
+                bio.trim(),
+
               email:
                 email.trim(),
+
               avatar:
                 avatarUrl,
             }
           );
 
-        const updatedUser =
-          res.data.data;
-
-        // 🔥 fast ui
-        setUser(
-          (prev) => ({
-            ...prev,
-            ...updatedUser,
-          })
-        );
-
-        // 🔥 latest user
+        // 🔥 FRESH USER ONLY
         await fetchUser();
 
-        // 🔥 IMPORTANT
         localStorage.setItem(
           "step",
           "app"
@@ -577,6 +526,8 @@ function ProfileSetup({
         onComplete?.();
 
       } catch (err) {
+
+        console.log(err);
 
         const msg =
           err.response
@@ -659,6 +610,150 @@ function ProfileSetup({
           </label>
 
         </div>
+
+        {/* 🔥 CROPPER */}
+        {showCropper &&
+          preview && (
+
+            <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
+
+              <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+
+                <ImageCropper
+                  image={preview}
+                  crop={crop}
+                  setCrop={setCrop}
+                  zoom={zoom}
+                  setZoom={setZoom}
+                  aspect={1 / 1}
+                  cropShape="round"
+                  showGrid={false}
+
+                  onCropDone={
+                    async (
+                      croppedFile
+                    ) => {
+
+                      try {
+
+                        if (
+                          !croppedFile
+                        ) {
+
+                          return;
+                        }
+
+                        setLoading(
+                          true
+                        );
+
+                        // 🔥 NEW PREVIEW
+                        const croppedPreview =
+                          URL.createObjectURL(
+                            croppedFile
+                          );
+
+                        setPreview(
+                          croppedPreview
+                        );
+
+                        // 🔥 CLOSE
+                        setShowCropper(
+                          false
+                        );
+
+                        // 🔥 UPLOAD
+                        const formData =
+                          new FormData();
+
+                        formData.append(
+                          "file",
+                          croppedFile
+                        );
+
+                        formData.append(
+                          "type",
+                          "profile"
+                        );
+
+                        const uploadRes =
+                          await API.post(
+                            "/file/upload",
+                            formData,
+                            {
+                              headers: {
+                                "Content-Type":
+                                  "multipart/form-data",
+                              },
+                            }
+                          );
+
+                        console.log(
+                          "UPLOAD RESPONSE:",
+                          uploadRes.data
+                        );
+
+                        // 🔥 ONLY STRING
+                        const imageUrl =
+                          uploadRes.data
+                            ?.data?.url || "";
+
+                        console.log(
+                          "IMAGE URL:",
+                          imageUrl
+                        );
+
+                        if (
+                          !imageUrl
+                        ) {
+
+                          toast.error(
+                            "Image upload failed"
+                          );
+
+                          return;
+                        }
+
+                        // 🔥 SAVE URL
+                        setUploadedUrl(
+                          imageUrl
+                        );
+
+                        toast.success(
+                          "Image uploaded ✅"
+                        );
+
+                      } catch (err) {
+
+                        console.log(
+                          err
+                        );
+
+                        const msg =
+                          err.response
+                            ?.data
+                            ?.message ||
+
+                          "Image upload failed";
+
+                        toast.error(
+                          msg
+                        );
+
+                      } finally {
+
+                        setLoading(
+                          false
+                        );
+                      }
+                    }
+                  }
+                />
+
+              </div>
+
+            </div>
+          )}
 
         {/* FORM */}
         <div className="w-full max-w-sm flex flex-col gap-6">
@@ -743,31 +838,31 @@ function ProfileSetup({
             {generatedOTP &&
               !emailVerified && (
 
-              <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2">
 
-                <input
-                  placeholder="OTP"
-                  value={otp}
-                  onChange={(e) =>
-                    setOtp(
-                      e.target
-                        .value
-                    )
-                  }
-                  className="bg-transparent border-b border-white/20 pb-1 outline-none"
-                />
+                  <input
+                    placeholder="OTP"
+                    value={otp}
+                    onChange={(e) =>
+                      setOtp(
+                        e.target
+                          .value
+                      )
+                    }
+                    className="bg-transparent border-b border-white/20 pb-1 outline-none"
+                  />
 
-                <button
-                  onClick={
-                    verifyOTP
-                  }
-                  className="text-xs border px-2 rounded cursor-pointer"
-                >
-                  OK
-                </button>
+                  <button
+                    onClick={
+                      verifyOTP
+                    }
+                    className="text-xs border px-2 rounded cursor-pointer"
+                  >
+                    OK
+                  </button>
 
-              </div>
-            )}
+                </div>
+              )}
 
             {/* VERIFIED */}
             {emailVerified && (
@@ -816,11 +911,10 @@ function ProfileSetup({
           whileHover={{
             scale: 1.02,
           }}
-          className={`mt-10 w-full max-w-sm py-3 rounded-full font-medium cursor-pointer transition ${
-            loading
+          className={`mt-10 w-full max-w-sm py-3 rounded-full font-medium cursor-pointer transition ${loading
               ? "bg-white/10 text-white/30"
               : "bg-gradient-to-r from-[#00c896] to-[#0ea5e9] text-black"
-          }`}
+            }`}
         >
 
           {loading

@@ -19,6 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/status")
@@ -161,6 +162,86 @@ public class StatusController {
                         true,
 
                         "Status viewed ✅",
+
+                        null
+                )
+        );
+    }
+
+    // ===============================
+    // 🔥 REACT TO STATUS
+    // ===============================
+    @PostMapping("/react/{statusId}")
+    public ResponseEntity<ApiResponse<?>>
+    reactToStatus(
+
+            @PathVariable
+            Long statusId,
+
+            @RequestBody
+            Map<String, String> body,
+
+            @AuthenticationPrincipal
+            CustomUserDetails userDetails
+    ) {
+
+        statusService.reactToStatus(
+
+                statusId,
+
+                userDetails.getUser()
+                        .getId(),
+
+                body.get("reaction")
+        );
+
+        return ResponseEntity.ok(
+
+                new ApiResponse<>(
+
+                        true,
+
+                        "Reaction added ✅",
+
+                        null
+                )
+        );
+    }
+
+    // ===============================
+    // 🔥 REPLY TO STATUS
+    // ===============================
+    @PostMapping("/reply/{statusId}")
+    public ResponseEntity<ApiResponse<?>>
+    replyToStatus(
+
+            @PathVariable
+            Long statusId,
+
+            @RequestBody
+            Map<String, String> body,
+
+            @AuthenticationPrincipal
+            CustomUserDetails userDetails
+    ) {
+
+        statusService.replyToStatus(
+
+                statusId,
+
+                userDetails.getUser()
+                        .getId(),
+
+                body.get("reply")
+        );
+
+        return ResponseEntity.ok(
+
+                new ApiResponse<>(
+
+                        true,
+
+                        "Reply sent ✅",
 
                         null
                 )

@@ -7,7 +7,18 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "status_views")
+@Table(
+        name = "status_views",
+
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {
+                                "status_id",
+                                "viewer_id"
+                        }
+                )
+        }
+)
 
 @Getter
 @Setter

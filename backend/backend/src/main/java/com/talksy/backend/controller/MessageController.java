@@ -2,42 +2,67 @@ package com.talksy.backend.controller;
 
 import com.talksy.backend.entity.*;
 import com.talksy.backend.payload.ApiResponse;
+
 import com.talksy.backend.repository.MessageReactionRepository;
+
+import com.talksy.backend.security.CustomUserDetails;
+
 import com.talksy.backend.service.MessageService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/messages")
+
 @RequiredArgsConstructor
 public class MessageController {
 
-    private final MessageService messageService;
-    private final MessageReactionRepository messageReactionRepository;
+    private final MessageService
+            messageService;
+
+    private final MessageReactionRepository
+            messageReactionRepository;
 
     // ===============================
     // 🔐 GET CURRENT USER
     // ===============================
     private User getCurrentUser() {
 
-        return (User)
-                org.springframework.security.core.context.SecurityContextHolder
+        Object principal =
+
+                SecurityContextHolder
                         .getContext()
                         .getAuthentication()
                         .getPrincipal();
+
+        // 🔥 CUSTOM USER DETAILS
+        if (principal instanceof CustomUserDetails userDetails) {
+
+            return userDetails.getUser();
+        }
+
+        throw new RuntimeException(
+                "Unauthorized user ❌"
+        );
     }
 
     // ===============================
     // 🔥 SEND MESSAGE
     // ===============================
     @PostMapping
-    public ResponseEntity<ApiResponse<?>> sendMessage(
-            @RequestBody Map<String, Object> body
+    public ResponseEntity<ApiResponse<?>>
+    sendMessage(
+
+            @RequestBody
+            Map<String, Object> body
     ) {
 
         try {
@@ -45,29 +70,23 @@ public class MessageController {
             User user =
                     getCurrentUser();
 
-            if (user == null) {
-
-                return ResponseEntity.status(401)
-                        .body(
-                                new ApiResponse<>(
-                                        false,
-                                        "Unauthorized",
-                                        null
-                                )
-                        );
-            }
-
             Long conversationId =
+
                     Long.valueOf(
-                            body.get("conversationId")
-                                    .toString()
+
+                            body.get(
+                                    "conversationId"
+                            ).toString()
                     );
 
             String content =
-                    body.get("content")
-                            .toString();
+
+                    body.get(
+                            "content"
+                    ).toString();
 
             String type =
+
                     body.get("type") != null
 
                             ?
@@ -79,15 +98,18 @@ public class MessageController {
 
                             "TEXT";
 
-            // 🔥 reply support
+            // 🔥 REPLY SUPPORT
             Long replyToId =
+
                     body.get("replyToId") != null
 
                             ?
 
                             Long.valueOf(
-                                    body.get("replyToId")
-                                            .toString()
+
+                                    body.get(
+                                            "replyToId"
+                                    ).toString()
                             )
 
                             :
@@ -95,14 +117,46 @@ public class MessageController {
                             null;
 
             Message message =
-                    messageService.sendMessage(
-                            user.getId(),
-                            conversationId,
-                            content,
-                            type,
-                            replyToId
-                    );
 
+                    messageService.sendMessage(
+
+                            user.getId(),
+
+                            conversationId,
+
+                            content,
+
+                            type,
+
+                            replyToId,
+
+                            // 🔥 NEW
+                            body.get("statusId") != null
+                                    ?
+                                    Long.valueOf(
+                                            body.get("statusId").toString()
+                                    )
+                                    :
+                                    null,
+
+                            body.get("statusMedia") != null
+                                    ?
+                                    body.get("statusMedia").toString()
+                                    :
+                                    null,
+
+                            body.get("statusType") != null
+                                    ?
+                                    body.get("statusType").toString()
+                                    :
+                                    null,
+
+                            body.get("statusCaption") != null
+                                    ?
+                                    body.get("statusCaption").toString()
+                                    :
+                                    null
+                    );
             Map<String, Object> response =
                     new HashMap<>();
 
@@ -132,7 +186,6 @@ public class MessageController {
                             .getId()
             );
 
-            // 🔥 NEW
             response.put(
                     "senderName",
                     message.getSender()
@@ -145,14 +198,36 @@ public class MessageController {
                             .getAvatar()
             );
 
-            // 🔥 group support
             response.put(
                     "isGroup",
                     message.getConversation()
                             .getIsGroup()
             );
 
-            // 🔥 reply response
+            // ===============================
+            // 🔥 STATUS PREVIEW DATA
+            // ===============================
+            response.put(
+                    "statusId",
+                    message.getStatusId()
+            );
+
+            response.put(
+                    "statusMedia",
+                    message.getStatusMedia()
+            );
+
+            response.put(
+                    "statusType",
+                    message.getStatusType()
+            );
+
+            response.put(
+                    "statusCaption",
+                    message.getStatusCaption()
+            );
+
+            // 🔥 REPLY DATA
             if (message.getReplyTo() != null) {
 
                 Map<String, Object> reply =
@@ -177,7 +252,6 @@ public class MessageController {
                                 .getId()
                 );
 
-                // 🔥 NEW
                 reply.put(
                         "senderName",
                         message.getReplyTo()
@@ -192,9 +266,13 @@ public class MessageController {
             }
 
             return ResponseEntity.ok(
+
                     new ApiResponse<>(
+
                             true,
-                            "Message sent",
+
+                            "Message sent ✅",
+
                             response
                     )
             );
@@ -203,11 +281,16 @@ public class MessageController {
 
             e.printStackTrace();
 
-            return ResponseEntity.status(500)
+            return ResponseEntity
+                    .status(500)
                     .body(
+
                             new ApiResponse<>(
+
                                     false,
+
                                     e.getMessage(),
+
                                     null
                             )
                     );
@@ -218,8 +301,11 @@ public class MessageController {
     // 🔥 GET MESSAGES
     // ===============================
     @GetMapping("/{conversationId}")
-    public ResponseEntity<ApiResponse<?>> getMessages(
-            @PathVariable Long conversationId
+    public ResponseEntity<ApiResponse<?>>
+    getMessages(
+
+            @PathVariable
+            Long conversationId
     ) {
 
         try {
@@ -227,25 +313,17 @@ public class MessageController {
             User user =
                     getCurrentUser();
 
-            if (user == null) {
-
-                return ResponseEntity.status(401)
-                        .body(
-                                new ApiResponse<>(
-                                        false,
-                                        "Unauthorized",
-                                        null
-                                )
-                        );
-            }
-
             List<Message> messages =
+
                     messageService.getMessages(
+
                             user.getId(),
+
                             conversationId
                     );
 
-            List<Map<String, Object>> response =
+            List<Map<String, Object>>
+                    response =
                     new ArrayList<>();
 
             for (Message m : messages) {
@@ -256,37 +334,47 @@ public class MessageController {
                 // ===============================
                 // 🔥 PRIVATE CHAT DELETE LOGIC
                 // ===============================
-                if (!Boolean.TRUE.equals(c.getIsGroup())) {
+                if (!Boolean.TRUE.equals(
+                        c.getIsGroup()
+                )) {
 
                     if (
+
                             c.getUser1() != null
 
                                     &&
 
                                     c.getUser1()
                                             .getId()
-                                            .equals(user.getId())
+                                            .equals(
+                                                    user.getId()
+                                            )
 
                                     &&
 
                                     m.isDeletedForUser1()
+
                     ) {
 
                         continue;
                     }
 
                     if (
+
                             c.getUser2() != null
 
                                     &&
 
                                     c.getUser2()
                                             .getId()
-                                            .equals(user.getId())
+                                            .equals(
+                                                    user.getId()
+                                            )
 
                                     &&
 
                                     m.isDeletedForUser2()
+
                     ) {
 
                         continue;
@@ -301,7 +389,7 @@ public class MessageController {
                         m.getId()
                 );
 
-                // 🔥 deleted
+                // 🔥 DELETED
                 if (m.isDeletedForEveryone()) {
 
                     map.put(
@@ -333,7 +421,6 @@ public class MessageController {
                                 .getId()
                 );
 
-                // 🔥 NEW
                 map.put(
                         "senderName",
                         m.getSender()
@@ -351,10 +438,32 @@ public class MessageController {
                         m.isRead()
                 );
 
-                // 🔥 group info
                 map.put(
                         "isGroup",
                         c.getIsGroup()
+                );
+
+                // ===============================
+                // 🔥 STATUS PREVIEW DATA
+                // ===============================
+                map.put(
+                        "statusId",
+                        m.getStatusId()
+                );
+
+                map.put(
+                        "statusMedia",
+                        m.getStatusMedia()
+                );
+
+                map.put(
+                        "statusType",
+                        m.getStatusType()
+                );
+
+                map.put(
+                        "statusCaption",
+                        m.getStatusCaption()
                 );
 
                 // ===============================
@@ -372,8 +481,10 @@ public class MessageController {
                     );
 
                     if (
+
                             m.getReplyTo()
                                     .isDeletedForEveryone()
+
                     ) {
 
                         reply.put(
@@ -397,7 +508,6 @@ public class MessageController {
                                     .getId()
                     );
 
-                    // 🔥 NEW
                     reply.put(
                             "senderName",
                             m.getReplyTo()
@@ -414,10 +524,13 @@ public class MessageController {
                 // ===============================
                 // 🔥 REACTIONS
                 // ===============================
-                List<Map<String, Object>> reactions =
+                List<Map<String, Object>>
+                        reactions =
                         new ArrayList<>();
 
-                List<MessageReaction> reactionList =
+                List<MessageReaction>
+                        reactionList =
+
                         messageReactionRepository
                                 .findByMessage(m);
 
@@ -449,9 +562,13 @@ public class MessageController {
             }
 
             return ResponseEntity.ok(
+
                     new ApiResponse<>(
+
                             true,
-                            "Messages fetched",
+
+                            "Messages fetched ✅",
+
                             response
                     )
             );
@@ -460,11 +577,16 @@ public class MessageController {
 
             e.printStackTrace();
 
-            return ResponseEntity.status(500)
+            return ResponseEntity
+                    .status(500)
                     .body(
+
                             new ApiResponse<>(
+
                                     false,
+
                                     e.getMessage(),
+
                                     null
                             )
                     );
@@ -475,8 +597,11 @@ public class MessageController {
     // 🔥 MARK AS READ
     // ===============================
     @PutMapping("/read/{conversationId}")
-    public ResponseEntity<ApiResponse<?>> markAsRead(
-            @PathVariable Long conversationId
+    public ResponseEntity<ApiResponse<?>>
+    markAsRead(
+
+            @PathVariable
+            Long conversationId
     ) {
 
         try {
@@ -484,27 +609,21 @@ public class MessageController {
             User user =
                     getCurrentUser();
 
-            if (user == null) {
-
-                return ResponseEntity.status(401)
-                        .body(
-                                new ApiResponse<>(
-                                        false,
-                                        "Unauthorized",
-                                        null
-                                )
-                        );
-            }
-
             messageService.markAsRead(
+
                     user.getId(),
+
                     conversationId
             );
 
             return ResponseEntity.ok(
+
                     new ApiResponse<>(
+
                             true,
-                            "Messages marked as read",
+
+                            "Messages marked as read ✅",
+
                             null
                     )
             );
@@ -513,11 +632,16 @@ public class MessageController {
 
             e.printStackTrace();
 
-            return ResponseEntity.status(500)
+            return ResponseEntity
+                    .status(500)
                     .body(
+
                             new ApiResponse<>(
+
                                     false,
+
                                     e.getMessage(),
+
                                     null
                             )
                     );
@@ -528,8 +652,11 @@ public class MessageController {
     // 🔥 DELETE FOR EVERYONE
     // ===============================
     @DeleteMapping("/everyone/{messageId}")
-    public ResponseEntity<ApiResponse<?>> deleteForEveryone(
-            @PathVariable Long messageId
+    public ResponseEntity<ApiResponse<?>>
+    deleteForEveryone(
+
+            @PathVariable
+            Long messageId
     ) {
 
         try {
@@ -538,14 +665,20 @@ public class MessageController {
                     getCurrentUser();
 
             messageService.deleteForEveryone(
+
                     user.getId(),
+
                     messageId
             );
 
             return ResponseEntity.ok(
+
                     new ApiResponse<>(
+
                             true,
-                            "Message deleted for everyone",
+
+                            "Message deleted for everyone ✅",
+
                             null
                     )
             );
@@ -554,157 +687,16 @@ public class MessageController {
 
             e.printStackTrace();
 
-            return ResponseEntity.status(500)
+            return ResponseEntity
+                    .status(500)
                     .body(
+
                             new ApiResponse<>(
+
                                     false,
+
                                     e.getMessage(),
-                                    null
-                            )
-                    );
-        }
-    }
 
-    // ===============================
-    // 🔥 DELETE FOR ME
-    // ===============================
-    @DeleteMapping("/me/{messageId}")
-    public ResponseEntity<ApiResponse<?>> deleteForMe(
-            @PathVariable Long messageId
-    ) {
-
-        try {
-
-            User user =
-                    getCurrentUser();
-
-            messageService.deleteForMe(
-                    user.getId(),
-                    messageId
-            );
-
-            return ResponseEntity.ok(
-                    new ApiResponse<>(
-                            true,
-                            "Message deleted for you",
-                            null
-                    )
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            return ResponseEntity.status(500)
-                    .body(
-                            new ApiResponse<>(
-                                    false,
-                                    e.getMessage(),
-                                    null
-                            )
-                    );
-        }
-    }
-
-    // ===============================
-    // 🔥 CLEAR CHAT
-    // ===============================
-    @DeleteMapping("/clear/{conversationId}")
-    public ResponseEntity<ApiResponse<?>> clearChat(
-            @PathVariable Long conversationId
-    ) {
-
-        try {
-
-            User user =
-                    getCurrentUser();
-
-            messageService.clearChat(
-                    user.getId(),
-                    conversationId
-            );
-
-            return ResponseEntity.ok(
-                    new ApiResponse<>(
-                            true,
-                            "Chat cleared",
-                            null
-                    )
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            return ResponseEntity.status(500)
-                    .body(
-                            new ApiResponse<>(
-                                    false,
-                                    e.getMessage(),
-                                    null
-                            )
-                    );
-        }
-    }
-
-    // ===============================
-    // 🔥 REACT TO MESSAGE
-    // ===============================
-    @PostMapping("/react")
-    public ResponseEntity<ApiResponse<?>> reactToMessage(
-            @RequestBody Map<String, Object> body
-    ) {
-
-        try {
-
-            User user =
-                    getCurrentUser();
-
-            if (user == null) {
-
-                return ResponseEntity.status(401)
-                        .body(
-                                new ApiResponse<>(
-                                        false,
-                                        "Unauthorized",
-                                        null
-                                )
-                        );
-            }
-
-            Long messageId =
-                    Long.valueOf(
-                            body.get("messageId")
-                                    .toString()
-                    );
-
-            String emoji =
-                    body.get("emoji")
-                            .toString();
-
-            messageService.reactToMessage(
-                    user.getId(),
-                    messageId,
-                    emoji
-            );
-
-            return ResponseEntity.ok(
-                    new ApiResponse<>(
-                            true,
-                            "Reaction updated",
-                            null
-                    )
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            return ResponseEntity.status(500)
-                    .body(
-                            new ApiResponse<>(
-                                    false,
-                                    e.getMessage(),
                                     null
                             )
                     );

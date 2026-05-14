@@ -2,73 +2,137 @@ package com.talksy.backend.controller;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+
 import com.talksy.backend.dto.AddContactResponse;
+
 import com.talksy.backend.entity.Contact;
 import com.talksy.backend.entity.User;
-import com.talksy.backend.payload.ApiResponse;
-import com.talksy.backend.service.ContactService;
 import com.talksy.backend.entity.Conversation;
+
+import com.talksy.backend.payload.ApiResponse;
+
+import com.talksy.backend.security.CustomUserDetails;
+
+import com.talksy.backend.service.ContactService;
 import com.talksy.backend.service.ConversationService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/contacts")
+
 @RequiredArgsConstructor
 public class ContactController {
-    private final ConversationService conversationService;
-    private final ContactService contactService;
+
+    private final ConversationService
+            conversationService;
+
+    private final ContactService
+            contactService;
 
     // ===============================
     // 🔐 CURRENT USER
     // ===============================
     private User getCurrentUser() {
-        return (User) org.springframework.security.core.context.SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+
+        Object principal =
+
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getPrincipal();
+
+        // 🔥 CUSTOM USER DETAILS
+        if (principal instanceof CustomUserDetails userDetails) {
+
+            return userDetails.getUser();
+        }
+
+        throw new RuntimeException(
+                "Unauthorized user ❌"
+        );
     }
 
     // ===============================
     // ➕ ADD CONTACT
     // ===============================
     @PostMapping
-    public ResponseEntity<ApiResponse<?>> addContact(@RequestBody Contact contact) {
+    public ResponseEntity<ApiResponse<?>>
+    addContact(
 
-        User user = getCurrentUser();
+            @RequestBody
+            Contact contact
+    ) {
 
-        AddContactResponse result = contactService.addContact(user.getId(), contact);
+        User user =
+                getCurrentUser();
 
-        // ❌ Invite case
+        AddContactResponse result =
+
+                contactService.addContact(
+
+                        user.getId(),
+
+                        contact
+                );
+
+        // ❌ INVITE CASE
         if (!result.isExists()) {
+
             return ResponseEntity.ok(
-                    new ApiResponse<>(false, result.getMessage(), null)
+
+                    new ApiResponse<>(
+
+                            false,
+
+                            result.getMessage(),
+
+                            null
+                    )
             );
         }
 
-        // ✅ Saved
+        // ✅ SAVED
         return ResponseEntity.ok(
-                new ApiResponse<>(true, result.getMessage(), result)
+
+                new ApiResponse<>(
+
+                        true,
+
+                        result.getMessage(),
+
+                        result
+                )
         );
     }
 
     // ===============================
     // 📋 GET CONTACTS
     // ===============================
-    // ===============================
-// 📋 GET CONTACTS
-// ===============================
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getContacts() {
+    public ResponseEntity<ApiResponse<?>>
+    getContacts() {
 
-        User currentUser = getCurrentUser();
+        User currentUser =
+                getCurrentUser();
 
         List<Contact> contacts =
-                contactService.getMyContacts(currentUser.getId());
 
-        List<Map<String, Object>> response =
+                contactService.getMyContacts(
+
+                        currentUser.getId()
+                );
+
+        List<Map<String, Object>>
+                response =
+
                 contacts.stream().map(contact -> {
 
                     Map<String, Object> map =
@@ -77,19 +141,36 @@ public class ContactController {
                     // ===============================
                     // 🔥 BASIC CONTACT
                     // ===============================
-                    map.put("id",
+                    map.put(
+
+                            "id",
+
                             contact.getContactUser() != null
-                                    ? contact.getContactUser().getId()
-                                    : contact.getId());
 
-                    map.put("name",
-                            contact.getName());
+                                    ?
 
-                    map.put("phone",
-                            contact.getPhone());
+                                    contact.getContactUser()
+                                            .getId()
 
-                    map.put("blocked",
-                            contact.isBlocked());
+                                    :
+
+                                    contact.getId()
+                    );
+
+                    map.put(
+                            "name",
+                            contact.getName()
+                    );
+
+                    map.put(
+                            "phone",
+                            contact.getPhone()
+                    );
+
+                    map.put(
+                            "blocked",
+                            contact.isBlocked()
+                    );
 
                     // ===============================
                     // 🔥 USER DATA
@@ -99,61 +180,107 @@ public class ContactController {
                         User otherUser =
                                 contact.getContactUser();
 
-                        map.put("avatar",
-                                otherUser.getAvatar());
+                        map.put(
+                                "avatar",
+                                otherUser.getAvatar()
+                        );
 
-                        map.put("bio",
-                                otherUser.getBio());
+                        map.put(
+                                "bio",
+                                otherUser.getBio()
+                        );
 
-                        map.put("online",
-                                otherUser.isOnline());
+                        map.put(
+                                "online",
+                                otherUser.isOnline()
+                        );
 
-                        map.put("lastSeen",
-                                otherUser.getLastSeen());
+                        map.put(
+                                "lastSeen",
+                                otherUser.getLastSeen()
+                        );
                     }
 
                     // ===============================
                     // 🔥 CONVERSATION DATA
                     // ===============================
-                    Conversation conversation =
-                            conversationService
-                                    .getConversationIfExists(
-                                            currentUser.getId(),
-                                            contact.getContactUser().getId()
-                                    );
+                    if (contact.getContactUser() != null) {
 
-                    if (conversation != null) {
+                        Conversation conversation =
 
-                        map.put("conversationId",
-                                conversation.getId());
+                                conversationService
+                                        .getConversationIfExists(
 
-                        map.put("lastMessage",
-                                conversation.getLastMessage());
+                                                currentUser.getId(),
 
-                        map.put("lastMessageTime",
-                                conversation.getLastMessageTime());
+                                                contact.getContactUser()
+                                                        .getId()
+                                        );
 
-                        Integer unreadCount =
-                                conversation.getUser1().getId().equals(currentUser.getId())
-                                        ? conversation.getUnreadCountUser1()
-                                        : conversation.getUnreadCountUser2();
+                        if (conversation != null) {
 
-                        map.put("unreadCount",
-                                unreadCount);
+                            map.put(
+                                    "conversationId",
+                                    conversation.getId()
+                            );
 
-                    } else {
+                            map.put(
+                                    "lastMessage",
+                                    conversation.getLastMessage()
+                            );
 
-                        map.put("conversationId",
-                                null);
+                            map.put(
+                                    "lastMessageTime",
+                                    conversation.getLastMessageTime()
+                            );
 
-                        map.put("lastMessage",
-                                "");
+                            Integer unreadCount =
 
-                        map.put("lastMessageTime",
-                                null);
+                                    conversation.getUser1() != null
 
-                        map.put("unreadCount",
-                                0);
+                                            &&
+
+                                            conversation.getUser1()
+                                                    .getId()
+                                                    .equals(
+                                                            currentUser.getId()
+                                                    )
+
+                                            ?
+
+                                            conversation.getUnreadCountUser1()
+
+                                            :
+
+                                            conversation.getUnreadCountUser2();
+
+                            map.put(
+                                    "unreadCount",
+                                    unreadCount
+                            );
+
+                        } else {
+
+                            map.put(
+                                    "conversationId",
+                                    null
+                            );
+
+                            map.put(
+                                    "lastMessage",
+                                    ""
+                            );
+
+                            map.put(
+                                    "lastMessageTime",
+                                    null
+                            );
+
+                            map.put(
+                                    "unreadCount",
+                                    0
+                            );
+                        }
                     }
 
                     return map;
@@ -161,9 +288,13 @@ public class ContactController {
                 }).toList();
 
         return ResponseEntity.ok(
+
                 new ApiResponse<>(
+
                         true,
-                        "Contacts fetched",
+
+                        "Contacts fetched ✅",
+
                         response
                 )
         );
@@ -173,35 +304,97 @@ public class ContactController {
     // 🔍 SEARCH CONTACT
     // ===============================
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<?>> search(@RequestParam String query) {
+    public ResponseEntity<ApiResponse<?>>
+    search(
 
-        User user = getCurrentUser();
+            @RequestParam
+            String query
+    ) {
 
-        List<Contact> contacts = contactService.searchContacts(user.getId(), query);
+        User user =
+                getCurrentUser();
 
-        List<AddContactResponse> response = contacts.stream().map(c ->
-                AddContactResponse.builder()
-                        .exists(true)
-                        .message("Contact fetched")
-                        .id(c.getId())
-                        .name(c.getName())
-                        .phone(c.getPhone())
-                        .blocked(c.isBlocked())
-                        .avatar(
-                                c.getContactUser() != null
-                                        ? c.getContactUser().getAvatar()
-                                        : null
-                        )
-                        .bio(
-                                c.getContactUser() != null
-                                        ? c.getContactUser().getBio()
-                                        : null
-                        )
-                        .build()
-        ).toList();
+        List<Contact> contacts =
+
+                contactService.searchContacts(
+
+                        user.getId(),
+
+                        query
+                );
+
+        List<AddContactResponse>
+                response =
+
+                contacts.stream().map(c ->
+
+                        AddContactResponse
+                                .builder()
+
+                                .exists(true)
+
+                                .message(
+                                        "Contact fetched"
+                                )
+
+                                .id(
+                                        c.getId()
+                                )
+
+                                .name(
+                                        c.getName()
+                                )
+
+                                .phone(
+                                        c.getPhone()
+                                )
+
+                                .blocked(
+                                        c.isBlocked()
+                                )
+
+                                .avatar(
+
+                                        c.getContactUser() != null
+
+                                                ?
+
+                                                c.getContactUser()
+                                                        .getAvatar()
+
+                                                :
+
+                                                null
+                                )
+
+                                .bio(
+
+                                        c.getContactUser() != null
+
+                                                ?
+
+                                                c.getContactUser()
+                                                        .getBio()
+
+                                                :
+
+                                                null
+                                )
+
+                                .build()
+
+                ).toList();
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Search result", response)
+
+                new ApiResponse<>(
+
+                        true,
+
+                        "Search result ✅",
+
+                        response
+                )
         );
     }
 
@@ -209,48 +402,126 @@ public class ContactController {
     // ❌ DELETE CONTACT
     // ===============================
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>>
+    delete(
 
-        User user = getCurrentUser();
+            @PathVariable
+            Long id
+    ) {
 
-        contactService.deleteContact(user.getId(), id);
+        User user =
+                getCurrentUser();
+
+        contactService.deleteContact(
+
+                user.getId(),
+
+                id
+        );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Contact deleted", null)
+
+                new ApiResponse<>(
+
+                        true,
+
+                        "Contact deleted ✅",
+
+                        null
+                )
         );
     }
 
     // ===============================
-    // 🚫 BLOCK / UNBLOCK (🔥 FIXED)
+    // 🚫 BLOCK / UNBLOCK
     // ===============================
     @PutMapping("/{id}/block")
-    public ResponseEntity<ApiResponse<?>> toggleBlock(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>>
+    toggleBlock(
 
-        User user = getCurrentUser();
+            @PathVariable
+            Long id
+    ) {
 
-        Contact updated = contactService.toggleBlockContact(user.getId(), id);
+        User user =
+                getCurrentUser();
 
-        AddContactResponse response = AddContactResponse.builder()
-                .exists(true)
-                .message("Contact updated")
-                .id(updated.getId())
-                .name(updated.getName())
-                .phone(updated.getPhone())
-                .blocked(updated.isBlocked())
-                .avatar(
-                        updated.getContactUser() != null
-                                ? updated.getContactUser().getAvatar()
-                                : null
-                )
-                .bio(
-                        updated.getContactUser() != null
-                                ? updated.getContactUser().getBio()
-                                : null
-                )
-                .build();
+        Contact updated =
+
+                contactService.toggleBlockContact(
+
+                        user.getId(),
+
+                        id
+                );
+
+        AddContactResponse response =
+
+                AddContactResponse
+                        .builder()
+
+                        .exists(true)
+
+                        .message(
+                                "Contact updated"
+                        )
+
+                        .id(
+                                updated.getId()
+                        )
+
+                        .name(
+                                updated.getName()
+                        )
+
+                        .phone(
+                                updated.getPhone()
+                        )
+
+                        .blocked(
+                                updated.isBlocked()
+                        )
+
+                        .avatar(
+
+                                updated.getContactUser() != null
+
+                                        ?
+
+                                        updated.getContactUser()
+                                                .getAvatar()
+
+                                        :
+
+                                        null
+                        )
+
+                        .bio(
+
+                                updated.getContactUser() != null
+
+                                        ?
+
+                                        updated.getContactUser()
+                                                .getBio()
+
+                                        :
+
+                                        null
+                        )
+
+                        .build();
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Contact updated", response)
+
+                new ApiResponse<>(
+
+                        true,
+
+                        "Contact updated ✅",
+
+                        response
+                )
         );
     }
 }

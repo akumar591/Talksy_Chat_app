@@ -65,6 +65,7 @@ import { ChatProvider } from "./context/ChatContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import { GroupProvider } from "./context/GroupContext";
+import { StatusProvider } from "./context/StatusContext";
 
 // =====================================
 // 🔥 VALID STEPS
@@ -313,7 +314,7 @@ function AppRoutes() {
             if (
               savedStep &&
               savedStep !==
-                "splash" &&
+              "splash" &&
               VALID_STEPS.includes(
                 savedStep
               )
@@ -618,19 +619,23 @@ function App() {
 
         <GroupProvider>
 
-          <ThemeProvider>
+          <StatusProvider>
 
-            <SettingsProvider>
+            <ThemeProvider>
 
-              <BrowserRouter>
+              <SettingsProvider>
 
-                <AppRoutes />
+                <BrowserRouter>
 
-              </BrowserRouter>
+                  <AppRoutes />
 
-            </SettingsProvider>
+                </BrowserRouter>
 
-          </ThemeProvider>
+              </SettingsProvider>
+
+            </ThemeProvider>
+
+          </StatusProvider>
 
         </GroupProvider>
 

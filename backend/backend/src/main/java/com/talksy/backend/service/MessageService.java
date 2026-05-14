@@ -31,7 +31,13 @@ public class MessageService {
             Long conversationId,
             String content,
             String type,
-            Long replyToId
+            Long replyToId,
+
+            // 🔥 NEW
+            Long statusId,
+            String statusMedia,
+            String statusType,
+            String statusCaption
     ) {
 
         User sender = userRepository.findById(senderId)
@@ -183,8 +189,14 @@ public class MessageService {
                 .content(encryptedContent)
                 .type(type != null ? type : "TEXT")
                 .replyTo(replyTo)
-                .build();
 
+                // 🔥 STATUS SUPPORT
+                .statusId(statusId)
+                .statusMedia(statusMedia)
+                .statusType(statusType)
+                .statusCaption(statusCaption)
+
+                .build();
         Message saved =
                 messageRepository.save(message);
 
@@ -219,6 +231,57 @@ public class MessageService {
         }
 
         conversationRepository.save(conversation);
+
+// ===============================
+// 🔐 DECRYPT CURRENT MESSAGE
+// ===============================
+        try {
+
+            saved.setContent(
+                    CryptoUtil.decrypt(
+                            saved.getContent()
+                    )
+            );
+
+        } catch (Exception e) {
+
+            saved.setContent(
+                    saved.getContent()
+            );
+        }
+
+// ===============================
+// 🔐 DECRYPT REPLY MESSAGE
+// ===============================
+        if (
+                saved.getReplyTo() != null
+
+                        &&
+
+                        saved.getReplyTo()
+                                .getContent() != null
+        ) {
+
+            try {
+
+                saved.getReplyTo().setContent(
+
+                        CryptoUtil.decrypt(
+
+                                saved.getReplyTo()
+                                        .getContent()
+                        )
+                );
+
+            } catch (Exception e) {
+
+                saved.getReplyTo().setContent(
+
+                        saved.getReplyTo()
+                                .getContent()
+                );
+            }
+        }
 
         return saved;
     }

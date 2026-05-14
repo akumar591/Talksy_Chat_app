@@ -1,4 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 
 import {
   FiArrowLeft,
@@ -15,10 +20,36 @@ import StatusViewer from "./StatusViewer";
 
 import AddStatus from "./AddStatus";
 
+import {
+  useStatus,
+} from "../../context/StatusContext";
+
 const StatusLayout = () => {
 
-  const [selectedStatus, setSelectedStatus] =
-    useState(null);
+  // ===============================
+  // 🔥 STATUS CONTEXT
+  // ===============================
+  const {
+
+    feedStatuses,
+
+    myStatuses,
+
+    fetchFeedStatuses,
+
+    fetchMyStatuses,
+
+    loading,
+
+  } = useStatus();
+
+  // ===============================
+  // 🔥 STATES
+  // ===============================
+  const [
+    selectedStatus,
+    setSelectedStatus,
+  ] = useState(null);
 
   const [search, setSearch] =
     useState("");
@@ -27,27 +58,57 @@ const StatusLayout = () => {
     useState(false);
 
   // 🔥 ADD STATUS
-  const [showAddStatus, setShowAddStatus] =
-    useState(false);
-
-  // 🔥 USER STATUS
-  const [userStatuses, setUserStatuses] =
-    useState([]);
+  const [
+    showAddStatus,
+    setShowAddStatus,
+  ] = useState(false);
 
   const menuRef = useRef();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  // 🔥 CLOSE MENU
+  // ===============================
+  // 🔥 FETCH STATUS DATA
+  // ===============================
+  useEffect(() => {
+
+    fetchFeedStatuses();
+
+    fetchMyStatuses();
+
+  }, [
+    fetchFeedStatuses,
+    fetchMyStatuses,
+  ]);
+
+  // ===============================
+  // 🔥 AUTO CLOSE MENU
+  // ===============================
+  useEffect(() => {
+
+    setShowMenu(false);
+
+  }, [
+    selectedStatus,
+    showAddStatus,
+  ]);
+
+  // ===============================
+  // 🔥 CLOSE MENU OUTSIDE
+  // ===============================
   useEffect(() => {
 
     const handler = (e) => {
 
       if (
+
         menuRef.current &&
+
         !menuRef.current.contains(
           e.target
         )
+
       ) {
 
         setShowMenu(false);
@@ -60,12 +121,85 @@ const StatusLayout = () => {
     );
 
     return () =>
+
       document.removeEventListener(
         "mousedown",
         handler
       );
 
   }, []);
+
+  // ===============================
+  // 🔥 SAFE FEED
+  // ===============================
+  const safeFeedStatuses =
+    Array.isArray(
+      feedStatuses
+    )
+
+      ?
+
+      feedStatuses
+
+      :
+
+      [];
+
+  // ===============================
+  // 🔥 SEARCH FILTER
+  // ===============================
+  const filteredFeed =
+    useMemo(() => {
+
+      const query =
+        search
+          .trim()
+          .toLowerCase();
+
+      if (!query) {
+
+        return safeFeedStatuses;
+      }
+
+      return safeFeedStatuses.filter(
+        (s) =>
+
+          s?.name
+            ?.toLowerCase()
+            .includes(query)
+      );
+
+    }, [
+      safeFeedStatuses,
+      search,
+    ]);
+
+  // ===============================
+  // 🔥 VIEWER SAFE CHECK
+  // ===============================
+  useEffect(() => {
+
+    if (
+      !selectedStatus
+    ) return;
+
+    const statuses =
+      selectedStatus?.statuses ||
+      [];
+
+    if (
+
+      selectedStatus.index >=
+      statuses.length
+
+    ) {
+
+      setSelectedStatus(
+        null
+      );
+    }
+
+  }, [selectedStatus]);
 
   return (
     <div
@@ -109,7 +243,7 @@ const StatusLayout = () => {
               {/* 🔥 BACK */}
               <FiArrowLeft
                 onClick={() =>
-                  navigate("/")
+                  navigate(-1)
                 }
                 className="
                   text-lg
@@ -266,30 +400,92 @@ const StatusLayout = () => {
       >
 
         <StatusList
-          onOpen={setSelectedStatus}
+
+          onOpen={
+            setSelectedStatus
+          }
+
           onAddStatus={() =>
             setShowAddStatus(true)
           }
-          userStatuses={userStatuses}
+
+          // 🔥 BACKEND DATA
+          userStatuses={
+            Array.isArray(
+              myStatuses
+            )
+
+              ?
+
+              myStatuses
+
+              :
+
+              []
+          }
+
+          statuses={
+            filteredFeed
+          }
+
+          loading={
+            loading
+          }
         />
+
+        {/* 🔥 EMPTY SEARCH */}
+        {!loading &&
+
+          search.trim() &&
+
+          filteredFeed.length ===
+          0 && (
+
+            <div
+              className="
+                flex
+                flex-col
+
+                items-center
+                justify-center
+
+                py-10
+
+                text-center
+              "
+            >
+
+              <p
+                className="
+                  text-sm
+                  opacity-60
+                "
+              >
+                No status found
+              </p>
+
+              <p
+                className="
+                  text-xs
+                  opacity-40
+                  mt-1
+                "
+              >
+                Try another name
+              </p>
+
+            </div>
+          )}
 
       </div>
 
-      {/* 🔥 ADD STATUS PAGE */}
+      {/* 🔥 ADD STATUS */}
       {showAddStatus && (
+
         <AddStatus
           onClose={() =>
             setShowAddStatus(false)
           }
-          onAdd={(newStatus) => {
-
-            setUserStatuses((prev) => [
-              newStatus,
-              ...prev,
-            ]);
-
-            setShowAddStatus(false);
-          }}
         />
       )}
 
@@ -322,6 +518,8 @@ const StatusLayout = () => {
           justify-center
 
           bg-[var(--bg)]
+
+          z-30
         `}
       >
 
@@ -329,20 +527,35 @@ const StatusLayout = () => {
         {selectedStatus ? (
 
           <StatusViewer
+
             statuses={
-              selectedStatus.statuses
+              selectedStatus
+                ?.statuses || []
             }
+
             currentIndex={
-              selectedStatus.index
+              selectedStatus
+                ?.index || 0
             }
+
+            // 🔥 IMPORTANT FIX
+            isOwnStatus={
+              selectedStatus
+                ?.isOwnStatus || false
+            }
+
             setIndex={(i) =>
+
               setSelectedStatus(
                 (prev) => ({
+
                   ...prev,
+
                   index: i,
                 })
               )
             }
+
             onClose={() =>
               setSelectedStatus(null)
             }

@@ -1,50 +1,97 @@
 package com.talksy.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
+
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
+
+// 🔥 IMPORTANT
+@JsonIgnoreProperties({
+        "hibernateLazyInitializer",
+        "handler"
+})
+
 @Getter
 @Setter
+
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Builder
 public class Message {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
 
-    // 🔥 Conversation
+    // ===============================
+    // 🔥 CONVERSATION
+    // ===============================
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", nullable = false)
+    @JoinColumn(
+            name = "conversation_id",
+            nullable = false
+    )
     private Conversation conversation;
 
-    // 🔥 Sender
+    // ===============================
+    // 🔥 SENDER
+    // ===============================
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(
+            name = "sender_id",
+            nullable = false
+    )
     private User sender;
 
-    // 🔥 Message content (encrypted store hoga)
+    // ===============================
+    // 🔥 MESSAGE CONTENT
+    // ===============================
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    // 🔥 Type (TEXT / IMAGE / VIDEO / FILE / VOICE)
+    // ===============================
+    // 🔥 TYPE
+    // ===============================
+    // TEXT / IMAGE / VIDEO / FILE / VOICE
     private String type;
 
-    // 🔥 Reply support
-    @ManyToOne(fetch = FetchType.LAZY)
+    // ===============================
+    // 🔥 REPLY SUPPORT
+    // ===============================
+    // 🔥 CHANGED TO EAGER
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "reply_to_id")
     private Message replyTo;
 
-    // 🔥 Read status
+    // ===============================
+    // 🔥 STATUS REPLY SUPPORT
+    // ===============================
+    private Long statusId;
+
+    @Column(columnDefinition = "TEXT")
+    private String statusMedia;
+
+    private String statusType;
+
+    @Column(columnDefinition = "TEXT")
+    private String statusCaption;
+
+    // ===============================
+    // 🔥 READ STATUS
+    // ===============================
     private boolean isRead = false;
 
     // ===============================
-    // 🔥 DELETE SYSTEM (IMPORTANT)
+    // 🔥 DELETE SYSTEM
     // ===============================
 
     // ❌ delete for everyone
@@ -66,6 +113,8 @@ public class Message {
     // ===============================
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+
+        this.createdAt =
+                LocalDateTime.now();
     }
 }

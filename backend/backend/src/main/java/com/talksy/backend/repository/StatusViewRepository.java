@@ -28,4 +28,27 @@ public interface StatusViewRepository
             Status status,
             User viewer
     );
+
+    // ===============================
+    // 🔥 DELETE ALL STATUS VIEWS
+    // ===============================
+    void deleteByStatus(
+            Status status
+    );
+
+    // ===============================
+    // 🔥 LATEST VIEW
+    // ===============================
+    Optional<StatusView>
+    findTopByStatusAndViewerOrderByViewedAtDesc(
+            Status status,
+            User viewer
+    );
+
+    // ===============================
+    // 🔥 UNIQUE VIEW COUNT
+    // ===============================
+    long countDistinctByStatus(
+            Status status
+    );
 }

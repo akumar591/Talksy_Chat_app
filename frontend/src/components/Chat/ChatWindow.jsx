@@ -270,6 +270,7 @@ const ChatWindow = ({ chat, onBack }) => {
     );
   }
 
+
   return (
     <div className="flex flex-col w-full h-full overflow-x-hidden bg-[var(--bg)] text-[var(--text)]">
       {/* 🔥 HEADER */}
@@ -797,14 +798,38 @@ const ChatWindow = ({ chat, onBack }) => {
       >
         {/* 🔥 EMOJI CHECK */}
         {(() => {
-          const isOnlyEmoji = (text = "") => {
+          const isOnlyEmoji = (msg) => {
+
+            // 🔥 ONLY NORMAL TEXT
+            if (msg.type !== "TEXT") {
+              return false;
+            }
+
+            // 🔥 NO STATUS
+            if (
+              msg.statusMedia ||
+              msg.statusCaption ||
+              msg.statusId
+            ) {
+              return false;
+            }
+
+            const text =
+              msg.content?.trim() || "";
+
+            if (!text) {
+              return false;
+            }
+
+            // 🔥 ONLY EMOJIS
             const emojiRegex =
               /^(\p{Emoji_Presentation}|\p{Extended_Pictographic}|\s)+$/u;
 
-            return emojiRegex.test(text.trim());
+            return emojiRegex.test(text);
           };
 
           return sortedMessages.map((msg) => {
+            console.log("CHAT MSG:", msg);
             const isMe = Number(msg.senderId) === Number(user?.id);
 
             return (
@@ -852,7 +877,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                   cursor-pointer
 
-                  ${isOnlyEmoji(msg.content)
+                  ${isOnlyEmoji(msg)
                           ? `
                       bg-transparent
                       px-1
@@ -934,6 +959,87 @@ const ChatWindow = ({ chat, onBack }) => {
                         </div>
                       )}
 
+                      {/* 🔥 STATUS PREVIEW */}
+                      {(msg.statusMedia || msg.statusCaption) && (
+                        <div
+                          className={`
+      mb-2
+      overflow-hidden
+
+      rounded-2xl
+
+      border
+
+      ${isMe
+                              ? "border-black/10 bg-black/10"
+                              : "border-[var(--border)] bg-[var(--bg)]"
+                            }
+    `}
+                        >
+                          {/* 🔥 STATUS HEADER */}
+                          <div
+                            className="
+        px-3
+        py-2
+
+        text-[11px]
+        font-semibold
+
+        opacity-70
+
+        border-b
+        border-white/5
+      "
+                          >
+                            Reply to Status
+                          </div>
+
+                          {/* 🔥 IMAGE STATUS */}
+                          {msg.statusType === "IMAGE" && msg.statusMedia && (
+                            <img
+                              src={msg.statusMedia}
+                              alt="status"
+                              className="
+          w-full
+          max-h-[260px]
+          object-cover
+        "
+                            />
+                          )}
+
+                          {/* 🔥 VIDEO STATUS */}
+                          {msg.statusType === "VIDEO" && msg.statusMedia && (
+                            <video
+                              src={msg.statusMedia}
+                              controls
+                              playsInline
+                              className="
+          w-full
+          max-h-[260px]
+          object-cover
+        "
+                            />
+                          )}
+
+                          {/* 🔥 STATUS CAPTION */}
+                          {msg.statusCaption && (
+                            <div
+                              className="
+          px-3
+          py-2
+
+          text-[12px]
+
+          opacity-80
+          break-words
+        "
+                            >
+                              {msg.statusCaption}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* 🔥 TEXT */}
                       <div
                         className={`
@@ -946,7 +1052,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     tracking-[0.1px]
 
-                    ${isOnlyEmoji(msg.content)
+                    ${isOnlyEmoji(msg)
                             ? `
                         text-[24px]
                         leading-none
@@ -964,7 +1070,17 @@ const ChatWindow = ({ chat, onBack }) => {
                       >
                         {msg.deleted
                           ? "🚫 This message was deleted"
-                          : msg.content}
+                          : msg.type === "STATUS_REPLY"
+                            ? (msg.content || "").replace(
+                              "Reply to your status: ",
+                              "",
+                            )
+                            : msg.type === "STATUS_REACTION"
+                              ? (msg.content || "").replace(
+                                " reacted to your status",
+                                "",
+                              )
+                              : msg.content}
                       </div>
 
                       {/* 🔥 FOOTER */}
@@ -976,7 +1092,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     gap-1
 
-                    ${isOnlyEmoji(msg.content) ? "mt-0" : "mt-1"}
+                    ${isOnlyEmoji(msg) ? "mt-0" : "mt-1"}
                   `}
                       >
                         <span
@@ -1646,8 +1762,8 @@ const ChatWindow = ({ chat, onBack }) => {
               aria-label="Record voice"
               onClick={handleMicClick}
               className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${isRecording
-                  ? "bg-[var(--primary)] text-black"
-                  : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
+                ? "bg-[var(--primary)] text-black"
+                : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
                 }`}
             >
               <FiMic />
@@ -1656,25 +1772,13 @@ const ChatWindow = ({ chat, onBack }) => {
         </div>
       </div>
 
-      
       {/* 🔥 ADD MEMBERS MODAL */}
       {showAddMembersModal && (
-
         <AddMembersModal
-
-          group={
-            groupDetails || chat
-          }
-
-          onClose={() =>
-            setShowAddMembersModal(
-              false
-            )
-          }
+          group={groupDetails || chat}
+          onClose={() => setShowAddMembersModal(false)}
         />
       )}
-
-
     </div>
   );
 };

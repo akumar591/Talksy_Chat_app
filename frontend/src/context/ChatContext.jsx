@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useEffect,
 } from "react";
 
 import API from "../api/axios";
@@ -57,6 +58,60 @@ export const ChatProvider = ({ children }) => {
     useRef(false);
 
   // ===============================
+  // 🔥 RESTORE CHAT
+  // ===============================
+  useEffect(() => {
+
+    try {
+
+      const savedConversation =
+        localStorage.getItem(
+          "activeConversation"
+        );
+
+      const savedChat =
+        localStorage.getItem(
+          "activeChat"
+        );
+
+      if (savedConversation) {
+
+        setConversation(
+          JSON.parse(
+            savedConversation
+          )
+        );
+      }
+
+      if (savedChat) {
+
+        setSelectedChat(
+          JSON.parse(savedChat)
+        );
+      }
+
+    } catch (err) {
+
+      console.log(err);
+    }
+
+  }, []);
+
+  // 🔥 AUTO FETCH AFTER REFRESH
+  useEffect(() => {
+
+    if (conversation?.id) {
+
+      fetchMessages(
+        conversation.id
+      );
+    }
+
+  }, [
+    conversation?.id
+  ]);
+
+  // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
@@ -95,10 +150,10 @@ export const ChatProvider = ({ children }) => {
             c.id === contactId
 
               ? {
-                  ...c,
-                  blocked:
-                    updated.blocked,
-                }
+                ...c,
+                blocked:
+                  updated.blocked,
+              }
 
               : c
           )
@@ -108,10 +163,10 @@ export const ChatProvider = ({ children }) => {
           prev?.id === contactId
 
             ? {
-                ...prev,
-                blocked:
-                  updated.blocked,
-              }
+              ...prev,
+              blocked:
+                updated.blocked,
+            }
 
             : prev
         );
@@ -320,6 +375,17 @@ export const ChatProvider = ({ children }) => {
           conversationData
         );
 
+        // 🔥 SAVE ACTIVE CHAT
+        localStorage.setItem(
+          "activeChat",
+          JSON.stringify(updatedChat)
+        );
+
+        localStorage.setItem(
+          "activeConversation",
+          JSON.stringify(conversationData)
+        );
+
         await fetchMessages(
           conversationData.id
         );
@@ -403,15 +469,28 @@ export const ChatProvider = ({ children }) => {
             reactions:
               msg.reactions || [],
 
+            // 🔥 STATUS SUPPORT
+            statusId:
+              msg.statusId || null,
+
+            statusMedia:
+              msg.statusMedia || "",
+
+            statusType:
+              msg.statusType || "",
+
+            statusCaption:
+              msg.statusCaption || "",
+
             replyTo: msg.replyTo
 
               ? {
-                  id:
-                    msg.replyTo.id,
+                id:
+                  msg.replyTo.id,
 
-                  content:
-                    msg.replyTo.content,
-                }
+                content:
+                  msg.replyTo.content,
+              }
 
               : null,
           })
@@ -449,6 +528,12 @@ export const ChatProvider = ({ children }) => {
         conversationId,
         content,
         type = "TEXT",
+
+        // 🔥 NEW
+        statusId = null,
+        statusMedia = "",
+        statusType = "",
+        statusCaption = "",
       }) => {
 
         try {
@@ -491,14 +576,21 @@ export const ChatProvider = ({ children }) => {
 
             reactions: [],
 
+            // 🔥 STATUS SUPPORT
+            statusId,
+            statusMedia,
+            statusType,
+            statusCaption,
+
             replyTo: replyTo
 
               ? {
-                  id: replyTo.id,
+                id: replyTo.id,
 
-                  content:
-                    replyTo.content,
-                }
+                // 🔥 AVOID ENCRYPTED FLASH
+                content:
+                  "Replying...",
+              }
 
               : null,
           };
@@ -515,6 +607,12 @@ export const ChatProvider = ({ children }) => {
             content,
 
             type,
+
+            // 🔥 STATUS SUPPORT
+            statusId,
+            statusMedia,
+            statusType,
+            statusCaption,
           };
 
           if (replyTo?.id) {
@@ -537,36 +635,49 @@ export const ChatProvider = ({ children }) => {
               m.id === tempId
 
                 ? {
-                    ...realMessage,
+                  ...realMessage,
 
-                    senderId:
-                      Number(
-                        realMessage.senderId
-                      ),
+                  senderId:
+                    Number(
+                      realMessage.senderId
+                    ),
 
-                    senderName:
-                      realMessage.senderName || "",
+                  senderName:
+                    realMessage.senderName || "",
 
-                    senderAvatar:
-                      realMessage.senderAvatar || "",
+                  senderAvatar:
+                    realMessage.senderAvatar || "",
 
-                    reactions:
-                      realMessage.reactions ||
-                      [],
+                  reactions:
+                    realMessage.reactions ||
+                    [],
 
-                    replyTo:
-                      realMessage.replyTo
+                  // 🔥 STATUS SUPPORT
+                  statusId:
+                    realMessage.statusId || null,
 
-                        ? {
-                            id:
-                              realMessage.replyTo.id,
+                  statusMedia:
+                    realMessage.statusMedia || "",
 
-                            content:
-                              realMessage.replyTo.content,
-                          }
+                  statusType:
+                    realMessage.statusType || "",
 
-                        : null,
-                  }
+                  statusCaption:
+                    realMessage.statusCaption || "",
+
+                  replyTo:
+                    realMessage.replyTo
+
+                      ? {
+                        id:
+                          realMessage.replyTo.id,
+
+                        content:
+                          realMessage.replyTo.content,
+                      }
+
+                      : null,
+                }
 
                 : m
             )
@@ -575,17 +686,17 @@ export const ChatProvider = ({ children }) => {
           setContacts((prev) =>
             prev.map((c) =>
               c.conversationId ===
-              conversationId
+                conversationId
 
                 ? {
-                    ...c,
+                  ...c,
 
-                    lastMessage:
-                      content,
+                  lastMessage:
+                    content,
 
-                    lastMessageTime:
-                      new Date().toISOString(),
-                  }
+                  lastMessageTime:
+                    new Date().toISOString(),
+                }
 
                 : c
             )
@@ -676,9 +787,9 @@ export const ChatProvider = ({ children }) => {
                   r.isMe
 
                     ? {
-                        ...r,
-                        emoji,
-                      }
+                      ...r,
+                      emoji,
+                    }
 
                     : r
                 );
@@ -764,13 +875,13 @@ export const ChatProvider = ({ children }) => {
             m.id === messageId
 
               ? {
-                  ...m,
+                ...m,
 
-                  content:
-                    "This message was deleted",
+                content:
+                  "This message was deleted",
 
-                  deleted: true,
-                }
+                deleted: true,
+              }
 
               : m
           )
@@ -841,13 +952,13 @@ export const ChatProvider = ({ children }) => {
         setContacts((prev) =>
           prev.map((c) =>
             c.conversationId ===
-            conversationId
+              conversationId
 
               ? {
-                  ...c,
+                ...c,
 
-                  unreadCount: 0,
-                }
+                unreadCount: 0,
+              }
 
               : c
           )
@@ -880,6 +991,14 @@ export const ChatProvider = ({ children }) => {
   // 🔥 RESET CHAT
   // ===============================
   const resetChatState = () => {
+
+    localStorage.removeItem(
+      "activeChat"
+    );
+
+    localStorage.removeItem(
+      "activeConversation"
+    );
 
     setSelectedChat(null);
 

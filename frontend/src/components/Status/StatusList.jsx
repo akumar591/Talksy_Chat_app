@@ -1,119 +1,147 @@
-import React from "react";
+import React, { useMemo } from "react";
 
-/* 🔥 DEMO DATA */
-const statuses = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    media: "https://picsum.photos/400/700",
-    type: "image",
-    seen: false,
-    time: "Just now",
-  },
+import { useAuth } from "../../context/AuthContext";
 
-  {
-    id: 2,
-    name: "Aman Verma",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    media:
-      "https://www.w3schools.com/html/mov_bbb.mp4",
-    type: "video",
-    seen: false,
-    time: "10 min ago",
-  },
+/* =============================== */
+/* 🔥 GROUP STORIES */
+/* =============================== */
+const groupStatusesByUser = (
+  statuses = []
+) => {
 
-  {
-    id: 3,
-    name: "Sneha Kapoor",
-    avatar: "https://i.pravatar.cc/150?img=7",
-    media: "https://picsum.photos/401/700",
-    type: "image",
-    seen: false,
-    time: "Today, 2:30 PM",
-  },
+  const grouped = {};
 
-  {
-    id: 4,
-    name: "Karan Mehta",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    media: "https://picsum.photos/402/700",
-    type: "image",
-    seen: true,
-    time: "Today, 12:10 PM",
-  },
+  statuses.forEach((status) => {
 
-  {
-    id: 5,
-    name: "Priya Singh",
-    avatar: "https://i.pravatar.cc/150?img=9",
-    media: "https://picsum.photos/403/700",
-    type: "image",
-    seen: true,
-    time: "Yesterday",
-  },
+    if (
+      !status?.userId
+    ) return;
 
-  ...Array.from(
-    { length: 15 },
-    (_, i) => ({
-      id: i + 6,
+    if (
+      !grouped[
+      status.userId
+      ]
+    ) {
 
-      name:
-        [
-          "Rohit",
-          "Neha",
-          "Arjun",
-          "Simran",
-          "Vikas",
-        ][i % 5] +
-        " " +
-        [
-          "Kumar",
-          "Jain",
-          "Singh",
-          "Verma",
-        ][i % 4],
+      grouped[
+        status.userId
+      ] = {
 
-      avatar: `https://i.pravatar.cc/150?img=${
-        i + 10
-      }`,
+        userId:
+          status.userId,
 
-      media: `https://picsum.photos/40${i}/70${i}`,
+        name:
+          status.name,
 
-      type: "image",
+        avatar:
+          status.avatar,
 
-      seen: i > 7,
+        seen: true,
 
-      time:
-        i < 5
-          ? "Today"
-          : "Yesterday",
-    })
-  ),
-];
+        statuses: [],
+      };
+    }
+
+    // 🔥 PUSH STATUS
+    grouped[
+      status.userId
+    ].statuses.push(status);
+
+    // 🔥 IF ANY UNSEEN
+    if (!status.seen) {
+
+      grouped[
+        status.userId
+      ].seen = false;
+    }
+  });
+
+  return Object.values(
+    grouped
+  );
+};
 
 /* 🔥 MAIN COMPONENT */
 const StatusList = ({
   onOpen,
   onAddStatus,
+
+  // 🔥 BACKEND DATA
   userStatuses = [],
+  statuses = [],
+
+  loading = false,
 }) => {
 
-  // 🔥 MERGE
-  const allStatuses = [
-    ...userStatuses,
-    ...statuses,
-  ];
+  // ===============================
+  // 🔥 SAFE ARRAY
+  // ===============================
+  const safeUserStatuses =
+    Array.isArray(
+      userStatuses
+    )
 
-  // 🔥 FILTERS
-  const recent = allStatuses.filter(
-    (s) => !s.seen
-  );
+      ?
 
-  const viewed = allStatuses.filter(
-    (s) => s.seen
-  );
+      userStatuses
 
+      :
+
+      [];
+
+  const safeStatuses =
+    Array.isArray(
+      statuses
+    )
+
+      ?
+
+      statuses
+
+      :
+
+      [];
+
+  // ===============================
+  // 🔥 REMOVE OWN STATUS
+  // ===============================
+  const filteredStatuses =
+    safeStatuses.filter(
+      (s) =>
+
+        !safeUserStatuses.some(
+          (my) =>
+            my.userId ===
+            s.userId
+        )
+    );
+
+  // ===============================
+  // 🔥 GROUP STORIES
+  // ===============================
+  const groupedStatuses =
+    useMemo(() => {
+
+      return groupStatusesByUser(
+        filteredStatuses
+      );
+
+    }, [filteredStatuses]);
+
+  // ===============================
+  // 🔥 RECENT / VIEWED
+  // ===============================
+  const recent =
+    groupedStatuses.filter(
+      (s) => !s.seen
+    );
+
+  const viewed =
+    groupedStatuses.filter(
+      (s) => s.seen
+    );
+
+    const { user } = useAuth();
   return (
     <div className="w-full h-full bg-[var(--bg)]">
 
@@ -134,15 +162,22 @@ const StatusList = ({
         "
       >
 
+        {/* =============================== */}
         {/* 🔥 MY STATUS */}
-        {userStatuses.length > 0 ? (
+        {/* =============================== */}
+        {safeUserStatuses.length >
+          0 ? (
 
           <div
             onClick={() =>
               onOpen({
+
                 statuses:
-                  userStatuses,
+                  safeUserStatuses,
+
                 index: 0,
+
+                isOwnStatus: true,
               })
             }
             className="
@@ -180,9 +215,12 @@ const StatusList = ({
 
                 <img
                   src={
-                    userStatuses[0]
-                      ?.media
+                    safeUserStatuses[0]
+                      ?.avatar ||
+
+                    "https://i.pravatar.cc/150?img=12"
                   }
+                  alt="My Status"
                   className="
                     w-14 h-14
                     rounded-full
@@ -242,7 +280,7 @@ const StatusList = ({
               <div className="flex items-center gap-2">
 
                 <p className="font-semibold text-sm">
-                  You
+                  My Status
                 </p>
 
                 <span
@@ -257,14 +295,21 @@ const StatusList = ({
                     text-[var(--primary)]
                   "
                 >
-                  Active
+                  {
+                    safeUserStatuses.length
+                  }
                 </span>
 
               </div>
 
               <p className="text-xs opacity-60 mt-1">
-                Tap to view your
-                status
+
+                {
+                  safeUserStatuses[0]
+                    ?.time ||
+                  "Tap to view your status"
+                }
+
               </p>
 
             </div>
@@ -297,17 +342,10 @@ const StatusList = ({
 
             {/* 🔥 AVATAR */}
             <div className="relative">
-
               <img
-                src="https://i.pravatar.cc/150?img=12"
-                className="
-                  w-14 h-14
-                  rounded-full
-                  object-cover
-
-                  border-2
-                  border-[var(--primary)]
-                "
+                src={user?.avatar}
+                alt="My Status"
+                className="w-14 h-14 rounded-full object-cover border-2 border-[var(--primary)]"
               />
 
               {/* 🔥 PLUS */}
@@ -360,24 +398,112 @@ const StatusList = ({
 
         )}
 
-        {/* 🔥 RECENT */}
-        {recent.length > 0 && (
-          <Section
-            title="Recent Updates"
-            list={recent}
-            onOpen={onOpen}
-          />
+        {/* =============================== */}
+        {/* 🔥 LOADING */}
+        {/* =============================== */}
+        {loading && (
+
+          <div
+            className="
+              flex
+              items-center
+              justify-center
+
+              py-10
+            "
+          >
+
+            <div
+              className="
+                w-8 h-8
+
+                border-2
+                border-[var(--primary)]/20
+
+                border-t-[var(--primary)]
+
+                rounded-full
+
+                animate-spin
+              "
+            />
+
+          </div>
         )}
 
+        {/* =============================== */}
+        {/* 🔥 RECENT */}
+        {/* =============================== */}
+        {!loading &&
+          recent.length > 0 && (
+
+            <Section
+              title="Recent Updates"
+              list={recent}
+              onOpen={onOpen}
+            />
+          )}
+
+        {/* =============================== */}
         {/* 🔥 VIEWED */}
-        {viewed.length > 0 && (
-          <Section
-            title="Viewed Updates"
-            list={viewed}
-            onOpen={onOpen}
-            viewed
-          />
-        )}
+        {/* =============================== */}
+        {!loading &&
+          viewed.length > 0 && (
+
+            <Section
+              title="Viewed Updates"
+              list={viewed}
+              onOpen={onOpen}
+              viewed
+            />
+          )}
+
+        {/* =============================== */}
+        {/* 🔥 EMPTY */}
+        {/* =============================== */}
+        {!loading &&
+
+          recent.length === 0 &&
+
+          viewed.length === 0 &&
+
+          safeUserStatuses.length === 0 && (
+
+            <div
+              className="
+                flex
+                flex-col
+
+                items-center
+                justify-center
+
+                py-16
+
+                text-center
+              "
+            >
+
+              <p
+                className="
+                  text-sm
+                  opacity-60
+                "
+              >
+                No status updates
+              </p>
+
+              <p
+                className="
+                  text-xs
+                  opacity-40
+                  mt-2
+                "
+              >
+                Add a new story
+              </p>
+
+            </div>
+          )}
 
       </div>
 
@@ -387,7 +513,10 @@ const StatusList = ({
 
 export default StatusList;
 
+/* =============================== */
 /* 🔥 SECTION */
+/* =============================== */
+
 const Section = ({
   title,
   list,
@@ -401,12 +530,11 @@ const Section = ({
       {title}
     </p>
 
-    {list.map((s, index) => (
+    {list.map((group) => (
+
       <StatusItem
-        key={s.id}
-        s={s}
-        index={index}
-        fullList={list}
+        key={group.userId}
+        group={group}
         onOpen={onOpen}
         viewed={viewed}
       />
@@ -415,21 +543,32 @@ const Section = ({
   </div>
 );
 
+/* =============================== */
 /* 🔥 STATUS ITEM */
+/* =============================== */
 const StatusItem = ({
-  s,
-  index,
-  fullList,
+  group,
   onOpen,
   viewed,
 }) => {
+
+  const latestStatus =
+
+    group.statuses[
+    group.statuses.length - 1
+    ];
 
   return (
     <div
       onClick={() =>
         onOpen({
-          statuses: fullList,
-          index,
+
+          statuses:
+            group.statuses,
+
+          index: 0,
+
+          isOwnStatus: false,
         })
       }
       className="
@@ -456,16 +595,26 @@ const StatusItem = ({
           p-[2px]
           rounded-full
 
-          ${
-            viewed
-              ? "bg-gray-500/40"
-              : "bg-gradient-to-tr from-[var(--primary)] to-blue-500"
+          ${viewed
+
+            ?
+
+            "bg-gray-500/40"
+
+            :
+
+            "bg-gradient-to-tr from-[var(--primary)] to-blue-500"
           }
         `}
       >
 
         <img
-          src={s.avatar}
+          src={
+            latestStatus?.avatar ||
+
+            "https://i.pravatar.cc/150?img=10"
+          }
+          alt={latestStatus?.name}
           className="
             w-12 h-12
             rounded-full
@@ -481,27 +630,43 @@ const StatusItem = ({
         <div className="flex justify-between items-center">
 
           <p className="font-medium truncate text-sm">
-            {s.name}
+
+            {
+              latestStatus?.name ||
+              "Unknown"
+            }
+
           </p>
 
           <span className="text-[10px] opacity-60">
-            {s.time}
+
+            {
+              latestStatus?.time ||
+              ""
+            }
+
           </span>
 
         </div>
 
+        {/* 🔥 TYPE */}
         <p className="text-xs opacity-60">
 
-          {s.type === "video"
-            ? "🎥 Video"
-            : "📷 Photo"}
+          {
+            group.statuses.length
+          } updates
 
         </p>
 
         {/* 🔥 CAPTION */}
-        {s.caption && (
+        {latestStatus?.caption && (
+
           <p className="text-xs opacity-50 truncate mt-1">
-            {s.caption}
+
+            {
+              latestStatus.caption
+            }
+
           </p>
         )}
 
