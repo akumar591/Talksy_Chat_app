@@ -32,6 +32,8 @@ import { useChat } from "../../context/ChatContext";
 import { useAuth } from "../../context/AuthContext";
 import { useGroup } from "../../context/GroupContext";
 import AddMembersModal from "./AddMembersModal";
+import { toast } from "react-hot-toast";
+import MediaGrid from "./MediaGrid";
 
 const ChatWindow = ({ chat, onBack }) => {
   const navigate = useNavigate();
@@ -59,6 +61,10 @@ const ChatWindow = ({ chat, onBack }) => {
     setReplyTo,
 
     fetchMessages,
+
+    // 🔥 NEW
+    uploadChatMedia,
+
   } = useChat();
 
   // ===============================
@@ -98,6 +104,12 @@ const ChatWindow = ({ chat, onBack }) => {
 
   const timerRef = useRef(null);
 
+  const galleryInputRef = useRef(null);
+
+  const cameraInputRef = useRef(null);
+
+  const fileInputRef = useRef(null);
+
   const emojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🙏"];
 
   const { leaveGroup, fetchGroupById, groupDetails } = useGroup();
@@ -105,10 +117,112 @@ const ChatWindow = ({ chat, onBack }) => {
   // ===============================
   // 🔥 SORT MESSAGES
   // ===============================
-  const sortedMessages = useMemo(() => {
-    return [...messages].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+  const groupedMessages = useMemo(() => {
+
+    const sorted = [...messages].sort(
+      (a, b) =>
+        new Date(a.createdAt) -
+        new Date(b.createdAt)
     );
+
+    const finalMessages = [];
+
+    let currentGroup = [];
+
+    const flushGroup = () => {
+
+      if (!currentGroup.length) {
+        return;
+      }
+
+      // 🔥 SINGLE IMAGE
+      if (currentGroup.length === 1) {
+
+        finalMessages.push(
+          currentGroup[0]
+        );
+
+      } else {
+
+        // 🔥 MULTIPLE IMAGE GROUP
+        finalMessages.push({
+
+          id:
+            `media-group-${currentGroup[0].id}`,
+
+          type: "MEDIA_GROUP",
+
+          senderId:
+            currentGroup[0].senderId,
+
+          createdAt:
+            currentGroup[0].createdAt,
+
+          medias: [...currentGroup],
+        });
+      }
+
+      currentGroup = [];
+    };
+
+    sorted.forEach((msg) => {
+
+      const isMedia =
+        msg.type === "IMAGE";
+
+      // 🔥 NORMAL MESSAGE
+      if (!isMedia) {
+
+        flushGroup();
+
+        finalMessages.push(msg);
+
+        return;
+      }
+
+      // 🔥 FIRST IMAGE
+      if (!currentGroup.length) {
+
+        currentGroup.push(msg);
+
+        return;
+      }
+
+      const last =
+        currentGroup[
+        currentGroup.length - 1
+        ];
+
+      const sameSender =
+        last.senderId ===
+        msg.senderId;
+
+      // 🔥 45 SECOND WINDOW
+      const closeTime =
+        (
+          new Date(msg.createdAt) -
+          new Date(last.createdAt)
+        ) < 45000;
+
+      if (
+        sameSender &&
+        closeTime
+      ) {
+
+        currentGroup.push(msg);
+
+      } else {
+
+        flushGroup();
+
+        currentGroup.push(msg);
+      }
+    });
+
+    flushGroup();
+
+    return finalMessages;
+
   }, [messages]);
 
   // ===============================
@@ -127,7 +241,7 @@ const ChatWindow = ({ chat, onBack }) => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
     });
-  }, [sortedMessages]);
+  }, [groupedMessages]);
 
   // ===============================
   // 🔥 AUTO FOCUS
@@ -169,7 +283,7 @@ const ChatWindow = ({ chat, onBack }) => {
       }
 
       // ATTACH
-      if (attachRef.current && !attachRef.current.contains(e.target)) {
+      if (attachRef.current && attachRef.current.contains(e.target) && !e.target.closest(".attach-menu")) {
         setShowAttach(false);
       }
 
@@ -218,6 +332,71 @@ const ChatWindow = ({ chat, onBack }) => {
       console.error("Send message error:", error);
     }
   }, [input, conversation, sendMessage, replyTo, setReplyTo]);
+
+  // ===============================
+  // 🔥 SEND MEDIA
+  // ===============================
+  const handleSendMedia =
+    useCallback(async (
+      files,
+      mediaType
+    ) => {
+
+      try {
+
+        if (
+          !files?.length ||
+          !conversation?.id
+        ) {
+          return;
+        }
+
+        setShowAttach(false);
+
+        const fileArray =
+          Array.from(files);
+
+        for (const file of fileArray) {
+
+          // 🔥 UPLOAD TO CLOUDINARY
+          const uploaded =
+
+            await uploadChatMedia(file);
+
+          if (!uploaded?.url) {
+            continue;
+          }
+
+          // 🔥 SEND MESSAGE
+          await sendMessage({
+
+            conversationId:
+              conversation.id,
+
+            content:
+              uploaded.url,
+
+            type:
+              mediaType,
+          });
+        }
+
+      } catch (err) {
+
+        console.log(err);
+
+        toast.error(
+          "Media send failed"
+        );
+      }
+    }, [
+
+      conversation,
+
+      sendMessage,
+
+      uploadChatMedia,
+    ]);
 
   // ===============================
   // 🔥 MIC
@@ -305,18 +484,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
               {!chat.isGroup && chat.online && (
                 <span
-                  className="
-              absolute
-              bottom-0
-              right-0
-              w-3
-              h-3
-              bg-green-500
-              rounded-full
-              border-2
-              border-[var(--bg)]
-            "
-                />
+                  className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--bg)]" />
               )}
             </div>
 
@@ -352,16 +520,7 @@ const ChatWindow = ({ chat, onBack }) => {
                 },
               })
             }
-            className="
-        w-10
-        h-10
-        rounded-full
-        flex
-        items-center
-        justify-center
-        hover:bg-[var(--primary)]/10
-        transition
-      "
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--primary)]/10 transition"
           >
             <FiVideo />
           </button>
@@ -380,16 +539,7 @@ const ChatWindow = ({ chat, onBack }) => {
                 },
               })
             }
-            className="
-        w-10
-        h-10
-        rounded-full
-        flex
-        items-center
-        justify-center
-        hover:bg-[var(--primary)]/10
-        transition
-      "
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--primary)]/10 transition"
           >
             <FiPhone />
           </button>
@@ -403,47 +553,14 @@ const ChatWindow = ({ chat, onBack }) => {
 
                 setShowMenu((prev) => !prev);
               }}
-              className="
-          w-10
-          h-10
-          rounded-full
-          flex
-          items-center
-          justify-center
-          hover:bg-[var(--primary)]/10
-          transition
-        "
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--primary)]/10 transition"
             >
               <FiMoreVertical />
             </button>
 
             {showMenu && (
-              <div
-                className="
-            absolute
-            right-0
-            top-12
+              <div className="absolute right-0 top-12 w-56 p-1.5 z-50 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[0_12px_40px_rgba(0,0,0,0.35)] overflow-hidden animate-menu">
 
-            w-56
-
-            p-1.5
-
-            z-50
-
-            rounded-2xl
-
-            bg-[var(--card)]
-
-            border
-            border-[var(--border)]
-
-            shadow-[0_12px_40px_rgba(0,0,0,0.35)]
-
-            overflow-hidden
-
-            animate-menu
-          "
-              >
                 {/* PROFILE / GROUP INFO */}
                 <div
                   onClick={() => {
@@ -455,23 +572,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     setShowMenu(false);
                   }}
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              hover:bg-white/5
-
-              transition-all
-              duration-200
-            "
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200"
                 >
                   <FiUser size={16} />
 
@@ -487,74 +588,26 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     setShowMenu(false);
                   }}
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              hover:bg-white/5
-
-              transition-all
-              duration-200
-            "
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200"
                 >
                   <FiImage size={16} />
 
-                  <span className="text-[13px] font-medium">Media & Files</span>
+                  <span className="text-[13px] font-medium">
+                    Media & Files
+                  </span>
                 </div>
 
                 {/* CHAT THEME */}
-                <div
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              hover:bg-white/5
-
-              transition-all
-              duration-200
-            "
-                >
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
                   <FiEdit3 size={16} />
 
-                  <span className="text-[13px] font-medium">Chat Theme</span>
+                  <span className="text-[13px] font-medium">
+                    Chat Theme
+                  </span>
                 </div>
 
                 {/* WALLPAPER */}
-                <div
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              hover:bg-white/5
-
-              transition-all
-              duration-200
-            "
-                >
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
                   <FiGrid size={16} />
 
                   <span className="text-[13px] font-medium">
@@ -563,25 +616,7 @@ const ChatWindow = ({ chat, onBack }) => {
                 </div>
 
                 {/* MUTE */}
-                <div
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              hover:bg-white/5
-
-              transition-all
-              duration-200
-            "
-                >
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
                   <FiBellOff size={16} />
 
                   <span className="text-[13px] font-medium">
@@ -601,25 +636,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                         setShowMenu(false);
                       }}
-                      className="
-                  flex
-                  items-center
-                  gap-3
-
-                  px-3
-                  py-2.5
-
-                  rounded-xl
-
-                  cursor-pointer
-
-                  text-yellow-400
-
-                  hover:bg-yellow-500/10
-
-                  transition-all
-                  duration-200
-                "
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-yellow-400 hover:bg-yellow-500/10 transition-all duration-200"
                     >
                       {chat?.blocked ? (
                         <FiUnlock size={16} />
@@ -644,23 +661,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                         setShowMenu(false);
                       }}
-                      className="
-    flex
-    items-center
-    gap-3
-
-    px-3
-    py-2.5
-
-    rounded-xl
-
-    cursor-pointer
-
-    hover:bg-white/5
-
-    transition-all
-    duration-200
-  "
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200"
                     >
                       <FiUserPlus size={16} />
 
@@ -682,25 +683,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                         setShowMenu(false);
                       }}
-                      className="
-                  flex
-                  items-center
-                  gap-3
-
-                  px-3
-                  py-2.5
-
-                  rounded-xl
-
-                  cursor-pointer
-
-                  text-red-400
-
-                  hover:bg-red-500/10
-
-                  transition-all
-                  duration-200
-                "
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
                     >
                       <FiLogOut size={16} />
 
@@ -718,29 +701,13 @@ const ChatWindow = ({ chat, onBack }) => {
 
                     setShowMenu(false);
                   }}
-                  className="
-              flex
-              items-center
-              gap-3
-
-              px-3
-              py-2.5
-
-              rounded-xl
-
-              cursor-pointer
-
-              text-red-400
-
-              hover:bg-red-500/10
-
-              transition-all
-              duration-200
-            "
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
                 >
                   <FiTrash2 size={16} />
 
-                  <span className="text-[13px] font-medium">Clear Chat</span>
+                  <span className="text-[13px] font-medium">
+                    Clear Chat
+                  </span>
                 </div>
 
                 {/* DELETE CONTACT */}
@@ -751,25 +718,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
                       setShowMenu(false);
                     }}
-                    className="
-                flex
-                items-center
-                gap-3
-
-                px-3
-                py-2.5
-
-                rounded-xl
-
-                cursor-pointer
-
-                text-red-400
-
-                hover:bg-red-500/10
-
-                transition-all
-                duration-200
-              "
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
                   >
                     <FiUserX size={16} />
 
@@ -785,17 +734,7 @@ const ChatWindow = ({ chat, onBack }) => {
       </div>
 
       {/* 🔥 MESSAGES */}
-      <div
-        className="
-    flex-1
-    overflow-y-auto
-    overflow-x-hidden
-    hide-scrollbar
-    px-4
-    py-4
-    space-y-4
-  "
-      >
+      <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar px-4 py-4 space-y-4">
         {/* 🔥 EMOJI CHECK */}
         {(() => {
           const isOnlyEmoji = (msg) => {
@@ -828,9 +767,14 @@ const ChatWindow = ({ chat, onBack }) => {
             return emojiRegex.test(text);
           };
 
-          return sortedMessages.map((msg) => {
+          return groupedMessages.map((msg) => {
             console.log("CHAT MSG:", msg);
             const isMe = Number(msg.senderId) === Number(user?.id);
+
+            const actionMessage =
+              msg.type === "MEDIA_GROUP"
+                ? msg.medias[0]
+                : msg;
 
             return (
               <div
@@ -855,296 +799,201 @@ const ChatWindow = ({ chat, onBack }) => {
                     />
                   )}
 
-                  <div className="relative max-w-full">
-                    {/* 🔥 MESSAGE */}
+                  <div
+                    className="relative max-w-full"
+                    onMouseEnter={() =>
+                      setActiveMessageId(actionMessage.id)
+                    }
+                    onMouseLeave={() =>
+                      setActiveMessageId(null)
+                    }
+                  >
+
+                    {/* 🔥 MESSAGE CONTENT */}
                     <div
-                      onClick={() =>
-                        setActiveMessageId(
-                          activeMessageId === msg.id ? null : msg.id,
-                        )
-                      }
                       className={`
-                  relative
-                  w-fit
-                  max-w-[320px]
-                  md:max-w-[480px]
+    relative
+    w-fit
+    max-w-full
 
-                  overflow-visible
-
-                  shadow-sm
-                  transition-all
-                  duration-200
-
-                  cursor-pointer
-
-                  ${isOnlyEmoji(msg)
-                          ? `
-                      bg-transparent
-                      px-1
-                      py-0
-                      shadow-none
-                      border-none
-                    `
-                          : `
-                      px-3
-                      py-2
-
-                      rounded-[20px]
-
-                      ${isMe
-                            ? `
-                          bg-[var(--primary)]
-                          text-black
-                          rounded-br-md
-                        `
-                            : `
-                          bg-[var(--card)]
-                          text-[var(--text)]
-                          rounded-bl-md
-                          border
-                          border-[var(--border)]
-                        `
-                          }
-
-                      hover:shadow-lg
-                    `
+    ${isOnlyEmoji(msg)
+                          ? "bg-transparent shadow-none p-0"
+                          : ""
                         }
-                `}
+
+    ${!isOnlyEmoji(msg) &&
+                          (
+                            msg.type === "TEXT" ||
+                            msg.type === "STATUS_REPLY" ||
+                            msg.type === "STATUS_REACTION"
+                          )
+                          ? `
+        px-3.5
+        py-2.5
+
+        shadow-sm
+        backdrop-blur-xl
+
+        border
+
+        ${isMe
+                            ? `
+            bg-[var(--primary)]
+            text-black
+            border-[var(--primary)]
+            rounded-2xl
+            rounded-br-md
+          `
+                            : `
+            bg-[var(--card)]
+            text-[var(--text)]
+            border-[var(--border)]
+            rounded-2xl
+            rounded-bl-md
+          `
+                          }
+      `
+                          : ""
+                        }
+
+    ${msg.type === "MEDIA_GROUP" ||
+                          msg.type === "IMAGE" ||
+                          msg.type === "VIDEO"
+                          ? `
+        rounded-2xl
+        overflow-hidden
+      `
+                          : ""
+                        }
+
+    whitespace-pre-wrap
+    break-words
+    tracking-[0.1px]
+
+    ${isOnlyEmoji(msg)
+                          ? "text-[42px] leading-none"
+                          : "text-[13.5px] leading-[1.45]"
+                        }
+  `}
+                      style={{
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
                     >
-                      {/* 🔥 GROUP SENDER NAME */}
-                      {chat?.isGroup && !isMe && !msg.deleted && (
-                        <p
-                          className="
-                      text-[11px]
-                      font-semibold
-                      text-[var(--primary)]
-                      mb-1
-                    "
-                        >
-                          {msg.senderName || "Unknown"}
-                        </p>
-                      )}
 
-                      {/* 🔥 REPLY */}
-                      {msg.replyTo && (
-                        <div
-                          className={`
-                      mb-1.5
-                      px-2.5
-                      py-1.5
+                      {msg.deleted ? (
+                        <span className="italic opacity-60 text-sm">
+                          🚫 This message was deleted
+                        </span>
+                      ) : (
+                        <>
 
-                      rounded-xl
-
-                      text-[11px]
-
-                      border-l-[3px]
-
-                      ${isMe
-                              ? `
-                          bg-black/10
-                          border-black/30
-                        `
-                              : `
-                          bg-[var(--primary)]/10
-                          border-[var(--primary)]
-                        `
-                            }
-                    `}
-                        >
-                          <p className="font-medium opacity-70 mb-0.5">Reply</p>
-
-                          <p className="truncate opacity-80">
-                            {msg.replyTo.content}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* 🔥 STATUS PREVIEW */}
-                      {(msg.statusMedia || msg.statusCaption) && (
-                        <div
-                          className={`
-      mb-2
-      overflow-hidden
-
-      rounded-2xl
-
-      border
-
-      ${isMe
-                              ? "border-black/10 bg-black/10"
-                              : "border-[var(--border)] bg-[var(--bg)]"
-                            }
-    `}
-                        >
-                          {/* 🔥 STATUS HEADER */}
-                          <div
-                            className="
-        px-3
-        py-2
-
-        text-[11px]
-        font-semibold
-
-        opacity-70
-
-        border-b
-        border-white/5
-      "
-                          >
-                            Reply to Status
-                          </div>
-
-                          {/* 🔥 IMAGE STATUS */}
-                          {msg.statusType === "IMAGE" && msg.statusMedia && (
-                            <img
-                              src={msg.statusMedia}
-                              alt="status"
-                              className="
-          w-full
-          max-h-[260px]
-          object-cover
-        "
+                          {/* 🔥 MEDIA GROUP */}
+                          {msg.type === "MEDIA_GROUP" && (
+                            <MediaGrid
+                              medias={msg.medias}
+                              onDelete={() => {
+                                deleteForEveryone(actionMessage.id);
+                              }}
                             />
                           )}
 
-                          {/* 🔥 VIDEO STATUS */}
-                          {msg.statusType === "VIDEO" && msg.statusMedia && (
-                            <video
-                              src={msg.statusMedia}
-                              controls
-                              playsInline
-                              className="
-          w-full
-          max-h-[260px]
-          object-cover
-        "
-                            />
-                          )}
+                          {/* 🔥 IMAGE */}
+                          {msg.type === "IMAGE" && (
+                            <div className="max-w-[260px] md:max-w-[340px] overflow-hidden rounded-2xl">
 
-                          {/* 🔥 STATUS CAPTION */}
-                          {msg.statusCaption && (
-                            <div
-                              className="
-          px-3
-          py-2
-
-          text-[12px]
-
-          opacity-80
-          break-words
-        "
-                            >
-                              {msg.statusCaption}
+                              <img
+                                src={msg.content}
+                                alt="chat-media"
+                                loading="lazy"
+                                className="w-full h-[220px] object-cover cursor-pointer hover:scale-[1.02] transition duration-300"
+                                onClick={() => window.open(msg.content, "_blank")}
+                              />
                             </div>
                           )}
-                        </div>
-                      )}
 
-                      {/* 🔥 TEXT */}
-                      <div
-                        className={`
-                    w-full
-                    max-w-full
+                          {/* 🔥 VIDEO */}
+                          {msg.type === "VIDEO" && (
+                            <video
+                              src={msg.content}
+                              controls
+                              playsInline
+                              className="w-full max-w-[260px] md:max-w-[340px] rounded-2xl object-cover"
+                            />
+                          )}
 
-                    whitespace-pre-wrap
-                    break-words
-                    break-all
+                          {/* 🔥 FILE */}
+                          {msg.type === "FILE" && (
+                            <a
+                              href={msg.content}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`
+            flex
+            items-center
+            gap-3
 
-                    tracking-[0.1px]
+            px-3
+            py-3
 
-                    ${isOnlyEmoji(msg)
-                            ? `
-                        text-[24px]
-                        leading-none
-                      `
-                            : `
-                        text-[13.5px]
-                        leading-[1.4]
-                      `
-                          }
-                  `}
-                        style={{
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {msg.deleted
-                          ? "🚫 This message was deleted"
-                          : msg.type === "STATUS_REPLY"
-                            ? (msg.content || "").replace(
-                              "Reply to your status: ",
-                              "",
-                            )
-                            : msg.type === "STATUS_REACTION"
-                              ? (msg.content || "").replace(
+            rounded-2xl
+
+            transition
+
+            ${isMe
+                                  ? "bg-black/10 hover:bg-black/20"
+                                  : "bg-[var(--bg)] hover:bg-white/5 border border-[var(--border)]"
+                                }
+          `}
+                            >
+                              <div className="w-11 h-11 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center text-lg">
+                                📄
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-medium truncate">
+                                  File
+                                </p>
+
+                                <p className="text-[11px] opacity-60 truncate">
+                                  Tap to open
+                                </p>
+                              </div>
+                            </a>
+                          )}
+
+                          {/* 🔥 TEXT */}
+                          {msg.type === "TEXT" && (
+                            <span>{msg.content}</span>
+                          )}
+
+                          {/* 🔥 STATUS REPLY */}
+                          {msg.type === "STATUS_REPLY" && (
+                            <span>
+                              {(msg.content || "").replace(
+                                "Reply to your status: ",
+                                "",
+                              )}
+                            </span>
+                          )}
+
+                          {/* 🔥 STATUS REACTION */}
+                          {msg.type === "STATUS_REACTION" && (
+                            <span>
+                              {(msg.content || "").replace(
                                 " reacted to your status",
                                 "",
-                              )
-                              : msg.content}
-                      </div>
-
-                      {/* 🔥 FOOTER */}
-                      <div
-                        className={`
-                    flex
-                    items-center
-                    justify-end
-
-                    gap-1
-
-                    ${isOnlyEmoji(msg) ? "mt-0" : "mt-1"}
-                  `}
-                      >
-                        <span
-                          className={`
-                      text-[9px]
-                      tracking-wide
-
-                      ${isMe ? "text-black/70" : "text-[var(--text)]/50"}
-                    `}
-                        >
-                          {formatTime(msg.createdAt)}
-                        </span>
-                      </div>
-
-                      {/* 🔥 REACTIONS */}
-                      {msg.reactions?.length > 0 && (
-                        <div
-                          className="
-                      absolute
-                      -bottom-3
-
-                      left-2
-
-                      flex
-                      items-center
-                      gap-1
-
-                      px-2
-                      py-[3px]
-
-                      rounded-full
-
-                      bg-[var(--card)]
-
-                      border
-                      border-[var(--border)]
-
-                      shadow-lg
-                      z-20
-                    "
-                        >
-                          {msg.reactions.map((r, i) => (
-                            <span key={i} className="text-[12px]">
-                              {r.emoji}
+                              )}
                             </span>
-                          ))}
-                        </div>
+                          )}
+
+                        </>
                       )}
                     </div>
 
                     {/* 🔥 ACTIONS BELOW MESSAGE */}
-                    {!msg.deleted && activeMessageId === msg.id && (
+
+                    {!msg.deleted && activeMessageId === actionMessage.id && (
                       <div
                         className={`
                     absolute
@@ -1164,7 +1013,7 @@ const ChatWindow = ({ chat, onBack }) => {
                           onClick={(e) => {
                             e.stopPropagation();
 
-                            setReplyTo(msg);
+                            setReplyTo(actionMessage);
                           }}
                           className="
                       w-7
@@ -1191,7 +1040,7 @@ const ChatWindow = ({ chat, onBack }) => {
                           onClick={(e) => {
                             e.stopPropagation();
 
-                            setReactionMsgId(msg.id);
+                            setReactionMsgId(actionMessage.id);
                           }}
                           className="
                       w-7
@@ -1218,7 +1067,7 @@ const ChatWindow = ({ chat, onBack }) => {
                           onClick={(e) => {
                             e.stopPropagation();
 
-                            setMessageMenuId(msg.id);
+                            setMessageMenuId(actionMessage.id);
                           }}
                           className="
                       w-7
@@ -1242,7 +1091,7 @@ const ChatWindow = ({ chat, onBack }) => {
                     )}
 
                     {/* 🔥 REACTION PICKER */}
-                    {reactionMsgId === msg.id && (
+                    {reactionMsgId === actionMessage.id && (
                       <div
                         ref={reactionRef}
                         className={`
@@ -1270,7 +1119,7 @@ const ChatWindow = ({ chat, onBack }) => {
                           <span
                             key={i}
                             onClick={() => {
-                              reactToMessage(msg.id, e);
+                              reactToMessage(actionMessage.id, e);
 
                               setReactionMsgId(null);
                             }}
@@ -1379,6 +1228,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
       {/* 🔥 INPUT */}
       <div className="relative p-3 bg-[var(--card)] border-t border-[var(--border)] bottom-0">
+
         {/* 🔥 REPLY PREVIEW */}
         {replyTo && (
           <div className="mb-2 px-3 py-2 bg-[var(--primary)]/10 rounded-2xl flex justify-between items-center text-sm">
@@ -1396,143 +1246,122 @@ const ChatWindow = ({ chat, onBack }) => {
           </div>
         )}
 
+        {/* 🔥 HIDDEN GALLERY INPUT */}
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+
+            const files = e.target.files;
+
+            if (!files?.length) return;
+
+            handleSendMedia(
+              files,
+              "IMAGE"
+            );
+
+            e.target.value = "";
+          }}
+        />
+
+        {/* 🔥 HIDDEN VIDEO INPUT */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="video/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+
+            const files = e.target.files;
+
+            if (!files?.length) return;
+
+            handleSendMedia(
+              files,
+              "VIDEO"
+            );
+
+            e.target.value = "";
+          }}
+        />
+
+        {/* 🔥 HIDDEN FILE INPUT */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+
+            const files = e.target.files;
+
+            if (!files?.length) return;
+
+            handleSendMedia(
+              files,
+              "FILE"
+            );
+
+            e.target.value = "";
+          }}
+        />
+
         {/* 🔥 ATTACH MENU */}
         {showAttach && (
-          <div
-            className="
-      absolute
-      bottom-24
-      left-4
+          <div className="attach-menu absolute bottom-24 left-4 z-50 w-60 p-2 rounded-3xl bg-[var(--card)] border border-[var(--border)] shadow-2xl animate-menu">
 
-      z-50
-
-      w-60
-
-      p-2
-
-      rounded-3xl
-
-      bg-[var(--card)]
-
-      border
-      border-[var(--border)]
-
-      shadow-2xl
-
-      animate-menu
-    "
-          >
             <div className="grid grid-cols-3 gap-3">
-              {/* IMAGE */}
+
+              {/* 🔥 GALLERY */}
               <button
-                className="
-          flex
-          flex-col
-          items-center
-          gap-2
-
-          p-3
-
-          rounded-2xl
-
-          hover:bg-white/5
-
-          transition
-        "
+                type="button"
+                onClick={() => {
+                  galleryInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-white/5 transition"
               >
-                <div
-                  className="
-            w-12
-            h-12
-
-            rounded-2xl
-
-            bg-pink-500/20
-
-            flex
-            items-center
-            justify-center
-          "
-                >
+                <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center">
                   <FiImage className="text-pink-400 text-xl" />
                 </div>
 
                 <span className="text-[11px]">Gallery</span>
               </button>
 
-              {/* CAMERA */}
+              {/* 🔥 VIDEO */}
               <button
-                className="
-          flex
-          flex-col
-          items-center
-          gap-2
-
-          p-3
-
-          rounded-2xl
-
-          hover:bg-white/5
-
-          transition
-        "
+                type="button"
+                onClick={() => {
+                  cameraInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-white/5 transition"
               >
-                <div
-                  className="
-            w-12
-            h-12
-
-            rounded-2xl
-
-            bg-blue-500/20
-
-            flex
-            items-center
-            justify-center
-          "
-                >
-                  <FiCamera className="text-blue-400 text-xl" />
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+                  <FiVideo className="text-blue-400 text-xl" />
                 </div>
 
-                <span className="text-[11px]">Camera</span>
+                <span className="text-[11px]">Video</span>
               </button>
 
-              {/* FILE */}
+              {/* 🔥 FILE */}
               <button
-                className="
-          flex
-          flex-col
-          items-center
-          gap-2
-
-          p-3
-
-          rounded-2xl
-
-          hover:bg-white/5
-
-          transition
-        "
+                type="button"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-white/5 transition"
               >
-                <div
-                  className="
-            w-12
-            h-12
-
-            rounded-2xl
-
-            bg-green-500/20
-
-            flex
-            items-center
-            justify-center
-          "
-                >
+                <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center">
                   <FiPlus className="text-green-400 text-xl" />
                 </div>
 
                 <span className="text-[11px]">File</span>
               </button>
+
             </div>
           </div>
         )}
@@ -1541,117 +1370,31 @@ const ChatWindow = ({ chat, onBack }) => {
         {showEmoji && (
           <div
             ref={emojiRef}
-            className="
-      fixed
-
-      left-0
-      right-0
-      bottom-0
-
-      md:absolute
-      md:left-14
-      md:right-auto
-      md:bottom-24
-
-      z-[999]
-
-      md:w-[320px]
-
-      rounded-t-[24px]
-      md:rounded-[24px]
-
-      overflow-hidden
-      hide-scrollbar
-
-      border-t
-      md:border
-
-      border-[var(--border)]
-
-      shadow-[0_-10px_40px_rgba(0,0,0,0.45)]
-
-      animate-menu
-    "
+            className="fixed left-0 right-0 bottom-0 md:absolute md:left-14 md:right-auto md:bottom-24 z-[999] md:w-[320px] rounded-t-[24px] md:rounded-[24px] overflow-hidden hide-scrollbar border-t md:border border-[var(--border)] shadow-[0_-10px_40px_rgba(0,0,0,0.45)] animate-menu"
             style={{
               background: "var(--card)",
             }}
           >
+
             {/* 🔥 TOP BAR */}
-            <div
-              className="
-        flex
-        items-center
-        justify-between
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[rgba(255,255,255,0.05)]">
 
-        px-3
-        py-2
-
-        border-b
-        border-[rgba(255,255,255,0.05)]
-      "
-            >
-              <h3
-                className="
-          text-[13px]
-          font-medium
-          opacity-80
-        "
-              >
+              <h3 className="text-[13px] font-medium opacity-80">
                 Emojis
               </h3>
 
               <button
                 onClick={() => setShowEmoji(false)}
-                className="
-          w-7
-          h-7
-
-          rounded-full
-
-          flex
-          items-center
-          justify-center
-
-          hover:bg-white/5
-
-          transition
-        "
+                className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/5 transition"
               >
                 <FiX size={16} />
               </button>
             </div>
 
             {/* 🔥 LIVE INPUT PREVIEW */}
-            <div
-              className="
-        flex
-        items-center
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-[rgba(255,255,255,0.05)] overflow-x-auto hide-scrollbar">
 
-        gap-2
-
-        px-3
-        py-2
-
-        border-b
-        border-[rgba(255,255,255,0.05)]
-
-        overflow-x-auto
-
-        hide-scrollbar
-      "
-            >
-              <div
-                className="
-          flex
-          items-center
-
-          gap-1
-
-          text-lg
-
-          whitespace-nowrap
-        "
-              >
+              <div className="flex items-center gap-1 text-lg whitespace-nowrap">
                 {input}
               </div>
             </div>
@@ -1675,39 +1418,22 @@ const ChatWindow = ({ chat, onBack }) => {
               }}
               style={{
                 background: "var(--card)",
-
                 border: "none",
-
                 borderRadius: window.innerWidth < 768 ? "0px" : "24px",
-
                 boxShadow: "none",
-
                 width: "100%",
-
                 scrollbarWidth: "none",
-
                 msOverflowStyle: "none",
-
                 "--epr-bg-color": "var(--card)",
-
                 "--epr-category-label-bg-color": "var(--card)",
-
                 "--epr-hover-bg-color": "rgba(255,255,255,0.06)",
-
                 "--epr-focus-bg-color": "rgba(255,255,255,0.08)",
-
                 "--epr-search-input-bg-color": "rgba(255,255,255,0.03)",
-
                 "--epr-search-input-text-color": "var(--text)",
-
                 "--epr-search-border-color": "transparent",
-
                 "--epr-category-icon-active-color": "var(--primary)",
-
                 "--epr-text-color": "var(--text)",
-
                 "--epr-emoji-size": "24px",
-
                 "--epr-emoji-gap": "6px",
               }}
             />
@@ -1716,6 +1442,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
         {/* 🔥 INPUT ROW */}
         <div className="flex items-center gap-2">
+
           <button
             aria-label="Attach file"
             ref={attachRef}
@@ -1726,6 +1453,7 @@ const ChatWindow = ({ chat, onBack }) => {
           </button>
 
           <div className="flex items-center flex-1 px-3 py-2 rounded-full bg-[var(--bg)] border border-[var(--border)] gap-2">
+
             <FiSmile
               onClick={() => setShowEmoji((prev) => !prev)}
               className="cursor-pointer"

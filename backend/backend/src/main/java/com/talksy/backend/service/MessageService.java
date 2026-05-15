@@ -301,6 +301,7 @@ public class MessageService {
                                         "Conversation not found"
                                 ));
 
+
         // ===============================
         // 🔥 GROUP SECURITY
         // ===============================
@@ -405,6 +406,138 @@ public class MessageService {
                     m.getReplyTo().setContent(
                             m.getReplyTo()
                                     .getContent()
+                    );
+                }
+            }
+        }
+
+        return messages;
+    }
+
+    // ===============================
+    // 🔥 GET MEDIA MESSAGES
+    // ===============================
+    public List<Message> getMediaMessages(
+
+            Long userId,
+
+            Long conversationId
+    ) {
+
+        Conversation conversation =
+
+                conversationRepository
+                        .findById(conversationId)
+
+                        .orElseThrow(() ->
+
+                                new RuntimeException(
+                                        "Conversation not found"
+                                )
+                        );
+
+        // ===============================
+        // 🔥 GROUP SECURITY
+        // ===============================
+        if (Boolean.TRUE.equals(
+                conversation.getIsGroup()
+        )) {
+
+            User user =
+
+                    userRepository
+                            .findById(userId)
+
+                            .orElseThrow(() ->
+
+                                    new RuntimeException(
+                                            "User not found"
+                                    )
+                            );
+
+            boolean isMember =
+
+                    groupMemberRepository
+                            .findByGroupAndUser(
+
+                                    conversation.getGroup(),
+
+                                    user
+                            )
+                            .isPresent();
+
+            if (!isMember) {
+
+                throw new RuntimeException(
+                        "You are not a member of this group"
+                );
+            }
+        }
+
+        // ===============================
+        // 🔥 PRIVATE SECURITY
+        // ===============================
+        else {
+
+            if (
+
+                    !conversation.getUser1()
+                            .getId()
+                            .equals(userId)
+
+                            &&
+
+                            !conversation.getUser2()
+                                    .getId()
+                                    .equals(userId)
+            ) {
+
+                throw new RuntimeException(
+                        "You are not part of this conversation"
+                );
+            }
+        }
+
+        // ===============================
+        // 🔥 FETCH MEDIA
+        // ===============================
+        List<Message> messages =
+
+                messageRepository
+                        .findByConversationAndTypeInOrderByCreatedAtDesc(
+
+                                conversation,
+
+                                List.of(
+
+                                        "IMAGE",
+
+                                        "VIDEO",
+
+                                        "FILE"
+                                )
+                        );
+
+        // ===============================
+        // 🔐 DECRYPT
+        // ===============================
+        for (Message m : messages) {
+
+            if (!m.isDeletedForEveryone()) {
+
+                try {
+
+                    m.setContent(
+
+                            CryptoUtil.decrypt(
+                                    m.getContent()
+                            )
+                    );
+
+                } catch (Exception e) {
+
+                    m.setContent(
+                            m.getContent()
                     );
                 }
             }

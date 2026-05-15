@@ -594,6 +594,113 @@ public class MessageController {
     }
 
     // ===============================
+    // 🔥 GET MEDIA MESSAGES
+    // ===============================
+    @GetMapping("/media/{conversationId}")
+    public ResponseEntity<ApiResponse<?>>
+    getMediaMessages(
+
+            @PathVariable
+            Long conversationId
+    ) {
+
+        try {
+
+            User user =
+                    getCurrentUser();
+
+            List<Message> messages =
+
+                    messageService.getMediaMessages(
+
+                            user.getId(),
+
+                            conversationId
+                    );
+
+            List<Map<String, Object>>
+                    response =
+                    new ArrayList<>();
+
+            for (Message m : messages) {
+
+                Map<String, Object> map =
+                        new HashMap<>();
+
+                map.put(
+                        "id",
+                        m.getId()
+                );
+
+                map.put(
+                        "content",
+                        m.getContent()
+                );
+
+                map.put(
+                        "type",
+                        m.getType()
+                );
+
+                map.put(
+                        "createdAt",
+                        m.getCreatedAt()
+                );
+
+                map.put(
+                        "senderId",
+                        m.getSender()
+                                .getId()
+                );
+
+                map.put(
+                        "senderName",
+                        m.getSender()
+                                .getName()
+                );
+
+                map.put(
+                        "senderAvatar",
+                        m.getSender()
+                                .getAvatar()
+                );
+
+                response.add(map);
+            }
+
+            return ResponseEntity.ok(
+
+                    new ApiResponse<>(
+
+                            true,
+
+                            "Media messages fetched ✅",
+
+                            response
+                    )
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(500)
+                    .body(
+
+                            new ApiResponse<>(
+
+                                    false,
+
+                                    e.getMessage(),
+
+                                    null
+                            )
+                    );
+        }
+    }
+
+    // ===============================
     // 🔥 MARK AS READ
     // ===============================
     @PutMapping("/read/{conversationId}")

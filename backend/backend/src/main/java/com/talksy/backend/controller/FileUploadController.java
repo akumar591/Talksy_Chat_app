@@ -1,27 +1,31 @@
 package com.talksy.backend.controller;
 
+import com.cloudinary.Cloudinary;
+
+import com.cloudinary.utils.ObjectUtils;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/file")
+
+@RequiredArgsConstructor
 public class FileUploadController {
 
     // ===============================
-    // 📁 BASE DIRECTORY
+    // 🔥 CLOUDINARY
     // ===============================
-    private static final String
-            BASE_DIR = "uploads/";
+    private final Cloudinary
+            cloudinary;
 
     // ===============================
     // 🔥 MAX FILE SIZE
@@ -146,23 +150,23 @@ public class FileUploadController {
 
                 case "profile":
 
-                    folder = "profile/";
+                    folder = "profile";
                     break;
 
                 case "chat":
 
-                    folder = "chat/";
+                    folder = "chat";
                     break;
 
                 case "docs":
 
-                    folder = "docs/";
+                    folder = "docs";
                     break;
 
                 // 🔥 STATUS SUPPORT
                 case "status":
 
-                    folder = "status/";
+                    folder = "status";
                     break;
 
                 default:
@@ -173,78 +177,37 @@ public class FileUploadController {
             }
 
             // ===============================
-            // 📁 CREATE DIRECTORY
+            // ☁️ CLOUDINARY UPLOAD
             // ===============================
-            String basePath =
-                    System.getProperty(
-                            "user.dir"
-                    );
+            Map uploadResult =
 
-            String fullDir =
+                    cloudinary
+                            .uploader()
+                            .upload(
 
-                    basePath +
-                            "/" +
-                            BASE_DIR +
-                            folder;
+                                    file.getBytes(),
 
-            File dir =
-                    new File(fullDir);
+                                    ObjectUtils.asMap(
 
-            if (!dir.exists()) {
+                                            "folder",
+                                            "talksy/" + folder,
 
-                dir.mkdirs();
-            }
-
-            // ===============================
-            // 🔥 UNIQUE FILE NAME
-            // ===============================
-            String originalName =
-
-                    file.getOriginalFilename();
-
-            String safeName =
-
-                    originalName != null
-
-                            ?
-
-                            originalName.replaceAll(
-                                    "\\s+",
-                                    "_"
-                            )
-
-                            :
-
-                            "file";
-
-            String fileName =
-
-                    UUID.randomUUID()
-                            +
-                            "_" +
-                            safeName;
+                                            // 🔥 VIDEO SUPPORT
+                                            "resource_type",
+                                            isVideo
+                                                    ? "video"
+                                                    : "image"
+                                    )
+                            );
 
             // ===============================
-            // 💾 SAVE FILE
-            // ===============================
-            File dest =
-
-                    new File(
-                            fullDir + fileName
-                    );
-
-            file.transferTo(dest);
-
-            // ===============================
-            // 🌐 FILE URL
+            // 🌐 CLOUDINARY URL
             // ===============================
             String url =
 
-                    "http://localhost:8080/uploads/"
-                            +
-                            folder
-                            +
-                            fileName;
+                    uploadResult
+                            .get("secure_url")
+                            .toString();
 
             // ===============================
             // 🔥 RESPONSE DATA
@@ -272,8 +235,11 @@ public class FileUploadController {
             );
 
             data.put(
-                    "fileName",
-                    fileName
+                    "publicId",
+
+                    uploadResult
+                            .get("public_id")
+                            .toString()
             );
 
             return ok(
