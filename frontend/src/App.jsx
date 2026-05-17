@@ -34,23 +34,23 @@ import CallLayout from "./components/Call/CallLayout";
 import { ThemeProvider } from "./context/ThemeContext";
 
 import {
-    AuthProvider,
-    useAuth,
+  AuthProvider,
+  useAuth,
 } from "./context/AuthContext";
 
 import { SettingsProvider } from "./context/SettingsContext";
 
 import {
-    BrowserRouter,
-    Routes,
-    Route,
-    Navigate,
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
 } from "react-router-dom";
 
 import {
-    useState,
-    useEffect,
-    useRef,
+  useState,
+  useEffect,
+  useRef,
 } from "react";
 
 import UserProfile from "./components/User/UserProfile";
@@ -72,199 +72,189 @@ import { StatusProvider } from "./context/StatusContext";
 // 🔥 VALID STEPS
 // =====================================
 const VALID_STEPS = [
-    "splash",
-    "onboarding",
-    "login",
-    "otp",
-    "profile",
-    "app",
+  "splash",
+  "onboarding",
+  "login",
+  "otp",
+  "profile",
+  "app",
 ];
 
 function AppRoutes() {
 
-    const {
-        user,
-        authLoading,
-    } = useAuth();
+  const {
+    user,
+    authLoading,
+  } = useAuth();
 
-    // =====================================
-    // 🔥 INITIAL STEP
-    // =====================================
-    const getInitialStep =
-        () => {
+  // =====================================
+  // 🔥 INITIAL STEP
+  // =====================================
+  const getInitialStep =
+    () => {
 
-            const seenSplash =
-                localStorage.getItem(
-                    "seenSplash"
-                );
-
-            const savedStep =
-                localStorage.getItem(
-                    "step"
-                );
-
-            // 🔥 FIRST APP OPEN
-            if (!seenSplash) {
-
-                return "splash";
-            }
-
-            // 🔥 VALID STEP RESTORE
-            if (
-                VALID_STEPS.includes(
-                    savedStep
-                )
-            ) {
-
-                return savedStep;
-            }
-
-            // 🔥 DEFAULT
-            return "onboarding";
-        };
-
-    // =====================================
-    // 🔥 STEP STATE
-    // =====================================
-    const [step, setStep] =
-        useState(
-            getInitialStep
+      const seenSplash =
+        localStorage.getItem(
+          "seenSplash"
         );
 
-    // =====================================
-    // 🔥 MOUNT SAFETY
-    // =====================================
-    const mountedRef =
-        useRef(false);
-
-    // =====================================
-    // 🔥 UPDATE STEP
-    // =====================================
-    const updateStep = (
-        newStep
-    ) => {
-
-        // 🔥 invalid safety
-        if (
-            !VALID_STEPS.includes(
-                newStep
-            )
-        ) {
-
-            return;
-        }
-
-        // 🔥 save instantly
-        localStorage.setItem(
-            "step",
-            newStep
+      const savedStep =
+        localStorage.getItem(
+          "step"
         );
 
-        setStep(newStep);
+      if (!seenSplash) {
+
+        return "splash";
+      }
+
+      if (
+        VALID_STEPS.includes(
+          savedStep
+        )
+      ) {
+
+        return savedStep;
+      }
+
+      return "onboarding";
     };
 
-    // =====================================
-    // 🔥 BODY BG
-    // =====================================
-    useEffect(() => {
+  // =====================================
+  // 🔥 STEP STATE
+  // =====================================
+  const [step, setStep] =
+    useState(
+      getInitialStep
+    );
 
-        document.body.style.background =
-            "var(--bg)";
+  // =====================================
+  // 🔥 MOUNT SAFETY
+  // =====================================
+  const mountedRef =
+    useRef(false);
 
-    }, []);
+  // =====================================
+  // 🔥 UPDATE STEP
+  // =====================================
+  const updateStep = (
+    newStep
+  ) => {
 
-    // =====================================
-    // 🔥 STEP SYNC
-    // =====================================
-    useEffect(() => {
+    if (
+      !VALID_STEPS.includes(
+        newStep
+      )
+    ) {
 
-        if (
-            !mountedRef.current
-        ) {
+      return;
+    }
 
-            mountedRef.current =
-                true;
-        }
+    localStorage.setItem(
+      "step",
+      newStep
+    );
 
-        // 🔥 keep localStorage synced
+    setStep(newStep);
+  };
+
+  // =====================================
+  // 🔥 BODY BG
+  // =====================================
+  useEffect(() => {
+
+    document.body.style.background =
+      "var(--bg)";
+
+  }, []);
+
+  // =====================================
+  // 🔥 STEP SYNC
+  // =====================================
+  useEffect(() => {
+
+    if (
+      !mountedRef.current
+    ) {
+
+      mountedRef.current =
+        true;
+    }
+
+    localStorage.setItem(
+      "step",
+      step
+    );
+
+  }, [step]);
+
+  // =====================================
+  // 🔥 REFRESH SAFETY
+  // =====================================
+  useEffect(() => {
+
+    const handleBeforeUnload =
+      () => {
+
         localStorage.setItem(
-            "step",
-            step
+          "step",
+          step
         );
+      };
 
-    }, [step]);
+    window.addEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
 
-    // =====================================
-    // 🔥 REFRESH SAFETY
-    // =====================================
-    useEffect(() => {
+    return () => {
 
-        const handleBeforeUnload =
-            () => {
+      window.removeEventListener(
+        "beforeunload",
+        handleBeforeUnload
+      );
+    };
 
-                localStorage.setItem(
-                    "step",
-                    step
-                );
-            };
+  }, [step]);
 
-        window.addEventListener(
-            "beforeunload",
-            handleBeforeUnload
-        );
+  // =====================================
+  // 🔥 AUTO APP RESTORE
+  // =====================================
+  useEffect(() => {
 
-        return () => {
+    if (authLoading)
+      return;
 
-            window.removeEventListener(
-                "beforeunload",
-                handleBeforeUnload
-            );
-        };
+    if (
+      step === "otp" ||
+      step === "profile"
+    ) {
 
-    }, [step]);
+      return;
+    }
 
-    // =====================================
-    // 🔥 AUTO APP RESTORE
-    // =====================================
-    useEffect(() => {
+    if (
+      user &&
+      step !== "app"
+    ) {
 
-        // 🔥 wait auth restore
-        if (authLoading)
-            return;
+      updateStep("app");
+    }
 
-        // 🔥 DON'T FORCE APP
-        // while auth flow active
-        if (
-            step === "otp" ||
-            step === "profile"
-        ) {
+  }, [
+    user,
+    authLoading,
+    step,
+  ]);
 
-            return;
-        }
+  // =====================================
+  // 🔥 LOADING
+  // =====================================
+  if (authLoading) {
 
-        // 🔥 restore app only
-        if (
-            user &&
-            step !== "app"
-        ) {
-
-            updateStep("app");
-        }
-
-    }, [
-        user,
-        authLoading,
-        step,
-    ]);
-
-    // =====================================
-    // 🔥 LOADING
-    // =====================================
-    if (authLoading) {
-
-        return (
-            <div
-                className="
+    return (
+      <div
+        className="
           h-screen
           flex
           items-center
@@ -272,383 +262,384 @@ function AppRoutes() {
           bg-[#0b0f1a]
           text-white
         "
-            >
-                Loading...
-            </div>
-        );
-    }
-
-    // =====================================
-    // 🔥 SPLASH
-    // =====================================
-    if (step === "splash") {
-
-        return (
-            <>
-                <Toaster position="top-center" />
-
-                <Splash
-                    onFinish={() => {
-
-                        // 🔥 mark splash seen
-                        localStorage.setItem(
-                            "seenSplash",
-                            "true"
-                        );
-
-                        // 🔥 already logged in
-                        if (user) {
-
-                            updateStep(
-                                "app"
-                            );
-
-                            return;
-                        }
-
-                        // 🔥 restore old flow
-                        const savedStep =
-                            localStorage.getItem(
-                                "step"
-                            );
-
-                        if (
-                            savedStep &&
-                            savedStep !==
-                            "splash" &&
-                            VALID_STEPS.includes(
-                                savedStep
-                            )
-                        ) {
-
-                            updateStep(
-                                savedStep
-                            );
-
-                            return;
-                        }
-
-                        // 🔥 new user
-                        updateStep(
-                            "onboarding"
-                        );
-
-                    }}
-                />
-            </>
-        );
-    }
-
-    // =====================================
-    // 🔥 ONBOARDING
-    // =====================================
-    if (
-        step ===
-        "onboarding"
-    ) {
-
-        return (
-            <>
-                <Toaster position="top-center" />
-
-                <Onboarding
-                    onFinish={() => {
-
-                        updateStep(
-                            "login"
-                        );
-
-                    }}
-                />
-            </>
-        );
-    }
-
-    // =====================================
-    // 🔥 LOGIN
-    // =====================================
-    if (
-        step === "login"
-    ) {
-
-        return (
-            <>
-                <Toaster position="top-center" />
-
-                <Login
-                    onLogin={() => {
-
-                        updateStep(
-                            "otp"
-                        );
-
-                    }}
-                />
-            </>
-        );
-    }
-
-    // =====================================
-    // 🔥 OTP
-    // =====================================
-    if (
-        step === "otp"
-    ) {
-
-        return (
-            <>
-                <Toaster position="top-center" />
-
-                <OTP
-                    onVerify={(
-                        nextStep
-                    ) => {
-
-                        if (
-                            !nextStep
-                        )
-                            return;
-
-                        updateStep(
-                            nextStep
-                        );
-
-                    }}
-                />
-            </>
-        );
-    }
-
-    // =====================================
-    // 🔥 PROFILE SETUP
-    // =====================================
-    if (
-        step ===
-        "profile"
-    ) {
-
-        return (
-            <>
-                <Toaster position="top-center" />
-
-                <ProfileSetup
-                    onComplete={() => {
-
-                        updateStep(
-                            "app"
-                        );
-
-                    }}
-                />
-            </>
-        );
-    }
-
-    // =====================================
-    // 🔥 MAIN APP
-    // =====================================
-    return (
-        <>
-            <Toaster position="top-center" />
-
-            <ProtectedRoute>
-
-                {/* 🔥 NAVBAR */}
-                <Navbar />
-
-                <Routes>
-
-                    {/* ================= CHAT ================= */}
-
-                    <Route
-                        path="/"
-                        element={<ChatLayout />}
-                    />
-
-                    <Route
-                        path="/chat/:id"
-                        element={<ChatLayout />}
-                    />
-
-                    <Route
-                        path="/group/:id"
-                        element={<ChatLayout />}
-                    />
-
-                    <Route
-                        path="/new-chat"
-                        element={<NewChat />}
-                    />
-
-                    <Route
-                        path="/new-group"
-                        element={<NewGroup />}
-                    />
-
-                    <Route
-                        path="/group-info/:id"
-                        element={<GroupInfo />}
-                    />
-
-                    {/* ================= USER ================= */}
-
-                    <Route
-                        path="/user/:id"
-                        element={<UserProfile />}
-                    />
-
-                    <Route
-                        path="/profile"
-                        element={<Profile />}
-                    />
-
-                    <Route
-                        path="/media/:id"
-                        element={<MediaPage />}
-                    />
-
-                    {/* ================= SETTINGS ================= */}
-
-                    <Route
-                        path="/settings"
-                        element={<Settings />}
-                    />
-
-                    <Route
-                        path="/settings/privacy"
-                        element={<Privacy />}
-                    />
-
-                    <Route
-                        path="/settings/security"
-                        element={<Security />}
-                    />
-
-                    <Route
-                        path="/settings/chats"
-                        element={<ChatsSettings />}
-                    />
-
-                    <Route
-                        path="/settings/notifications"
-                        element={<Notifications />}
-                    />
-
-                    <Route
-                        path="/settings/storage"
-                        element={<Storage />}
-                    />
-
-                    <Route
-                        path="/settings/two-step"
-                        element={<TwoStep />}
-                    />
-
-                    <Route
-                        path="/settings/help"
-                        element={<Help />}
-                    />
-
-                    <Route
-                        path="/settings/change-number"
-                        element={<ChangeNumber />}
-                    />
-
-                    <Route
-                        path="/linked-devices"
-                        element={<LinkedDevices />}
-                    />
-
-                    <Route
-                        path="/settings/theme-drawer"
-                        element={<SettingsDrawer />}
-                    />
-
-                    {/* ================= GROUPS ================= */}
-
-                    <Route
-                        path="/groups"
-                        element={<ChatLayout />}
-                    />
-
-                    {/* ================= COMMUNITY ================= */}
-
-                    <Route
-                        path="/community"
-                        element={<ChatLayout />}
-                    />
-
-                    <Route
-                        path="/community/:id"
-                        element={<ChatLayout />}
-                    />
-
-                    {/* ================= STATUS ================= */}
-
-                    <Route
-                        path="/status"
-                        element={<StatusLayout />}
-                    />
-
-                    {/* ================= CALL ================= */}
-
-                    <Route
-                        path="/call"
-                        element={<CallLayout />}
-                    />
-
-                    {/* ================= INVALID ================= */}
-
-                    <Route
-                        path="*"
-                        element={
-                            <Navigate
-                                to="/"
-                                replace
-                            />
-                        }
-                    />
-
-                </Routes>
-
-            </ProtectedRoute>
-        </>
+      >
+        Loading...
+      </div>
     );
+  }
+
+  // =====================================
+  // 🔥 SPLASH
+  // =====================================
+  if (step === "splash") {
+
+    return (
+      <>
+        <Toaster position="top-center" />
+
+        <Splash
+          onFinish={() => {
+
+            localStorage.setItem(
+              "seenSplash",
+              "true"
+            );
+
+            if (user) {
+
+              updateStep(
+                "app"
+              );
+
+              return;
+            }
+
+            const savedStep =
+              localStorage.getItem(
+                "step"
+              );
+
+            if (
+              savedStep &&
+              savedStep !==
+              "splash" &&
+              VALID_STEPS.includes(
+                savedStep
+              )
+            ) {
+
+              updateStep(
+                savedStep
+              );
+
+              return;
+            }
+
+            updateStep(
+              "onboarding"
+            );
+
+          }}
+        />
+      </>
+    );
+  }
+
+  // =====================================
+  // 🔥 ONBOARDING
+  // =====================================
+  if (
+    step ===
+    "onboarding"
+  ) {
+
+    return (
+      <>
+        <Toaster position="top-center" />
+
+        <Onboarding
+          onFinish={() => {
+
+            updateStep(
+              "login"
+            );
+
+          }}
+        />
+      </>
+    );
+  }
+
+  // =====================================
+  // 🔥 LOGIN
+  // =====================================
+  if (
+    step === "login"
+  ) {
+
+    return (
+      <>
+        <Toaster position="top-center" />
+
+        <Login
+          onLogin={() => {
+
+            updateStep(
+              "otp"
+            );
+
+          }}
+        />
+      </>
+    );
+  }
+
+  // =====================================
+  // 🔥 OTP
+  // =====================================
+  if (
+    step === "otp"
+  ) {
+
+    return (
+      <>
+        <Toaster position="top-center" />
+
+        <OTP
+          onVerify={(
+            nextStep
+          ) => {
+
+            if (
+              !nextStep
+            )
+              return;
+
+            updateStep(
+              nextStep
+            );
+
+          }}
+        />
+      </>
+    );
+  }
+
+  // =====================================
+  // 🔥 PROFILE SETUP
+  // =====================================
+  if (
+    step ===
+    "profile"
+  ) {
+
+    return (
+      <>
+        <Toaster position="top-center" />
+
+        <ProfileSetup
+          onComplete={() => {
+
+            updateStep(
+              "app"
+            );
+
+          }}
+        />
+      </>
+    );
+  }
+
+  // =====================================
+  // 🔥 MAIN APP
+  // =====================================
+  return (
+    <>
+      <Toaster position="top-center" />
+
+      <ProtectedRoute>
+
+        {/* 🔥 GLOBAL NAVBAR */}
+        <Navbar />
+
+        <Routes>
+
+          {/* ================= CHAT ================= */}
+
+          <Route
+            path="/"
+            element={<ChatLayout />}
+          />
+
+          {/* 🔥 CHAT WINDOW FULLSCREEN */}
+          <Route
+            path="/chat/:id"
+            element={<ChatLayout />}
+          />
+
+          {/* 🔥 GROUP CHAT */}
+          <Route
+            path="/group/:id"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/groups"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/community"
+            element={<ChatLayout />}
+          />
+
+          <Route
+            path="/community/:id"
+            element={<ChatLayout />}
+          />
+
+          {/* ================= NEW CHAT ================= */}
+
+          <Route
+            path="/new-chat"
+            element={<NewChat />}
+          />
+
+          <Route
+            path="/new-group"
+            element={<NewGroup />}
+          />
+
+          {/* 🔥 GROUP INFO FULLSCREEN */}
+          <Route
+            path="/group-info/:id"
+            element={<GroupInfo />}
+          />
+
+          {/* ================= USER ================= */}
+
+          {/* 🔥 USER PROFILE FULLSCREEN */}
+          <Route
+            path="/user/:id"
+            element={<UserProfile />}
+          />
+
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
+
+          {/* 🔥 MEDIA FULLSCREEN */}
+          <Route
+            path="/media/:id"
+            element={<MediaPage />}
+          />
+
+          {/* ================= SETTINGS ================= */}
+
+          <Route
+            path="/settings"
+            element={<Settings />}
+          />
+
+          <Route
+            path="/settings/privacy"
+            element={<Privacy />}
+          />
+
+          <Route
+            path="/settings/security"
+            element={<Security />}
+          />
+
+          <Route
+            path="/settings/chats"
+            element={<ChatsSettings />}
+          />
+
+          <Route
+            path="/settings/notifications"
+            element={<Notifications />}
+          />
+
+          <Route
+            path="/settings/storage"
+            element={<Storage />}
+          />
+
+          <Route
+            path="/settings/two-step"
+            element={<TwoStep />}
+          />
+
+          <Route
+            path="/settings/help"
+            element={<Help />}
+          />
+
+          <Route
+            path="/settings/change-number"
+            element={<ChangeNumber />}
+          />
+
+          <Route
+            path="/linked-devices"
+            element={<LinkedDevices />}
+          />
+
+          <Route
+            path="/settings/theme-drawer"
+            element={<SettingsDrawer />}
+          />
+
+          {/* ================= STATUS ================= */}
+
+          {/* 🔥 STATUS FULLSCREEN */}
+          <Route
+            path="/status"
+            element={<StatusLayout />}
+          />
+
+          {/* ================= CALL ================= */}
+
+          {/* 🔥 CALL FULLSCREEN */}
+          <Route
+            path="/call"
+            element={<CallLayout />}
+          />
+
+          {/* ================= INVALID ================= */}
+
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to="/"
+                replace
+              />
+            }
+          />
+
+        </Routes>
+
+      </ProtectedRoute>
+    </>
+  );
 }
 
 function App() {
 
-    return (
-        <AuthProvider>
+  return (
+    <AuthProvider>
 
-            <ChatProvider>
+      <ChatProvider>
 
-                <GroupProvider>
+        <GroupProvider>
 
-                    <StatusProvider>
+          <StatusProvider>
 
-                        <ThemeProvider>
+            <ThemeProvider>
 
-                            <SettingsProvider>
+              <SettingsProvider>
 
-                                <BrowserRouter>
+                <BrowserRouter>
 
-                                    <AppRoutes />
+                  <AppRoutes />
 
-                                </BrowserRouter>
+                </BrowserRouter>
 
-                            </SettingsProvider>
+              </SettingsProvider>
 
-                        </ThemeProvider>
+            </ThemeProvider>
 
-                    </StatusProvider>
+          </StatusProvider>
 
-                </GroupProvider>
+        </GroupProvider>
 
-            </ChatProvider>
+      </ChatProvider>
 
-        </AuthProvider>
-    );
+    </AuthProvider>
+  );
 }
 
 export default App;

@@ -90,36 +90,42 @@ const Navbar = () => {
     };
   }, []);
 
-  /* 🔥 FULLSCREEN ROUTES */
-  const fullScreenRoutes = [
+  /* 🔥 MOBILE HIDE ROUTES */
+  const mobileHideRoutes = [
     "/chat/",
-    "/new-chat",
-    "/new-group",
+
     "/group/",
-    "/group-info",
-    "/status",
-    "/media/",
-    "/call",
-    "/user/",
+
+    "/group-info/",
+
+    "/new-chat",
+
+    "/new-group",
+
     "/profile",
-    "/settings",
-    "/settings/privacy",
-    "/settings/security",
-    "/settings/chats",
-    "/settings/notifications",
-    "/settings/storage",
-    "/settings/two-step",
-    "/settings/help",
-    "/settings/change-number",
-    "/linked-devices",
-    "/media/:id",
+
+    "/status",
+
+    "/call",
+
+    "/media/",
+
+    "/user/",
   ];
 
-  /* 🔥 HIDE NAVBAR */
-  const hideNavbar =
-    fullScreenRoutes.some((route) => location.pathname.startsWith(route)) &&
-    isMobile;
+  /* 🔥 DESKTOP HIDE ROUTES */
+  const desktopHideRoutes = [];
 
+  /* 🔥 HIDE NAVBAR */
+  const hideNavbar = isMobile
+
+    ? mobileHideRoutes.some((route) =>
+      location.pathname.startsWith(route)
+    )
+
+    : desktopHideRoutes.some((route) =>
+      location.pathname.startsWith(route)
+    );
   return (
     <>
       {!hideNavbar && (
