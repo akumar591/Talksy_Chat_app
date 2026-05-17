@@ -98,6 +98,7 @@ const Navbar = () => {
     "/group/",
     "/group-info",
     "/status",
+    "/media/",
     "/call",
     "/user/",
     "/profile",
@@ -110,7 +111,8 @@ const Navbar = () => {
     "/settings/two-step",
     "/settings/help",
     "/settings/change-number",
-    "/linked-devices", 
+    "/linked-devices",
+    "/media/:id",
   ];
 
   /* 🔥 HIDE NAVBAR */
@@ -178,7 +180,7 @@ const Navbar = () => {
               <NavItem
                 icon={<FiMessageCircle />}
                 label="Chats"
-                onClick={() => { setActiveFilter("All"); navigate("/");}} />
+                onClick={() => { setActiveFilter("All"); navigate("/"); }} />
 
               <NavItem
                 icon={<FiUserPlus />}
@@ -201,10 +203,10 @@ const Navbar = () => {
               <NavItem
                 icon={<MdOutlineGroups />}
                 label="Groups"
-                onClick={() => { setActiveFilter("Groups"); navigate("/");}} />
+                onClick={() => { setActiveFilter("Groups"); navigate("/"); }} />
 
               <NavItem
-                icon={<MdOutlineGroups/>}
+                icon={<MdOutlineGroups />}
                 label="New-group"
                 onClick={() => navigate("/new-group")}
               />
@@ -286,15 +288,14 @@ const Navbar = () => {
 
                 pointer-events-none
 
-                ${
-                  theme === "light"
-                    ? `
+                ${theme === "light"
+                  ? `
                       bg-gradient-to-r
                       from-white
                       via-gray-100
                       to-white
                     `
-                    : `
+                  : `
                       bg-gradient-to-r
                       from-[#020617]
                       via-[#0b0f1a]
@@ -598,7 +599,7 @@ const Navbar = () => {
             <MobileItem
               icon={<FiMessageCircle />}
               label="Chats"
-              onClick={() => {setActiveFilter("All"); navigate("/");}}
+              onClick={() => { setActiveFilter("All"); navigate("/"); }}
             />
 
             <MobileItem
@@ -616,7 +617,7 @@ const Navbar = () => {
             <MobileItem
               icon={<MdOutlineGroup />}
               label="Groups"
-              onClick={() => { setActiveFilter("Groups"); navigate("/");}}
+              onClick={() => { setActiveFilter("Groups"); navigate("/"); }}
             />
           </div>
         </>
@@ -838,13 +839,12 @@ const Tab = ({ label, active, onClick }) => (
 
       whitespace-nowrap
 
-      ${
-        active
-          ? `
+      ${active
+        ? `
             bg-[var(--primary)]
             text-black
           `
-          : `
+        : `
             bg-[var(--card)]/30
           `
       }
