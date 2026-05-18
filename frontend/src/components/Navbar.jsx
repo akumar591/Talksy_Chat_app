@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 
 import {
   FiMessageCircle,
@@ -40,7 +40,9 @@ const Navbar = () => {
   const { user } = useAuth();
 
   /* 🔥 MOBILE CHECK */
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    window.innerWidth < 768
+  );
 
   /* 🔥 UI STATES */
   const [openSettings, setOpenSettings] = useState(false);
@@ -92,6 +94,7 @@ const Navbar = () => {
 
   /* 🔥 MOBILE HIDE ROUTES */
   const mobileHideRoutes = [
+
     "/chat/",
 
     "/group/",
@@ -103,6 +106,10 @@ const Navbar = () => {
     "/new-group",
 
     "/profile",
+
+    "/settings",
+
+    "/linked-devices",
 
     "/status",
 

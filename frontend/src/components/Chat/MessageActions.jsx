@@ -48,19 +48,19 @@ const MessageActions = ({
         items-center
         gap-2
 
-        px-2
-        py-1.5
+        px-2.5
+        py-2
 
         rounded-full
 
         backdrop-blur-2xl
 
         border
-        border-[rgba(255,255,255,0.08)]
+        border-[var(--border)]
 
-        bg-[rgba(18,18,20,0.78)]
+        bg-[color-mix(in_srgb,var(--card)_88%,transparent)]
 
-        shadow-[0_8px_25px_rgba(0,0,0,0.28)]
+        shadow-[0_10px_30px_rgba(0,0,0,0.22)]
 
         animate-menu
 
@@ -95,10 +95,19 @@ const MessageActions = ({
           items-center
           justify-center
 
+          bg-[var(--card)]
+
+          border
+          border-[var(--border)]
+
           text-[var(--text)]
 
-          hover:bg-white/10
+          shadow-md
+
+          hover:bg-[var(--primary)]/10
           hover:text-[var(--primary)]
+
+          hover:scale-105
 
           active:scale-95
 
@@ -134,10 +143,19 @@ const MessageActions = ({
           items-center
           justify-center
 
+          bg-[var(--card)]
+
+          border
+          border-[var(--border)]
+
           text-[var(--text)]
 
-          hover:bg-white/10
+          shadow-md
+
+          hover:bg-[var(--primary)]/10
           hover:text-[var(--primary)]
+
+          hover:scale-105
 
           active:scale-95
 
@@ -173,10 +191,19 @@ const MessageActions = ({
           items-center
           justify-center
 
+          bg-[var(--card)]
+
+          border
+          border-[var(--border)]
+
           text-[var(--text)]
+
+          shadow-md
 
           hover:bg-red-500/10
           hover:text-red-400
+
+          hover:scale-105
 
           active:scale-95
 

@@ -383,16 +383,101 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* ========================================= */
+/* 🔥 FULL EMOJI PICKER THEME FIX */
+/* ========================================= */
 
-/* 🔥 EMOJI */
-.epr-emoji {
+/* 🔥 MAIN CONTAINER */
+.EmojiPickerReact {
 
-  transition:
-    transform 0.12s ease !important;
+  background:
+    color-mix(in srgb, var(--card) 94%, transparent) !important;
+
+  border:
+    1px solid var(--border) !important;
+
+  border-radius: 18px !important;
+
+  overflow: hidden !important;
+
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.22) !important;
 }
 
+/* 🔥 TOP HEADER */
+.epr-header {
+
+  background:
+    transparent !important;
+
+  border-bottom:
+    1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* 🔥 SEARCH AREA */
+.epr-search-container {
+
+  background:
+    transparent !important;
+}
+
+/* 🔥 SEARCH INPUT */
+.epr-search-container input {
+
+  background:
+    rgba(255,255,255,0.05) !important;
+
+  color:
+    var(--text) !important;
+
+  border: none !important;
+
+  box-shadow: none !important;
+}
+
+/* 🔥 CATEGORY NAVIGATION */
+.epr-category-nav {
+
+  background:
+    color-mix(in srgb, var(--card) 96%, transparent) !important;
+
+  border-top:
+    1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* 🔥 CATEGORY BUTTONS */
+.epr-category-nav button {
+
+  color:
+    var(--text) !important;
+
+  opacity: 0.75;
+
+  transition:
+    all 0.15s ease !important;
+}
+
+/* 🔥 ACTIVE CATEGORY */
+.epr-btn-active {
+
+  background:
+    rgba(255,255,255,0.08) !important;
+
+  opacity: 1 !important;
+}
+
+/* 🔥 BODY */
+.epr-body {
+
+  background:
+    transparent !important;
+}
+
+/* 🔥 EMOJI HOVER */
 .epr-emoji:hover {
 
-  transform:
-    scale(1.12);
+  transform: scale(1.12);
+
+  background:
+    rgba(255,255,255,0.06) !important;
 }

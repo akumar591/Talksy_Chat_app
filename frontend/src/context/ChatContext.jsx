@@ -5,6 +5,7 @@ import {
   useCallback,
   useRef,
   useEffect,
+  useMemo,
 } from "react";
 
 import API from "../api/axios";
@@ -55,6 +56,74 @@ export const ChatProvider = ({ children }) => {
 
   // 🔥 FILTER
   const [activeFilter, setActiveFilter] = useState("All");
+
+  // ===============================
+  // 🔥 CACHED MEDIA DATA
+  // ===============================
+
+  const mediaMessages = useMemo(() => {
+
+    return messages.filter(
+      (msg) =>
+        (
+          msg.type === "IMAGE" ||
+          msg.type === "VIDEO"
+        ) &&
+        msg.content
+    );
+
+  }, [messages]);
+
+  const imageMessages = useMemo(() => {
+
+    return messages.filter(
+      (msg) =>
+        msg.type === "IMAGE" &&
+        msg.content
+    );
+
+  }, [messages]);
+
+  const videoMessages = useMemo(() => {
+
+    return messages.filter(
+      (msg) =>
+        msg.type === "VIDEO" &&
+        msg.content
+    );
+
+  }, [messages]);
+
+  const fileMessages = useMemo(() => {
+
+    return messages.filter(
+      (msg) =>
+        msg.type === "FILE" &&
+        msg.content
+    );
+
+  }, [messages]);
+
+  const pdfMessages = useMemo(() => {
+
+    return messages.filter(
+      (msg) =>
+        msg.type === "FILE" &&
+        msg.content &&
+        msg.content
+          .toLowerCase()
+          .includes(".pdf")
+    );
+
+  }, [messages]);
+
+  const profileMedia = useMemo(() => {
+
+    return mediaMessages
+      .slice()
+      .reverse();
+
+  }, [mediaMessages]);
 
   // ===============================
   // 🔥 LOCKS
@@ -175,10 +244,10 @@ export const ChatProvider = ({ children }) => {
           prev.map((c) =>
             c.id === contactId
               ? {
-                  ...c,
-                  blocked:
-                    updated.blocked,
-                }
+                ...c,
+                blocked:
+                  updated.blocked,
+              }
               : c
           )
         );
@@ -186,10 +255,10 @@ export const ChatProvider = ({ children }) => {
         setSelectedChat((prev) =>
           prev?.id === contactId
             ? {
-                ...prev,
-                blocked:
-                  updated.blocked,
-              }
+              ...prev,
+              blocked:
+                updated.blocked,
+            }
             : prev
         );
 
@@ -561,14 +630,14 @@ export const ChatProvider = ({ children }) => {
             replyTo:
               msg.replyTo
                 ? {
-                    id:
-                      msg.replyTo
-                        .id,
+                  id:
+                    msg.replyTo
+                      .id,
 
-                    content:
-                      msg.replyTo
-                        .content,
-                  }
+                  content:
+                    msg.replyTo
+                      .content,
+                }
                 : null,
           }));
 
@@ -707,40 +776,40 @@ export const ChatProvider = ({ children }) => {
             `temp-${Date.now()}`;
 
           const optimisticMessage =
-            {
-              id: tempId,
+          {
+            id: tempId,
 
-              content,
+            content,
 
-              type,
+            type,
 
-              senderId:
-                currentUserId,
+            senderId:
+              currentUserId,
 
-              createdAt:
-                new Date().toISOString(),
+            createdAt:
+              new Date().toISOString(),
 
-              isRead: false,
+            isRead: false,
 
-              deleted: false,
+            deleted: false,
 
-              reactions: [],
+            reactions: [],
 
-              statusId,
-              statusMedia,
-              statusType,
-              statusCaption,
+            statusId,
+            statusMedia,
+            statusType,
+            statusCaption,
 
-              replyTo: replyTo
-                ? {
-                    id:
-                      replyTo.id,
+            replyTo: replyTo
+              ? {
+                id:
+                  replyTo.id,
 
-                    content:
-                      "Replying...",
-                  }
-                : null,
-            };
+                content:
+                  "Replying...",
+              }
+              : null,
+          };
 
           setMessages((prev) => [
             ...prev,
@@ -777,56 +846,56 @@ export const ChatProvider = ({ children }) => {
             prev.map((m) =>
               m.id === tempId
                 ? {
-                    ...realMessage,
+                  ...realMessage,
 
-                    senderId:
-                      Number(
-                        realMessage.senderId
-                      ),
+                  senderId:
+                    Number(
+                      realMessage.senderId
+                    ),
 
-                    senderName:
-                      realMessage.senderName ||
-                      "",
+                  senderName:
+                    realMessage.senderName ||
+                    "",
 
-                    senderAvatar:
-                      realMessage.senderAvatar ||
-                      "",
+                  senderAvatar:
+                    realMessage.senderAvatar ||
+                    "",
 
-                    reactions:
-                      realMessage.reactions ||
-                      [],
+                  reactions:
+                    realMessage.reactions ||
+                    [],
 
-                    statusId:
-                      realMessage.statusId ||
-                      null,
+                  statusId:
+                    realMessage.statusId ||
+                    null,
 
-                    statusMedia:
-                      realMessage.statusMedia ||
-                      "",
+                  statusMedia:
+                    realMessage.statusMedia ||
+                    "",
 
-                    statusType:
-                      realMessage.statusType ||
-                      "",
+                  statusType:
+                    realMessage.statusType ||
+                    "",
 
-                    statusCaption:
-                      realMessage.statusCaption ||
-                      "",
+                  statusCaption:
+                    realMessage.statusCaption ||
+                    "",
 
-                    replyTo:
-                      realMessage.replyTo
-                        ? {
-                            id:
-                              realMessage
-                                .replyTo
-                                .id,
+                  replyTo:
+                    realMessage.replyTo
+                      ? {
+                        id:
+                          realMessage
+                            .replyTo
+                            .id,
 
-                            content:
-                              realMessage
-                                .replyTo
-                                .content,
-                          }
-                        : null,
-                  }
+                        content:
+                          realMessage
+                            .replyTo
+                            .content,
+                      }
+                      : null,
+                }
                 : m
             )
           );
@@ -834,25 +903,25 @@ export const ChatProvider = ({ children }) => {
           setContacts((prev) =>
             prev.map((c) =>
               c.conversationId ===
-              conversationId
+                conversationId
                 ? {
-                    ...c,
+                  ...c,
 
-                    lastMessage:
-                      type ===
+                  lastMessage:
+                    type ===
                       "IMAGE"
-                        ? "📷 Photo"
+                      ? "📷 Photo"
+                      : type ===
+                        "VIDEO"
+                        ? "🎥 Video"
                         : type ===
-                            "VIDEO"
-                          ? "🎥 Video"
-                          : type ===
-                              "FILE"
-                            ? "📄 File"
-                            : content,
+                          "FILE"
+                          ? "📄 File"
+                          : content,
 
-                    lastMessageTime:
-                      new Date().toISOString(),
-                  }
+                  lastMessageTime:
+                    new Date().toISOString(),
+                }
                 : c
             )
           );
@@ -934,7 +1003,7 @@ export const ChatProvider = ({ children }) => {
               if (
                 existing &&
                 existing.emoji ===
-                  emoji
+                emoji
               ) {
 
                 updated =
@@ -952,9 +1021,9 @@ export const ChatProvider = ({ children }) => {
                     (r) =>
                       r.isMe
                         ? {
-                            ...r,
-                            emoji,
-                          }
+                          ...r,
+                          emoji,
+                        }
                         : r
                   );
 
@@ -1038,15 +1107,15 @@ export const ChatProvider = ({ children }) => {
           setMessages((prev) =>
             prev.map((m) =>
               m.id ===
-              messageId
+                messageId
                 ? {
-                    ...m,
+                  ...m,
 
-                    content:
-                      "This message was deleted",
+                  content:
+                    "This message was deleted",
 
-                    deleted: true,
-                  }
+                  deleted: true,
+                }
                 : m
             )
           );
@@ -1127,11 +1196,11 @@ export const ChatProvider = ({ children }) => {
           setContacts((prev) =>
             prev.map((c) =>
               c.conversationId ===
-              conversationId
+                conversationId
                 ? {
-                    ...c,
-                    unreadCount: 0,
-                  }
+                  ...c,
+                  unreadCount: 0,
+                }
                 : c
             )
           );
@@ -1217,6 +1286,13 @@ export const ChatProvider = ({ children }) => {
         sending,
         sidebarLoading,
         hasFetchedContacts,
+
+        mediaMessages,
+        imageMessages,
+        videoMessages,
+        fileMessages,
+        pdfMessages,
+        profileMedia,
 
         activeFilter,
         setActiveFilter,

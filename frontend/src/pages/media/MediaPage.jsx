@@ -18,20 +18,32 @@ const MediaPage = () => {
 
   const navigate = useNavigate();
 
-  const { messages } = useChat();
+  // 🔥 NOW USING OPTIMIZED CONTEXT DATA
+  const {
+    mediaMessages,
+    imageMessages,
+    videoMessages,
+    fileMessages,
+    pdfMessages,
+  } = useChat();
 
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [activeTab, setActiveTab] = useState("MEDIA");
+  const [activeTab, setActiveTab] =
+    useState("ALL");
 
-  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] =
+    useState(false);
 
-  const [viewerMedia, setViewerMedia] = useState([]);
+  const [viewerMedia, setViewerMedia] =
+    useState([]);
 
-  const [viewerIndex, setViewerIndex] = useState(0);
+  const [viewerIndex, setViewerIndex] =
+    useState(0);
 
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserId, setCurrentUserId] =
+    useState(null);
 
   // ===============================
   // 🔥 GET USER
@@ -40,9 +52,14 @@ const MediaPage = () => {
 
     try {
 
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user =
+        JSON.parse(
+          localStorage.getItem("user")
+        );
 
-      setCurrentUserId(Number(user?.id));
+      setCurrentUserId(
+        Number(user?.id)
+      );
 
     } catch {
 
@@ -52,51 +69,44 @@ const MediaPage = () => {
   }, []);
 
   // ===============================
-  // 🔥 FILTER MEDIA
+  // 🔥 CURRENT ITEMS
   // ===============================
-  const mediaMessages = useMemo(() => {
+  const currentItems = useMemo(() => {
 
-    return messages.filter(
-      (msg) =>
-        (msg.type === "IMAGE" || msg.type === "VIDEO") &&
-        msg.content
-    );
+    switch (activeTab) {
 
-  }, [messages]);
+      case "IMAGES":
+        return imageMessages;
 
-  // ===============================
-  // 🔥 FILTER FILES
-  // ===============================
-  const fileMessages = useMemo(() => {
+      case "VIDEOS":
+        return videoMessages;
 
-    return messages.filter(
-      (msg) =>
-        msg.type === "FILE" &&
-        msg.content
-    );
+      case "FILES":
+        return fileMessages;
 
-  }, [messages]);
+      case "PDF":
+        return pdfMessages;
 
-  // ===============================
-  // 🔥 SENT MEDIA
-  // ===============================
-  const sentMedia = mediaMessages.filter(
-    (msg) =>
-      msg.senderId === currentUserId
-  );
+      default:
+        return mediaMessages;
+    }
 
-  // ===============================
-  // 🔥 RECEIVED MEDIA
-  // ===============================
-  const receivedMedia = mediaMessages.filter(
-    (msg) =>
-      msg.senderId !== currentUserId
-  );
+  }, [
+    activeTab,
+    mediaMessages,
+    imageMessages,
+    videoMessages,
+    fileMessages,
+    pdfMessages,
+  ]);
 
   // ===============================
   // 🔥 OPEN VIEWER
   // ===============================
-  const openViewer = (medias, index) => {
+  const openViewer = (
+    medias,
+    index
+  ) => {
 
     setViewerMedia(medias);
 
@@ -108,23 +118,30 @@ const MediaPage = () => {
   // ===============================
   // 🔥 DOWNLOAD
   // ===============================
-  const handleDownload = async (url, name) => {
+  const handleDownload = async (
+    url,
+    name
+  ) => {
 
     try {
 
-      const response = await fetch(url);
+      const response =
+        await fetch(url);
 
-      const blob = await response.blob();
+      const blob =
+        await response.blob();
 
       const downloadUrl =
         window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
+      const a =
+        document.createElement("a");
 
       a.href = downloadUrl;
 
       a.download =
-        name || `talksy-file-${Date.now()}`;
+        name ||
+        `talksy-file-${Date.now()}`;
 
       document.body.appendChild(a);
 
@@ -132,7 +149,9 @@ const MediaPage = () => {
 
       a.remove();
 
-      window.URL.revokeObjectURL(downloadUrl);
+      window.URL.revokeObjectURL(
+        downloadUrl
+      );
 
     } catch (err) {
 
@@ -169,7 +188,12 @@ const MediaPage = () => {
               </h2>
 
               <p className="text-xs opacity-60">
-                {mediaMessages.length + fileMessages.length} items
+
+                {mediaMessages.length +
+                  fileMessages.length}
+
+                {" "}items
+
               </p>
 
             </div>
@@ -178,34 +202,77 @@ const MediaPage = () => {
 
         </div>
 
-        {/* 🔥 TABS */}
-        <div className="flex gap-2 px-4 pb-4">
+        {/* =============================== */}
+        {/* 🔥 FILTER TABS */}
+        {/* =============================== */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar px-4 pb-4">
 
-          <button
-            onClick={() => setActiveTab("MEDIA")}
-            className={`px-4 py-2 rounded-full text-sm transition ${
-              activeTab === "MEDIA"
-                ? "bg-[var(--primary)] text-black"
-                : "bg-[var(--card)]"
-            }`}
-          >
+          {[
+            {
+              key: "ALL",
+              label: "All",
+            },
 
-            Media
+            {
+              key: "IMAGES",
+              label: "Images",
+            },
 
-          </button>
+            {
+              key: "VIDEOS",
+              label: "Videos",
+            },
 
-          <button
-            onClick={() => setActiveTab("FILES")}
-            className={`px-4 py-2 rounded-full text-sm transition ${
-              activeTab === "FILES"
-                ? "bg-[var(--primary)] text-black"
-                : "bg-[var(--card)]"
-            }`}
-          >
+            {
+              key: "FILES",
+              label: "Files",
+            },
 
-            Files
+            {
+              key: "PDF",
+              label: "PDF",
+            },
 
-          </button>
+          ].map((tab) => (
+
+            <button
+              key={tab.key}
+              onClick={() =>
+                setActiveTab(tab.key)
+              }
+              className={`
+                px-4
+                py-2
+
+                rounded-full
+
+                text-sm
+
+                whitespace-nowrap
+
+                transition-all
+                duration-200
+
+                ${activeTab === tab.key
+
+                  ? `
+                    bg-[var(--primary)]
+                    text-black
+                    shadow-lg
+                  `
+
+                  : `
+                    bg-[var(--card)]
+                    hover:bg-white/5
+                  `
+                }
+              `}
+            >
+
+              {tab.label}
+
+            </button>
+          ))}
 
         </div>
 
@@ -214,167 +281,43 @@ const MediaPage = () => {
       {/* =============================== */}
       {/* 🔥 BODY */}
       {/* =============================== */}
-      <div className="p-4 space-y-8">
+      <div className="p-4">
 
         {/* =============================== */}
-        {/* 🔥 MEDIA */}
+        {/* 🔥 FILES + PDF */}
         {/* =============================== */}
-        {activeTab === "MEDIA" && (
-          <>
-
-            {/* 🔥 YOU SENT */}
-            <div>
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <FiImage />
-
-                <h3 className="text-sm font-semibold">
-                  You Sent
-                </h3>
-
-              </div>
-
-              {sentMedia.length > 0 ? (
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-
-                  {sentMedia.map((item, index) => (
-
-                    <div
-                      key={item.id}
-                      onClick={() => openViewer(sentMedia, index)}
-                      className="relative rounded-3xl overflow-hidden bg-[var(--card)] aspect-square cursor-pointer group"
-                    >
-
-                      {/* 🔥 IMAGE */}
-                      {item.type === "IMAGE" && (
-                        <img
-                          src={item.content}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
-                      )}
-
-                      {/* 🔥 VIDEO */}
-                      {item.type === "VIDEO" && (
-                        <>
-                          <video
-                            src={item.content}
-                            className="w-full h-full object-cover"
-                          />
-
-                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-
-                            <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
-
-                              <FiVideo className="text-white text-2xl" />
-
-                            </div>
-
-                          </div>
-                        </>
-                      )}
-
-                    </div>
-                  ))}
-
-                </div>
-
-              ) : (
-
-                <div className="opacity-60 text-sm">
-                  No sent media
-                </div>
-
-              )}
-
-            </div>
-
-            {/* 🔥 RECEIVED */}
-            <div>
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <FiVideo />
-
-                <h3 className="text-sm font-semibold">
-                  Received
-                </h3>
-
-              </div>
-
-              {receivedMedia.length > 0 ? (
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-
-                  {receivedMedia.map((item, index) => (
-
-                    <div
-                      key={item.id}
-                      onClick={() => openViewer(receivedMedia, index)}
-                      className="relative rounded-3xl overflow-hidden bg-[var(--card)] aspect-square cursor-pointer group"
-                    >
-
-                      {/* 🔥 IMAGE */}
-                      {item.type === "IMAGE" && (
-                        <img
-                          src={item.content}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
-                      )}
-
-                      {/* 🔥 VIDEO */}
-                      {item.type === "VIDEO" && (
-                        <>
-                          <video
-                            src={item.content}
-                            className="w-full h-full object-cover"
-                          />
-
-                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-
-                            <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
-
-                              <FiVideo className="text-white text-2xl" />
-
-                            </div>
-
-                          </div>
-                        </>
-                      )}
-
-                    </div>
-                  ))}
-
-                </div>
-
-              ) : (
-
-                <div className="opacity-60 text-sm">
-                  No received media
-                </div>
-
-              )}
-
-            </div>
-
-          </>
-        )}
-
-        {/* =============================== */}
-        {/* 🔥 FILES */}
-        {/* =============================== */}
-        {activeTab === "FILES" && (
+        {activeTab === "FILES" ||
+        activeTab === "PDF" ? (
 
           <div className="space-y-4">
 
-            {fileMessages.map((file) => (
+            {(
+              activeTab === "PDF"
+                ? pdfMessages
+                : fileMessages
+            ).map((file) => (
 
               <div
                 key={file.id}
-                className="flex items-center justify-between gap-4 p-4 rounded-3xl bg-[var(--card)]"
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-4
+
+                  p-4
+
+                  rounded-3xl
+
+                  bg-[var(--card)]
+
+                  border
+                  border-[var(--border)]
+
+                  hover:border-[var(--primary)]/30
+
+                  transition-all
+                "
               >
 
                 {/* 🔥 LEFT */}
@@ -389,11 +332,21 @@ const MediaPage = () => {
                   <div className="min-w-0">
 
                     <p className="font-medium truncate">
-                      {file.content?.split("/")?.pop()}
+
+                      {file.content
+                        ?.split("/")
+                        ?.pop()}
+
                     </p>
 
                     <p className="text-sm opacity-60">
-                      Shared file
+
+                      {activeTab === "PDF"
+
+                        ? "PDF document"
+
+                        : "Shared file"}
+
                     </p>
 
                   </div>
@@ -402,8 +355,27 @@ const MediaPage = () => {
 
                 {/* 🔥 DOWNLOAD */}
                 <button
-                  onClick={() => handleDownload(file.content)}
-                  className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-[var(--primary)]/10 transition"
+                  onClick={() =>
+                    handleDownload(
+                      file.content
+                    )
+                  }
+                  className="
+                    w-12
+                    h-12
+
+                    rounded-2xl
+
+                    bg-white/5
+
+                    flex
+                    items-center
+                    justify-center
+
+                    hover:bg-[var(--primary)]/10
+
+                    transition-all
+                  "
                 >
 
                   <FiDownload />
@@ -413,20 +385,144 @@ const MediaPage = () => {
               </div>
             ))}
 
-            {fileMessages.length === 0 && (
+            {(
+              activeTab === "PDF"
+                ? pdfMessages
+                : fileMessages
+            ).length === 0 && (
 
-              <div className="flex flex-col items-center justify-center py-20 opacity-60">
+              <EmptyState
+                icon={<FiFile />}
+                text={
+                  activeTab === "PDF"
 
-                <FiFile className="text-5xl mb-4" />
+                    ? "No PDF files"
 
-                <p>
-                  No shared files
-                </p>
+                    : "No shared files"
+                }
+              />
 
-              </div>
             )}
 
           </div>
+
+        ) : (
+
+          <>
+            {/* =============================== */}
+            {/* 🔥 MEDIA GRID */}
+            {/* =============================== */}
+            {currentItems.length > 0 ? (
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+                {currentItems.map((
+                  item,
+                  index
+                ) => (
+
+                  <div
+                    key={item.id}
+                    onClick={() =>
+                      openViewer(
+                        currentItems,
+                        index
+                      )
+                    }
+                    className="
+                      relative
+
+                      rounded-3xl
+
+                      overflow-hidden
+
+                      bg-[var(--card)]
+
+                      aspect-square
+
+                      cursor-pointer
+
+                      group
+
+                      border
+                      border-[var(--border)]
+
+                      hover:border-[var(--primary)]/30
+
+                      transition-all
+                    "
+                  >
+
+                    {/* 🔥 IMAGE */}
+                    {item.type === "IMAGE" && (
+
+                      <img
+                        src={item.content}
+                        alt=""
+                        loading="lazy"
+                        className="
+                          w-full
+                          h-full
+
+                          object-cover
+
+                          group-hover:scale-105
+
+                          transition
+                          duration-300
+                        "
+                      />
+                    )}
+
+                    {/* 🔥 VIDEO */}
+                    {item.type === "VIDEO" && (
+
+                      <>
+                        <video
+                          src={item.content}
+                          className="
+                            w-full
+                            h-full
+                            object-cover
+                          "
+                        />
+
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+
+                          <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center">
+
+                            <FiVideo className="text-white text-2xl" />
+
+                          </div>
+
+                        </div>
+                      </>
+                    )}
+
+                  </div>
+                ))}
+
+              </div>
+
+            ) : (
+
+              <EmptyState
+                icon={
+                  activeTab === "VIDEOS"
+
+                    ? <FiVideo />
+
+                    : activeTab === "IMAGES"
+
+                    ? <FiImage />
+
+                    : <FiFile />
+                }
+                text={`No ${activeTab.toLowerCase()} found`}
+              />
+
+            )}
+          </>
         )}
 
       </div>
@@ -436,7 +532,9 @@ const MediaPage = () => {
       {/* =============================== */}
       <MediaViewerModal
         open={viewerOpen}
-        onClose={() => setViewerOpen(false)}
+        onClose={() =>
+          setViewerOpen(false)
+        }
         medias={viewerMedia}
         selectedIndex={viewerIndex}
         setSelectedIndex={setViewerIndex}
@@ -447,3 +545,24 @@ const MediaPage = () => {
 };
 
 export default MediaPage;
+
+/* =============================== */
+/* 🔥 EMPTY STATE */
+/* =============================== */
+const EmptyState = ({
+  icon,
+  text,
+}) => (
+
+  <div className="flex flex-col items-center justify-center py-20 opacity-60">
+
+    <div className="text-5xl mb-4">
+
+      {icon}
+
+    </div>
+
+    <p>{text}</p>
+
+  </div>
+);

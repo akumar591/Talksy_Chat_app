@@ -24,6 +24,8 @@ import { useAuth } from "../../context/AuthContext";
 
 import { useGroup } from "../../context/GroupContext";
 
+import MediaViewerModal from "../Chat/MediaViewerModal";
+
 import API from "../../api/axios";
 
 import toast from "react-hot-toast";
@@ -68,6 +70,11 @@ const GroupInfo = () => {
   const [
     showImageMenu,
     setShowImageMenu,
+  ] = useState(false);
+
+  const [
+    showAvatarViewer,
+    setShowAvatarViewer,
   ] = useState(false);
 
   // 🔥 NEW
@@ -138,7 +145,7 @@ const GroupInfo = () => {
     if (
       groupDetails &&
       String(groupDetails.id) ===
-        String(id)
+      String(id)
     ) {
 
       setGroup(groupDetails);
@@ -204,7 +211,7 @@ const GroupInfo = () => {
         (m) =>
 
           String(m?.id) ===
-            String(user?.id)
+          String(user?.id)
 
           &&
 
@@ -233,6 +240,9 @@ const GroupInfo = () => {
       group,
       user,
     ]);
+
+  const canManageGroupPhoto =
+    isAdmin || isCreator;
 
   // ===============================
   // 🔥 HANDLE IMAGE
@@ -264,8 +274,8 @@ const GroupInfo = () => {
       if (
         file.size >
         5 *
-          1024 *
-          1024
+        1024 *
+        1024
       ) {
 
         toast.error(
@@ -720,14 +730,25 @@ const GroupInfo = () => {
                     : `http://localhost:8080${group.avatar}`
                 }
                 alt={group.name}
-                onClick={() => {
+                onClick={(e) => {
 
+                  e.stopPropagation();
+
+                  // 🔥 ADMIN / CREATOR
                   if (
-                    isAdmin
+                    canManageGroupPhoto
                   ) {
 
                     setShowImageMenu(
                       !showImageMenu
+                    );
+                  }
+
+                  // 🔥 MEMBER
+                  else {
+
+                    setShowAvatarViewer(
+                      true
                     );
                   }
                 }}
@@ -748,17 +769,29 @@ const GroupInfo = () => {
             ) : (
 
               <div
-                onClick={() => {
+                onClick={(e) => {
 
+                  e.stopPropagation();
+
+                  // 🔥 ADMIN / CREATOR
                   if (
-                    isAdmin
+                    canManageGroupPhoto
                   ) {
 
                     setShowImageMenu(
                       !showImageMenu
                     );
                   }
+
+                  // 🔥 MEMBER
+                  else {
+
+                    setShowAvatarViewer(
+                      true
+                    );
+                  }
                 }}
+
                 className="
                   w-32
                   h-32
@@ -787,7 +820,7 @@ const GroupInfo = () => {
             )}
 
             {/* CAMERA */}
-            {isAdmin && (
+            {canManageGroupPhoto && (
 
               <button
                 onClick={() =>
@@ -822,10 +855,10 @@ const GroupInfo = () => {
 
             {/* IMAGE MENU */}
             {showImageMenu &&
-              isAdmin && (
+              canManageGroupPhoto && (
 
-              <div
-                className="
+                <div
+                  className="
                   absolute
                   top-36
                   left-1/2
@@ -846,29 +879,28 @@ const GroupInfo = () => {
 
                   z-50
                 "
-              >
+                >
 
-                {/* VIEW */}
-                <button
+                  {/* VIEW */}
+                  <button
 
-                  onClick={() => {
+                    onClick={() => {
 
-                    if (
-                      group.avatar
-                    ) {
+                      if (
+                        group.avatar
+                      ) {
 
-                      window.open(
-                        group.avatar,
-                        "_blank"
+                        setShowAvatarViewer(
+                          true
+                        );
+                      }
+
+                      setShowImageMenu(
+                        false
                       );
-                    }
+                    }}
 
-                    setShowImageMenu(
-                      false
-                    );
-                  }}
-
-                  className="
+                    className="
                     w-full
 
                     px-4
@@ -879,13 +911,13 @@ const GroupInfo = () => {
 
                     hover:bg-white/5
                   "
-                >
-                  View Group Photo
-                </button>
+                  >
+                    View Group Photo
+                  </button>
 
-                {/* UPDATE */}
-                <label
-                  className="
+                  {/* UPDATE */}
+                  <label
+                    className="
                     block
 
                     px-4
@@ -897,28 +929,28 @@ const GroupInfo = () => {
 
                     hover:bg-white/5
                   "
-                >
+                  >
 
-                  Change Group Photo
+                    Change Group Photo
 
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={
-                      handleImage
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={
+                        handleImage
+                      }
+                    />
+                  </label>
+
+                  {/* REMOVE */}
+                  <button
+
+                    onClick={
+                      removeGroupImage
                     }
-                  />
-                </label>
 
-                {/* REMOVE */}
-                <button
-
-                  onClick={
-                    removeGroupImage
-                  }
-
-                  className="
+                    className="
                     w-full
 
                     px-4
@@ -931,11 +963,11 @@ const GroupInfo = () => {
 
                     hover:bg-red-500/10
                   "
-                >
-                  Remove Group Photo
-                </button>
-              </div>
-            )}
+                  >
+                    Remove Group Photo
+                  </button>
+                </div>
+              )}
           </div>
 
           {/* NAME */}
@@ -1278,22 +1310,22 @@ const GroupInfo = () => {
                       String(
                         memberUser?.id
                       ) !==
-                        String(
-                          user?.id
-                        ) && (
+                      String(
+                        user?.id
+                      ) && (
 
-                      <button
+                        <button
 
-                        onClick={(e) => {
+                          onClick={(e) => {
 
-                          e.stopPropagation();
+                            e.stopPropagation();
 
-                          removeMember(
-                            memberUser.id
-                          );
-                        }}
+                            removeMember(
+                              memberUser.id
+                            );
+                          }}
 
-                        className="
+                          className="
                           w-10
                           h-10
 
@@ -1309,12 +1341,12 @@ const GroupInfo = () => {
 
                           transition
                         "
-                      >
+                        >
 
-                        <FiTrash2 />
+                          <FiTrash2 />
 
-                      </button>
-                    )}
+                        </button>
+                      )}
                   </div>
                 );
               }
@@ -1455,140 +1487,168 @@ const GroupInfo = () => {
       {showCropper &&
         preview && (
 
-        <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
 
-          <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+            <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
 
-            <ImageCropper
-              image={preview}
-              crop={crop}
-              setCrop={setCrop}
-              zoom={zoom}
-              setZoom={setZoom}
-              aspect={1 / 1}
-              cropShape="round"
-              showGrid={false}
+              <ImageCropper
+                image={preview}
+                crop={crop}
+                setCrop={setCrop}
+                zoom={zoom}
+                setZoom={setZoom}
+                aspect={1 / 1}
+                cropShape="round"
+                showGrid={false}
 
-              onCropDone={
-                async (
-                  croppedFile
-                ) => {
+                onCropDone={
+                  async (
+                    croppedFile
+                  ) => {
 
-                  try {
+                    try {
 
-                    if (
-                      !croppedFile
-                    ) {
+                      if (
+                        !croppedFile
+                      ) {
 
-                      return;
-                    }
+                        return;
+                      }
 
-                    // 🔥 NEW PREVIEW
-                    const croppedPreview =
-                      URL.createObjectURL(
+                      // 🔥 NEW PREVIEW
+                      const croppedPreview =
+                        URL.createObjectURL(
+                          croppedFile
+                        );
+
+                      setPreview(
+                        croppedPreview
+                      );
+
+                      setShowCropper(
+                        false
+                      );
+
+                      // 🔥 UPLOAD
+                      const formData =
+                        new FormData();
+
+                      formData.append(
+                        "file",
                         croppedFile
                       );
 
-                    setPreview(
-                      croppedPreview
-                    );
+                      formData.append(
+                        "type",
+                        "profile"
+                      );
 
-                    setShowCropper(
-                      false
-                    );
-
-                    // 🔥 UPLOAD
-                    const formData =
-                      new FormData();
-
-                    formData.append(
-                      "file",
-                      croppedFile
-                    );
-
-                    formData.append(
-                      "type",
-                      "profile"
-                    );
-
-                    const uploadRes =
-                      await API.post(
-                        "/file/upload",
-                        formData,
-                        {
-                          headers:
+                      const uploadRes =
+                        await API.post(
+                          "/file/upload",
+                          formData,
+                          {
+                            headers:
                             {
                               "Content-Type":
                                 "multipart/form-data",
                             },
+                          }
+                        );
+
+                      // 🔥 FINAL URL
+                      const imageUrl =
+                        uploadRes
+                          .data
+                          ?.data
+                          ?.url ||
+                        "";
+
+                      if (
+                        !imageUrl
+                      ) {
+
+                        toast.error(
+                          "Image upload failed"
+                        );
+
+                        return;
+                      }
+
+                      // 🔥 UPDATE GROUP
+                      await API.put(
+                        `/groups/${group.id}`,
+                        {
+                          avatar:
+                            imageUrl,
                         }
                       );
 
-                    // 🔥 FINAL URL
-                    const imageUrl =
-                      uploadRes
-                        .data
-                        ?.data
-                        ?.url ||
-                      "";
+                      const updated =
+                        await fetchGroupById(
+                          id
+                        );
 
-                    if (
-                      !imageUrl
+                      setGroup(updated);
+
+                      toast.success(
+                        "Group image updated ✅"
+                      );
+
+                    } catch (
+                    err
                     ) {
 
+                      console.log(
+                        err
+                      );
+
+                      const msg =
+                        err.response
+                          ?.data
+                          ?.message ||
+                        "Upload failed ❌";
+
                       toast.error(
-                        "Image upload failed"
+                        msg
                       );
-
-                      return;
                     }
-
-                    // 🔥 UPDATE GROUP
-                    await API.put(
-                      `/groups/${group.id}`,
-                      {
-                        avatar:
-                          imageUrl,
-                      }
-                    );
-
-                    const updated =
-                      await fetchGroupById(
-                        id
-                      );
-
-                    setGroup(updated);
-
-                    toast.success(
-                      "Group image updated ✅"
-                    );
-
-                  } catch (
-                    err
-                  ) {
-
-                    console.log(
-                      err
-                    );
-
-                    const msg =
-                      err.response
-                        ?.data
-                        ?.message ||
-                      "Upload failed ❌";
-
-                    toast.error(
-                      msg
-                    );
                   }
                 }
-              }
-            />
+              />
+
+            </div>
 
           </div>
+        )}
 
-        </div>
-      )}
+      {/* 🔥 GROUP IMAGE VIEWER */}
+      <MediaViewerModal
+        open={showAvatarViewer}
+
+        onClose={() =>
+          setShowAvatarViewer(false)
+        }
+
+        medias={[
+          {
+            type: "IMAGE",
+
+            content:
+              group.avatar?.startsWith(
+                "http"
+              )
+
+                ? group.avatar
+
+                : `http://localhost:8080${group.avatar}`,
+          },
+        ]}
+
+        selectedIndex={0}
+
+        setSelectedIndex={() => { }}
+      />
     </div>
   );
 };

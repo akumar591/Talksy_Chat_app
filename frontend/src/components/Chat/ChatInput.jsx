@@ -166,20 +166,14 @@ const ChatInput = ({
 
             </button>
 
-            {/* 🔥 CAMERA */}
+            {/* 🔥 VIDEO */}
             <button
               type="button"
               onClick={() => {
 
-                setShowCamera(
-                  true
-                );
+                cameraInputRef.current?.click();
 
                 setShowAttach(
-                  false
-                );
-
-                setShowEmoji(
                   false
                 );
               }}
@@ -193,7 +187,7 @@ const ChatInput = ({
               </div>
 
               <span className="text-[11px]">
-                Camera
+                Video
               </span>
 
             </button>
@@ -301,9 +295,7 @@ const ChatInput = ({
               showPreview: false,
             }}
             searchPlaceHolder="Search"
-            onEmojiClick={(
-              emojiData
-            ) => {
+            onEmojiClick={(emojiData) => {
 
               setInput(
                 prev =>
@@ -457,11 +449,10 @@ const ChatInput = ({
             onClick={
               handleMicClick
             }
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${
-              isRecording
-                ? "bg-[var(--primary)] text-black"
-                : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
-            }`}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition shrink-0 ${isRecording
+              ? "bg-[var(--primary)] text-black"
+              : "border border-[var(--border)] hover:bg-[var(--primary)]/20"
+              }`}
           >
 
             <FiMic />
