@@ -373,11 +373,10 @@ const StatusLayout = () => {
       {/* 🔥 STATUS LIST */}
       <div
         className={`
-          ${
-            selectedStatus ||
+          ${selectedStatus ||
             showAddStatus
-              ? "hidden md:block"
-              : "block"
+            ? "hidden md:block"
+            : "block"
           }
 
           fixed
@@ -492,15 +491,15 @@ const StatusLayout = () => {
       {/* 🔥 VIEWER AREA */}
       <div
         className={`
-          ${
-            selectedStatus
-              ? "flex"
-              : "hidden md:flex"
+          ${selectedStatus
+            ? "flex"
+            : "hidden md:flex"
           }
 
           fixed
 
           top-0
+          md:top-5
 
           left-0
           md:left-[30%]

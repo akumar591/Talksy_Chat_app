@@ -828,6 +828,11 @@ const ChatWindow = ({
 
       {/* 🔥 MEDIA PREVIEW */}
       <MediaPreviewModal
+
+        setPreviewUrls={
+          setPreviewUrls
+        }
+
         showMediaPreview={
           showMediaPreview
         }

@@ -594,6 +594,75 @@ public class MessageController {
     }
 
     // ===============================
+    // 🔥 REACT TO MESSAGE
+    // ===============================
+    @PostMapping("/react")
+    public ResponseEntity<ApiResponse<?>>
+    reactToMessage(
+
+            @RequestBody
+            Map<String, Object> body
+    ) {
+
+        try {
+
+            User user =
+                    getCurrentUser();
+
+            Long messageId =
+
+                    Long.valueOf(
+                            body.get(
+                                    "messageId"
+                            ).toString()
+                    );
+
+            String emoji =
+
+                    body.get(
+                            "emoji"
+                    ).toString();
+
+            messageService.reactToMessage(
+
+                    user.getId(),
+                    messageId,
+                    emoji
+            );
+
+            return ResponseEntity.ok(
+
+                    new ApiResponse<>(
+
+                            true,
+
+                            "Reaction updated ✅",
+
+                            null
+                    )
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(500)
+                    .body(
+
+                            new ApiResponse<>(
+
+                                    false,
+
+                                    e.getMessage(),
+
+                                    null
+                            )
+                    );
+        }
+    }
+
+    // ===============================
     // 🔥 GET MEDIA MESSAGES
     // ===============================
     @GetMapping("/media/{conversationId}")

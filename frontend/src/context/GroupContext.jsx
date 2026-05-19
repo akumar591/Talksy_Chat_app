@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import API from "../api/axios";
@@ -43,7 +44,7 @@ export const GroupProvider = ({
   // 🔥 FETCH MY GROUPS
   // ===============================
   const fetchGroups =
-    async () => {
+    useCallback(async () => {
 
       try {
 
@@ -114,7 +115,7 @@ export const GroupProvider = ({
 
         setLoading(false);
       }
-    };
+    }, []);
 
   // ===============================
   // 🔥 FETCH GROUP DETAILS

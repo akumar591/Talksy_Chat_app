@@ -111,10 +111,11 @@ const MessageBubble = ({
     isOnlyEmoji();
 
   // ===============================
-  // 🔥 REACTION
+  // 🔥 REACTIONS
+  // ✅ FIXED
   // ===============================
-  const reaction =
-    msg?.reaction || null;
+  const reactions =
+    msg?.reactions || [];
 
   return (
     <div
@@ -297,7 +298,6 @@ const MessageBubble = ({
                 `}
               >
 
-                {/* 🔥 REPLIED USER */}
                 <p
                   className={`
                     text-[11px]
@@ -313,7 +313,6 @@ const MessageBubble = ({
                   {msg.replyTo.senderName || "Reply"}
                 </p>
 
-                {/* 🔥 REPLIED CONTENT */}
                 <p
                   className="
                     text-[12px]
@@ -528,9 +527,10 @@ const MessageBubble = ({
         )}
 
         {/* =============================== */}
-        {/* 🔥 WHATSAPP STYLE REACTION */}
+        {/* 🔥 WHATSAPP STYLE REACTIONS */}
+        {/* ✅ FIXED */}
         {/* =============================== */}
-        {reaction && (
+        {reactions.length > 0 && (
           <div
             className={`
               absolute
@@ -541,10 +541,12 @@ const MessageBubble = ({
                 : "left-2"
               }
 
-              min-w-[28px]
-              h-[28px]
+              flex
+              items-center
+              gap-1
 
-              px-1.5
+              px-2
+              h-[28px]
 
               rounded-full
 
@@ -555,10 +557,6 @@ const MessageBubble = ({
 
               shadow-[0_4px_12px_rgba(0,0,0,0.25)]
 
-              flex
-              items-center
-              justify-center
-
               text-[15px]
 
               backdrop-blur-xl
@@ -566,7 +564,13 @@ const MessageBubble = ({
               z-20
             `}
           >
-            {reaction}
+
+            {reactions.map((r, i) => (
+              <span key={i}>
+                {r.emoji}
+              </span>
+            ))}
+
           </div>
         )}
 

@@ -1,76 +1,29 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
-
-import {
-  FiMessageCircle,
-  FiUsers,
-  FiSettings,
-  FiSun,
-  FiMoon,
-  FiSearch,
-  FiLink,
-  FiPhone,
-  FiUserPlus,
-  FiUser,
-} from "react-icons/fi";
-
+import React, { useState, useRef, useEffect } from "react";
+import { FiMessageCircle, FiUsers, FiSettings, FiSun, FiMoon, FiSearch, FiLink, FiPhone, FiUserPlus, FiUser } from "react-icons/fi";
 import { MdOutlineGroups, MdOutlineGroup, MdGroups } from "react-icons/md";
-
 import { BsThreeDotsVertical } from "react-icons/bs";
-
 import { createPortal } from "react-dom";
 import { useChat } from "../context/ChatContext";
-
 import { useNavigate, useLocation } from "react-router-dom";
-
 import { useAuth } from "../context/AuthContext";
-
 import { assets } from "../assets/assets";
-
 import { useTheme } from "../context/ThemeContext";
-
 import SettingsDrawer from "./Settings/SettingsDrawer";
 
 const Navbar = () => {
+
   const { theme, setTheme } = useTheme();
-
   const navigate = useNavigate();
-
   const location = useLocation();
-
   const { user } = useAuth();
-
-  /* 🔥 MOBILE CHECK */
-  const [isMobile, setIsMobile] = useState(
-    window.innerWidth < 768
-  );
 
   /* 🔥 UI STATES */
   const [openSettings, setOpenSettings] = useState(false);
-
   const [showMenu, setShowMenu] = useState(false);
-
   const { activeFilter, setActiveFilter } = useChat();
-
   const [search, setSearch] = useState("");
-
   const menuRef = useRef(null);
-
   const dropdownRef = useRef(null);
-
-  /* 🔥 RESPONSIVE */
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   /* 🔥 CLOSE MENU OUTSIDE */
   useEffect(() => {
@@ -120,26 +73,20 @@ const Navbar = () => {
     "/user/",
   ];
 
-  /* 🔥 DESKTOP HIDE ROUTES */
-  const desktopHideRoutes = [];
-
   /* 🔥 HIDE NAVBAR */
-  const hideNavbar = isMobile
-
-    ? mobileHideRoutes.some((route) =>
-      location.pathname.startsWith(route)
-    )
-
-    : desktopHideRoutes.some((route) =>
-      location.pathname.startsWith(route)
+  const hideNavbar =
+    mobileHideRoutes.some(
+      (route) =>
+        location.pathname.startsWith(route)
     );
+
   return (
     <>
-      {!hideNavbar && (
-        <>
-          {/* ================= DESKTOP NAVBAR ================= */}
-          <div
-            className="
+
+      <>
+        {/* ================= DESKTOP NAVBAR ================= */}
+        <div
+          className="
               hidden
               md:flex
 
@@ -165,23 +112,23 @@ const Navbar = () => {
 
               isolate
             "
-          >
-            {/* LOGO */}
-            <div className="flex items-center gap-3">
-              <img
-                src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
-                alt="logo"
-                className="
+        >
+          {/* LOGO */}
+          <div className="flex items-center gap-3">
+            <img
+              src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
+              alt="logo"
+              className="
                   w-24
                   h-10
                   object-contain
                 "
-              />
-            </div>
+            />
+          </div>
 
-            {/* CENTER NAV */}
-            <div
-              className="
+          {/* CENTER NAV */}
+          <div
+            className="
                 flex
                 items-center
 
@@ -189,430 +136,256 @@ const Navbar = () => {
 
                 text-xs
               "
-            >
-              <NavItem
-                icon={<FiMessageCircle />}
-                label="Chats"
-                onClick={() => { setActiveFilter("All"); navigate("/"); }} />
+          >
+            <NavItem
+              icon={<FiMessageCircle />}
+              label="Chats"
+              onClick={() => { setActiveFilter("All"); navigate("/"); }} />
 
-              <NavItem
-                icon={<FiUserPlus />}
-                label="New-chat"
-                onClick={() => navigate("/new-chat")}
-              />
+            <NavItem
+              icon={<FiUserPlus />}
+              label="New-chat"
+              onClick={() => navigate("/new-chat")}
+            />
 
-              <NavItem
-                icon={<FiUsers />}
-                label="Status"
-                onClick={() => navigate("/status")}
-              />
+            <NavItem
+              icon={<FiUsers />}
+              label="Status"
+              onClick={() => navigate("/status")}
+            />
 
-              <NavItem
-                icon={<FiPhone />}
-                label="Calls"
-                onClick={() => navigate("/call")}
-              />
+            <NavItem
+              icon={<FiPhone />}
+              label="Calls"
+              onClick={() => navigate("/call")}
+            />
 
-              <NavItem
-                icon={<MdOutlineGroups />}
-                label="Groups"
-                onClick={() => { setActiveFilter("Groups"); navigate("/"); }} />
+            <NavItem
+              icon={<MdOutlineGroups />}
+              label="Groups"
+              onClick={() => { setActiveFilter("Groups"); navigate("/"); }} />
 
-              <NavItem
-                icon={<MdOutlineGroups />}
-                label="New-group"
-                onClick={() => navigate("/new-group")}
-              />
+            <NavItem
+              icon={<MdOutlineGroups />}
+              label="New-group"
+              onClick={() => navigate("/new-group")}
+            />
 
-            </div>
+          </div>
 
-            {/* RIGHT SIDE */}
-            <div
-              className="
+          {/* RIGHT SIDE */}
+          <div
+            className="
                 flex
                 items-center
 
                 gap-4
               "
+          >
+            {/* PROFILE */}
+            <div
+              onClick={() => {
+                navigate("/profile");
+
+                setShowMenu(false);
+              }}
             >
-              {/* PROFILE */}
-              <div
-                onClick={() => {
-                  navigate("/profile");
+              <Profile user={user} />
+            </div>
 
-                  setShowMenu(false);
-                }}
-              >
-                <Profile user={user} />
-              </div>
+            {/* SETTINGS */}
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
 
-              {/* SETTINGS */}
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-
-                  setOpenSettings(true);
-                }}
-                className="
+                setOpenSettings(true);
+              }}
+              className="
                   cursor-pointer
                   group
                 "
-              >
-                <FiSettings
-                  className="
+            >
+              <FiSettings
+                className="
                     text-xl
                     icon
 
                     group-hover:text-[var(--primary)]
                   "
-                />
-              </div>
-
-              {/* THEME */}
-              <ThemeToggle theme={theme} setTheme={setTheme} />
+              />
             </div>
+
+            {/* THEME */}
+            <ThemeToggle theme={theme} setTheme={setTheme} />
           </div>
+        </div>
 
-          {/* ================= MOBILE NAV ================= */}
-          <div
-            className="
-              md:hidden
+        {/* ================= MOBILE NAV ================= */}
+        {!hideNavbar && (
+          <>
+            <div className="md:hidden fixed top-0 left-0 w-full z-50 isolate">
 
-              fixed
-              top-0
-              left-0
-
-              w-full
-
-              z-50
-
-              isolate
-            "
-          >
-            {/* BACKGROUND */}
-            <div
-              className={`
-                absolute
-                inset-0
-
-                backdrop-blur-xl
-
-                opacity-95
-
-                pointer-events-none
-
-                ${theme === "light"
-                  ? `
-                      bg-gradient-to-r
-                      from-white
-                      via-gray-100
-                      to-white
-                    `
-                  : `
-                      bg-gradient-to-r
-                      from-[#020617]
-                      via-[#0b0f1a]
-                      to-[#020617]
-                    `
-                }
-              `}
-            />
-
-            <div className="relative">
-              {/* TOP */}
+              {/* BACKGROUND */}
               <div
-                className="
-                  flex
-                  items-center
-                  justify-between
+                className={`absolute inset-0 backdrop-blur-xl opacity-95 pointer-events-none ${theme === "light"
+                  ? "bg-gradient-to-r from-white via-gray-100 to-white"
+                  : "bg-gradient-to-r from-[#020617] via-[#0b0f1a] to-[#020617]"
+                  }`}
+              />
 
-                  px-4
-                  pt-3
-                "
-              >
-                {/* LOGO */}
-                <img
-                  src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
-                  alt="logo"
-                  className="
-                    w-20
-                    h-8
-                    object-contain
-                  "
-                />
+              <div className="relative">
 
-                {/* ACTIONS */}
-                <div
-                  className="
-                    flex
-                    items-center
+                {/* TOP */}
+                <div className="flex items-center justify-between px-4 pt-3">
 
-                    gap-3
-                  "
-                >
-                  {/* NEW CHAT */}
-                  <div
-                    className="
-                      group
-                      relative
+                  {/* LOGO */}
+                  <img
+                    src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
+                    alt="logo"
+                    className="w-20 h-8 object-contain"
+                  />
 
-                      p-2.5
+                  {/* ACTIONS */}
+                  <div className="flex items-center gap-3">
 
-                      rounded-full
+                    {/* NEW CHAT */}
+                    <div className="group relative p-2.5 rounded-full cursor-pointer bg-[var(--card)]/40 hover:bg-[var(--primary)]/20 active:scale-95">
 
-                      cursor-pointer
+                      <div className="absolute inset-0 rounded-full bg-[var(--primary)] opacity-0 group-hover:opacity-20 blur-md" />
 
-                      bg-[var(--card)]/40
+                      <FiUserPlus
+                        onClick={() => navigate("/new-chat")}
+                        className="icon text-sm relative group-hover:text-[var(--primary)] group-hover:scale-110"
+                      />
+                    </div>
 
-                      hover:bg-[var(--primary)]/20
+                    {/* MENU */}
+                    <div ref={menuRef}>
 
-                      active:scale-95
-                    "
-                  >
-                    <div
-                      className="
-                        absolute
-                        inset-0
+                      <BsThreeDotsVertical
+                        onClick={() => setShowMenu((prev) => !prev)}
+                        className="text-xl cursor-pointer icon hover:text-[var(--primary)]"
+                      />
 
-                        rounded-full
-
-                        bg-[var(--primary)]
-
-                        opacity-0
-
-                        group-hover:opacity-20
-
-                        blur-md
-                      "
-                    />
-
-                    <FiUserPlus
-                      onClick={() => navigate("/new-chat")}
-                      className="
-                        icon
-                        text-sm
-                        relative
-
-                        group-hover:text-[var(--primary)]
-
-                        group-hover:scale-110
-                      "
-                    />
-                  </div>
-
-                  {/* MENU */}
-                  <div ref={menuRef}>
-                    <BsThreeDotsVertical
-                      onClick={() => setShowMenu((prev) => !prev)}
-                      className="
-                        text-xl
-                        cursor-pointer
-
-                        icon
-
-                        hover:text-[var(--primary)]
-                      "
-                    />
-
-                    {/* DROPDOWN */}
-                    {showMenu &&
-                      createPortal(
-                        <div
-                          ref={dropdownRef}
-                          className="
-                            fixed
-
-                            right-2
-                            top-[58px]
-
-                            w-56
-
-                            rounded-xl
-
-                            z-[9999]
-
-                            overflow-hidden
-
-                            animate-menu
-
-                            shadow-2xl
-                          "
-                          style={{
-                            backgroundColor: "var(--card)",
-
-                            color: "var(--text)",
-
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          <MenuItem
-                            icon={<FiUser />}
-                            label="Profile"
-                            onClick={() => {
-                              navigate("/profile");
-
-                              setShowMenu(false);
-                            }}
-                          />
-
-                          <MenuItem
-                            icon={<FiMessageCircle />}
-                            label="Status"
-                            onClick={() => {
-                              navigate("/status");
-
-                              setShowMenu(false);
-                            }}
-                          />
-
-                          <MenuItem
-                            icon={<MdGroups />}
-                            label="New Group"
-                            onClick={() => {
-                              navigate("/new-group");
-
-                              setShowMenu(false);
-                            }}
-                          />
-
-                          <MenuItem
-                            icon={<FiLink />}
-                            label="Linked Devices"
-                            onClick={() => {
-                              navigate("/linked-devices");
-
-                              setShowMenu(false);
-                            }}
-                          />
-
-                          {/* DIVIDER */}
+                      {/* DROPDOWN */}
+                      {showMenu &&
+                        createPortal(
                           <div
-                            className="
-                              border-t
-                              my-1
-                              opacity-20
-                            "
-                          />
-
-                          <MenuItem
-                            icon={<FiSettings />}
-                            label="Settings"
-                            onClick={() => {
-                              navigate("/settings");
-
-                              setShowMenu(false);
+                            ref={dropdownRef}
+                            className="fixed right-2 top-[58px] w-56 rounded-xl z-[9999] overflow-hidden animate-menu shadow-2xl"
+                            style={{
+                              backgroundColor: "var(--card)",
+                              color: "var(--text)",
+                              border: "1px solid var(--border)",
                             }}
-                          />
-                        </div>,
-                        document.body,
-                      )}
+                          >
+
+                            <MenuItem
+                              icon={<FiUser />}
+                              label="Profile"
+                              onClick={() => {
+                                navigate("/profile");
+                                setShowMenu(false);
+                              }}
+                            />
+
+                            <MenuItem
+                              icon={<FiMessageCircle />}
+                              label="Status"
+                              onClick={() => {
+                                navigate("/status");
+                                setShowMenu(false);
+                              }}
+                            />
+
+                            <MenuItem
+                              icon={<MdGroups />}
+                              label="New Group"
+                              onClick={() => {
+                                navigate("/new-group");
+                                setShowMenu(false);
+                              }}
+                            />
+
+                            <MenuItem
+                              icon={<FiLink />}
+                              label="Linked Devices"
+                              onClick={() => {
+                                navigate("/linked-devices");
+                                setShowMenu(false);
+                              }}
+                            />
+
+                            <div className="border-t my-1 opacity-20" />
+
+                            <MenuItem
+                              icon={<FiSettings />}
+                              label="Settings"
+                              onClick={() => {
+                                navigate("/settings");
+                                setShowMenu(false);
+                              }}
+                            />
+
+                          </div>,
+                          document.body
+                        )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* SEARCH */}
-              <div className="px-4 mt-3">
-                <div
-                  className="
-                    flex
-                    items-center
+                {/* SEARCH */}
+                <div className="px-4 mt-3">
 
-                    gap-2
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-full border bg-[var(--card)]/50 border-[var(--border)]">
 
-                    px-3
-                    py-2
+                    <FiSearch className="text-sm opacity-60" />
 
-                    rounded-full
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search chats..."
+                      className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text)]/50"
+                    />
+                  </div>
+                </div>
 
-                    border
+                {/* TABS */}
+                <div className="flex gap-1.5 px-4 pb-2 mt-3 overflow-x-auto hide-scrollbar">
 
-                    bg-[var(--card)]/50
-
-                    border-[var(--border)]
-                  "
-                >
-                  <FiSearch
-                    className="
-                      text-sm
-                      opacity-60
-                    "
-                  />
-
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search chats..."
-                    className="
-                      bg-transparent
-                      outline-none
-
-                      text-sm
-
-                      w-full
-
-                      placeholder:text-[var(--text)]/50
-                    "
-                  />
+                  {["All", "Unread", "Favorites", "Groups"].map((tab) => (
+                    <Tab
+                      key={tab}
+                      label={tab}
+                      active={activeFilter === tab}
+                      onClick={() => setActiveFilter(tab)}
+                    />
+                  ))}
                 </div>
               </div>
-
-              {/* TABS */}
-              <div
-                className="
-                  flex
-
-                  gap-1.5
-
-                  px-4
-                  pb-2
-                  mt-3
-
-                  overflow-x-auto
-
-                  hide-scrollbar
-                "
-              >
-                {["All", "Unread", "Favorites", "Groups"].map((tab) => (
-                  <Tab
-                    key={tab}
-                    label={tab}
-                    active={activeFilter === tab}
-                    onClick={() => setActiveFilter(tab)}
-                  />
-                ))}
-              </div>
             </div>
-          </div>
 
-          {/* MOBILE SPACE */}
-          <div className="h-16 md:hidden" />
+            {/* MOBILE SPACE */}
+            <div className="h-16 md:hidden" />
+          </>
+        )}
 
-          {/* ================= BOTTOM NAV ================= */}
+        {/* ================= BOTTOM NAV ================= */}
+        {!hideNavbar && (
           <div
-            className="
-              md:hidden
-
-              fixed
-              bottom-0
-              left-0
-
-              w-full
-
-              flex
-              justify-around
-
-              py-2
-
-              z-50
-
-              glass
-            "
+            className="md:hidden fixed bottom-0 left-0 w-full flex justify-around py-2 z-50 glass"
           >
+
             <MobileItem
               icon={<FiMessageCircle />}
               label="Chats"
-              onClick={() => { setActiveFilter("All"); navigate("/"); }}
+              onClick={() => {
+
+                setActiveFilter("All");
+
+                navigate("/");
+              }}
             />
 
             <MobileItem
@@ -630,11 +403,18 @@ const Navbar = () => {
             <MobileItem
               icon={<MdOutlineGroup />}
               label="Groups"
-              onClick={() => { setActiveFilter("Groups"); navigate("/"); }}
+              onClick={() => {
+
+                setActiveFilter("Groups");
+
+                navigate("/");
+              }}
             />
+
           </div>
-        </>
-      )}
+        )}
+      </>
+
 
       {/* SETTINGS DRAWER */}
       <SettingsDrawer

@@ -12,6 +12,7 @@ import {
 import { useChat } from "../../context/ChatContext";
 
 import { useGroup } from "../../context/GroupContext";
+import { FiSearch } from "react-icons/fi";
 
 const Sidebar = ({
   onSelectChat,
@@ -365,32 +366,25 @@ const Sidebar = ({
   return (
     <div className="w-full h-full bg-[var(--bg)]">
 
-      {/* 🔥 SEARCH */}
+      {/* SEARCH */}
       <div className="hidden md:block px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border bg-[var(--card)]/50 border-[var(--border)]" >
+          <FiSearch className="text-sm opacity-60" />
 
-        <input
-          type="text"
-          placeholder="Search chats..."
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-          className="
-            w-full
-            min-w-0
-            px-4
-            py-3
-            rounded-2xl
-            bg-[var(--card)]
-            border
-            border-[var(--border)]
-            outline-none
-            text-sm
-          "
-        />
+          <input
+            type="text"
+            placeholder="Search chats..."
+            value={search}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
+            className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text)]/50"
+          />
+        </div>
       </div>
+
 
       {/* 🔥 SCROLL */}
       <div className="h-full md:h-[calc(100%-80px)] overflow-y-auto overflow-x-hidden px-2 pb-20 md:pb-2 hide-scrollbar">
@@ -433,7 +427,7 @@ const Sidebar = ({
         {/* 🔥 EMPTY */}
         {!sidebarLoading &&
           filteredChats.length ===
-            0 && (
+          0 && (
 
             <div className="h-full flex items-center justify-center opacity-60 text-sm">
 
@@ -451,12 +445,12 @@ const Sidebar = ({
               const isActive =
 
                 location.pathname ===
-                  `/chat/${chat.id}`
+                `/chat/${chat.id}`
 
                 ||
 
                 location.pathname ===
-                  `/group/${chat.id}`;
+                `/group/${chat.id}`;
 
               return (
 
@@ -475,14 +469,13 @@ const Sidebar = ({
                     cursor-pointer
                     transition
 
-                    ${
-                      isActive
+                    ${isActive
 
-                        ? `
+                      ? `
                           bg-[var(--card)]
                         `
 
-                        : `
+                      : `
                           hover:bg-[var(--card)]/60
                         `
                     }
@@ -575,7 +568,7 @@ const Sidebar = ({
                           ? `${chat.memberCount} members`
                           : chat.lastMessage &&
                             chat.lastMessage.trim() !==
-                              ""
+                            ""
                             ? chat.lastMessage
                             : "Start conversation"}
                       </p>
@@ -584,8 +577,8 @@ const Sidebar = ({
                       {chat.unreadCount >
                         0 && (
 
-                        <span
-                          className="
+                          <span
+                            className="
                             min-w-[18px]
                             h-[18px]
                             px-1
@@ -597,17 +590,17 @@ const Sidebar = ({
                             items-center
                             justify-center
                           "
-                        >
-                          {chat.unreadCount}
-                        </span>
-                      )}
+                          >
+                            {chat.unreadCount}
+                          </span>
+                        )}
 
                       {/* 🔥 LAST SEEN */}
                       {!chat.online &&
                         !chat.isGroup &&
                         chat.lastSeen &&
                         chat.unreadCount ===
-                          0 && (
+                        0 && (
 
                           <span className="text-[10px] opacity-50 whitespace-nowrap">
 

@@ -44,8 +44,8 @@ const ReactionPicker = ({
         absolute
         z-50
 
-        top-full
-        mt-3
+        bottom-full
+        mb-1
 
         flex
         items-center
@@ -87,7 +87,13 @@ const ReactionPicker = ({
               e.stopPropagation();
 
               reactToMessage(
-                msg.id,
+
+                msg.type ===
+                  "MEDIA_GROUP"
+
+                  ? msg.medias?.[0]?.id
+                  : msg.id,
+
                 emoji
               );
 

@@ -24,25 +24,7 @@ export const ChatProvider = ({ children }) => {
 
   const [conversation, setConversation] = useState(null);
 
-  // 🔥 HYDRATED MESSAGES
-  const [messages, setMessages] = useState(() => {
-
-    try {
-
-      const cached =
-        localStorage.getItem(
-          "chatMessages"
-        );
-
-      return cached
-        ? JSON.parse(cached)
-        : [];
-
-    } catch {
-
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState([]);
 
   const [replyTo, setReplyTo] = useState(null);
 
@@ -131,65 +113,6 @@ export const ChatProvider = ({ children }) => {
   const messageFetchLock = useRef(false);
 
   const sendLock = useRef(false);
-
-  // ===============================
-  // 🔥 CACHE MESSAGES
-  // ===============================
-  useEffect(() => {
-
-    try {
-
-      localStorage.setItem(
-        "chatMessages",
-        JSON.stringify(messages)
-      );
-
-    } catch (err) {
-
-      console.log(err);
-    }
-
-  }, [messages]);
-
-  // ===============================
-  // 🔥 RESTORE CHAT
-  // ===============================
-  useEffect(() => {
-
-    try {
-
-      const savedChat =
-        localStorage.getItem(
-          "activeChat"
-        );
-
-      const savedConversation =
-        localStorage.getItem(
-          "activeConversation"
-        );
-
-      if (savedChat) {
-
-        setSelectedChat(
-          JSON.parse(savedChat)
-        );
-      }
-
-      if (savedConversation) {
-
-        setConversation(
-          JSON.parse(
-            savedConversation
-          )
-        );
-      }
-
-    } catch (err) {
-
-      console.log(err);
-    }
-
-  }, []);
 
   // ===============================
   // 🔥 AUTO FETCH AFTER REFRESH
@@ -502,18 +425,13 @@ export const ChatProvider = ({ children }) => {
           conversationData
         );
 
+        setMessages([]);
+
         // 🔥 SAVE ACTIVE CHAT
         localStorage.setItem(
           "activeChat",
           JSON.stringify(
             updatedChat
-          )
-        );
-
-        localStorage.setItem(
-          "activeConversation",
-          JSON.stringify(
-            conversationData
           )
         );
 
@@ -554,16 +472,10 @@ export const ChatProvider = ({ children }) => {
 
       try {
 
-        if (
-          !conversationId ||
-          messageFetchLock.current
-        ) {
+        if (!conversationId) {
 
           return;
         }
-
-        messageFetchLock.current =
-          true;
 
         const res =
           await API.get(
@@ -643,12 +555,8 @@ export const ChatProvider = ({ children }) => {
 
         mapped.sort(
           (a, b) =>
-            new Date(
-              a.createdAt
-            ) -
-            new Date(
-              b.createdAt
-            )
+            new Date(a.createdAt) -
+            new Date(b.createdAt)
         );
 
         setMessages(mapped);
@@ -672,10 +580,6 @@ export const ChatProvider = ({ children }) => {
           "Failed to load messages"
         );
 
-      } finally {
-
-        messageFetchLock.current =
-          false;
       }
 
     }, []);
@@ -971,14 +875,17 @@ export const ChatProvider = ({ children }) => {
 
         try {
 
+          // ✅ BACKEND API
           await API.post(
             "/messages/react",
             {
               messageId,
-              emoji,
+
+              emoji: emoji,
             }
           );
 
+          // ✅ UPDATE LOCAL STATE
           setMessages((prev) =>
             prev.map((m) => {
 
@@ -1000,6 +907,7 @@ export const ChatProvider = ({ children }) => {
                   []),
               ];
 
+              // ✅ REMOVE SAME REACTION
               if (
                 existing &&
                 existing.emoji ===
@@ -1012,7 +920,10 @@ export const ChatProvider = ({ children }) => {
                       !r.isMe
                   );
 
-              } else if (
+              }
+
+              // ✅ UPDATE REACTION
+              else if (
                 existing
               ) {
 
@@ -1027,7 +938,10 @@ export const ChatProvider = ({ children }) => {
                         : r
                   );
 
-              } else {
+              }
+
+              // ✅ ADD NEW REACTION
+              else {
 
                 updated.push({
                   id: Date.now(),
@@ -1150,10 +1064,6 @@ export const ChatProvider = ({ children }) => {
 
           setMessages([]);
 
-          localStorage.removeItem(
-            "chatMessages"
-          );
-
           toast.success(
             "Chat cleared"
           );
@@ -1246,17 +1156,6 @@ export const ChatProvider = ({ children }) => {
       localStorage.removeItem(
         "activeChat"
       );
-
-      localStorage.removeItem(
-        "activeConversation"
-      );
-
-      localStorage.removeItem(
-        "chatMessages"
-      );
-
-      messageFetchLock.current =
-        false;
 
       sendLock.current =
         false;
