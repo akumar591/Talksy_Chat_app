@@ -55,8 +55,8 @@ public class MessageController {
     }
 
     // ===============================
-    // 🔥 SEND MESSAGE
-    // ===============================
+// 🔥 SEND MESSAGE
+// ===============================
     @PostMapping
     public ResponseEntity<ApiResponse<?>>
     sendMessage(
@@ -157,12 +157,20 @@ public class MessageController {
                                     :
                                     null
                     );
+
             Map<String, Object> response =
                     new HashMap<>();
 
             response.put(
                     "id",
                     message.getId()
+            );
+
+            // 🔥 IMPORTANT FIX
+            response.put(
+                    "conversationId",
+                    message.getConversation()
+                            .getId()
             );
 
             response.put(
@@ -239,6 +247,21 @@ public class MessageController {
                                 .getId()
                 );
 
+                // 🔥 IMPORTANT FIX
+                reply.put(
+                        "type",
+                        message.getReplyTo()
+                                .getType()
+                );
+
+                // 🔥 IMPORTANT FIX
+                reply.put(
+                        "conversationId",
+                        message.getReplyTo()
+                                .getConversation()
+                                .getId()
+                );
+
                 reply.put(
                         "content",
                         message.getReplyTo()
@@ -257,6 +280,14 @@ public class MessageController {
                         message.getReplyTo()
                                 .getSender()
                                 .getName()
+                );
+
+                // 🔥 IMPORTANT FIX
+                reply.put(
+                        "senderAvatar",
+                        message.getReplyTo()
+                                .getSender()
+                                .getAvatar()
                 );
 
                 response.put(
@@ -389,6 +420,15 @@ public class MessageController {
                         m.getId()
                 );
 
+                // ===============================
+                // 🔥 IMPORTANT FIX
+                // ===============================
+                map.put(
+                        "conversationId",
+                        m.getConversation()
+                                .getId()
+                );
+
                 // 🔥 DELETED
                 if (m.isDeletedForEveryone()) {
 
@@ -432,6 +472,36 @@ public class MessageController {
                         m.getSender()
                                 .getAvatar()
                 );
+
+                // ===============================
+                // 🔥 RECEIVER ID
+                // 🔥 ONLY PRIVATE CHAT
+                // ===============================
+                if (!Boolean.TRUE.equals(
+                        c.getIsGroup()
+                )) {
+
+                    map.put(
+                            "receiverId",
+
+                            c.getUser1()
+                                    .getId()
+                                    .equals(
+                                            m.getSender()
+                                                    .getId()
+                                    )
+
+                                    ?
+
+                                    c.getUser2()
+                                            .getId()
+
+                                    :
+
+                                    c.getUser1()
+                                            .getId()
+                    );
+                }
 
                 map.put(
                         "isRead",
@@ -480,6 +550,21 @@ public class MessageController {
                                     .getId()
                     );
 
+                    // 🔥 IMPORTANT FIX
+                    reply.put(
+                            "type",
+                            m.getReplyTo()
+                                    .getType()
+                    );
+
+                    // 🔥 IMPORTANT FIX
+                    reply.put(
+                            "conversationId",
+                            m.getReplyTo()
+                                    .getConversation()
+                                    .getId()
+                    );
+
                     if (
 
                             m.getReplyTo()
@@ -513,6 +598,14 @@ public class MessageController {
                             m.getReplyTo()
                                     .getSender()
                                     .getName()
+                    );
+
+                    // 🔥 IMPORTANT FIX
+                    reply.put(
+                            "senderAvatar",
+                            m.getReplyTo()
+                                    .getSender()
+                                    .getAvatar()
                     );
 
                     map.put(
@@ -854,6 +947,61 @@ public class MessageController {
                             true,
 
                             "Message deleted for everyone ✅",
+
+                            null
+                    )
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(500)
+                    .body(
+
+                            new ApiResponse<>(
+
+                                    false,
+
+                                    e.getMessage(),
+
+                                    null
+                            )
+                    );
+        }
+    }
+
+    // ===============================
+// 🔥 DELETE FOR ME
+// ===============================
+    @DeleteMapping("/me/{messageId}")
+    public ResponseEntity<ApiResponse<?>>
+    deleteForMe(
+
+            @PathVariable
+            Long messageId
+    ) {
+
+        try {
+
+            User user =
+                    getCurrentUser();
+
+            messageService.deleteForMe(
+
+                    user.getId(),
+
+                    messageId
+            );
+
+            return ResponseEntity.ok(
+
+                    new ApiResponse<>(
+
+                            true,
+
+                            "Message deleted for me ✅",
 
                             null
                     )

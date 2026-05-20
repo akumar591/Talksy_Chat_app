@@ -1,3 +1,16 @@
+import {
+  FiMoreVertical,
+} from "react-icons/fi";
+
+import {
+  useState,
+  memo,
+} from "react";
+
+import MessageActions from "./MessageActions";
+import ReactionPicker from "./ReactionPicker";
+import DeleteMenu from "./DeleteMenu";
+
 const MediaGrid = ({
 
   medias = [],
@@ -5,11 +18,42 @@ const MediaGrid = ({
   setViewerOpen,
   setViewerMedia,
   setViewerIndex,
+
 }) => {
 
+  // ===============================
+  // 🔥 STATES
+  // ===============================
+  const [
+    showActions,
+    setShowActions,
+  ] = useState(false);
+
+  const [
+    showReactionPicker,
+    setShowReactionPicker,
+  ] = useState(false);
+
+  const [
+    showDeleteMenu,
+    setShowDeleteMenu,
+  ] = useState(false);
+
+  // ===============================
+  // 🔥 MAIN MEDIA
+  // ===============================
+  const mainMedia =
+    medias?.[0];
+
+  // ===============================
+  // 🔥 TOTAL
+  // ===============================
   const total =
     medias.length;
 
+  // ===============================
+  // 🔥 GRID CLASS
+  // ===============================
   const getGridClass = () => {
 
     if (total === 1) {
@@ -20,118 +64,272 @@ const MediaGrid = ({
   };
 
   return (
-    <div
-      className={`
-        grid
+    <div className="relative">
 
-        ${getGridClass()}
+      {/* =============================== */}
+      {/* 🔥 THREE DOT */}
+      {/* =============================== */}
+      <div className="
+        absolute
+        top-2
+        right-2
 
-        gap-1
+        z-40
+      ">
 
-        w-[220px]
-        md:w-[260px]
+        <button
+          onClick={(e) => {
 
-        overflow-hidden
-        rounded-2xl
-      `}
-    >
+            e.stopPropagation();
 
-      {medias
-        .slice(0, 4)
-        .map((media, index) => {
+            setShowActions(
+              prev => !prev
+            );
 
-          const isThreeLayout =
-            total === 3;
+            setShowReactionPicker(false);
 
-          const isSingle =
-            total === 1;
+            setShowDeleteMenu(false);
+          }}
+          className="
+            w-9
+            h-9
 
-          return (
-            <div
-              key={media.id || index}
-              className={`
-                relative
+            rounded-full
 
-                bg-black
+            bg-black/45
 
-                overflow-hidden
+            backdrop-blur-xl
 
-                cursor-pointer
+            border
+            border-white/10
 
-                ${isSingle
-                  ? "h-[260px] md:h-[320px]"
-                  : "h-[110px] md:h-[140px]"
-                }
+            text-white
 
-                ${isThreeLayout &&
-                  index === 0
-                  ? "row-span-2 h-[221px] md:h-[281px]"
-                  : ""
-                }
-              `}
-              onClick={(e) => {
+            flex
+            items-center
+            justify-center
 
-                e.stopPropagation();
+            hover:bg-black/60
 
-                setViewerMedia(
-                  medias
-                );
+            transition-all
+            duration-200
+          "
+        >
 
-                setViewerIndex(
-                  index
-                );
+          <FiMoreVertical size={18} />
 
-                setViewerOpen(true);
-              }}
-            >
+        </button>
 
-              {/* 🔥 IMAGE */}
-              <img
-                src={media.content}
-                alt=""
-                loading="lazy"
-                className="
-                  w-full
-                  h-full
+        {/* =============================== */}
+        {/* 🔥 ACTIONS */}
+        {/* =============================== */}
+        <MessageActions
+          msg={{
+            ...mainMedia,
 
-                  object-cover
+            type:
+              total > 1
+                ? "MEDIA_GROUP"
+                : mainMedia?.type,
 
-                  hover:scale-[1.03]
+            medias,
+          }}
 
-                  transition
-                  duration-300
-                "
-              />
+          isMe={true}
 
-              {/* 🔥 +MORE */}
-              {index === 3 &&
-                total > 4 && (
-                  <div
-                    className="
-                      absolute
-                      inset-0
+          showActions={showActions}
 
-                      bg-black/60
-                      backdrop-blur-sm
+          setShowReactionPicker={
+            setShowReactionPicker
+          }
 
-                      flex
-                      items-center
-                      justify-center
+          setShowDeleteMenu={
+            setShowDeleteMenu
+          }
+        />
 
-                      text-white
-                      text-3xl
-                      font-bold
-                    "
-                  >
-                    +{total - 4}
-                  </div>
-                )}
+        {/* =============================== */}
+        {/* 🔥 REACTION PICKER */}
+        {/* =============================== */}
+        <ReactionPicker
+          isMe={true}
 
-            </div>
-          );
-        })}
+          msg={{
+            ...mainMedia,
+
+            type:
+              total > 1
+                ? "MEDIA_GROUP"
+                : mainMedia?.type,
+
+            medias,
+          }}
+
+          showReactionPicker={
+            showReactionPicker
+          }
+
+          setShowReactionPicker={
+            setShowReactionPicker
+          }
+        />
+
+        {/* =============================== */}
+        {/* 🔥 DELETE MENU */}
+        {/* =============================== */}
+        <DeleteMenu
+          isMe={true}
+
+          msg={{
+            ...mainMedia,
+
+            type:
+              total > 1
+                ? "MEDIA_GROUP"
+                : mainMedia?.type,
+
+            medias,
+          }}
+
+          showDeleteMenu={
+            showDeleteMenu
+          }
+
+          setShowDeleteMenu={
+            setShowDeleteMenu
+          }
+
+          setShowActions={
+            setShowActions
+          }
+        />
+
+      </div>
+
+      {/* =============================== */}
+      {/* 🔥 MEDIA GRID */}
+      {/* =============================== */}
+      <div
+        className={`
+          grid
+
+          ${getGridClass()}
+
+          gap-1
+
+          w-[220px]
+          md:w-[260px]
+
+          overflow-hidden
+          rounded-2xl
+        `}
+      >
+
+        {medias
+          .slice(0, 4)
+          .map((media, index) => {
+
+            const isThreeLayout =
+              total === 3;
+
+            const isSingle =
+              total === 1;
+
+            return (
+              <div
+                key={media.id || index}
+                className={`
+                  relative
+
+                  bg-black
+
+                  overflow-hidden
+
+                  cursor-pointer
+
+                  ${isSingle
+                    ? "h-[260px] md:h-[320px]"
+                    : "h-[110px] md:h-[140px]"
+                  }
+
+                  ${isThreeLayout &&
+                    index === 0
+                    ? "row-span-2 h-[221px] md:h-[281px]"
+                    : ""
+                  }
+                `}
+                onClick={(e) => {
+
+                  e.stopPropagation();
+
+                  setViewerMedia(
+                    medias
+                  );
+
+                  setViewerIndex(
+                    index
+                  );
+
+                  setViewerOpen(
+                    true
+                  );
+                }}
+              >
+
+                {/* =============================== */}
+                {/* 🔥 IMAGE */}
+                {/* =============================== */}
+                <img
+                  src={media.content}
+                  alt=""
+                  loading="lazy"
+                  className="
+                    w-full
+                    h-full
+
+                    object-cover
+
+                    hover:scale-[1.03]
+
+                    transition
+                    duration-300
+                  "
+                />
+
+                {/* =============================== */}
+                {/* 🔥 +MORE */}
+                {/* =============================== */}
+                {index === 3 &&
+                  total > 4 && (
+
+                    <div
+                      className="
+                        absolute
+                        inset-0
+
+                        bg-black/60
+                        backdrop-blur-sm
+
+                        flex
+                        items-center
+                        justify-center
+
+                        text-white
+                        text-3xl
+                        font-bold
+                      "
+                    >
+                      +{total - 4}
+                    </div>
+                  )}
+
+              </div>
+            );
+          })}
+      </div>
+
     </div>
   );
 };
 
-export default MediaGrid;
+export default memo(MediaGrid);

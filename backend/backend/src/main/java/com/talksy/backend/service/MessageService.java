@@ -514,7 +514,9 @@ public class MessageService {
 
                                         "VIDEO",
 
-                                        "FILE"
+                                        "FILE",
+
+                                        "MEDIA_GROUP"
                                 )
                         );
 
@@ -642,10 +644,6 @@ public class MessageService {
         }
 
         message.setDeletedForEveryone(true);
-
-        message.setContent(
-                "This message was deleted"
-        );
 
         messageRepository.save(message);
     }

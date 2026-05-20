@@ -59,6 +59,12 @@ public class Message {
     private String content;
 
     // ===============================
+    // 🔥 CLOUDINARY PUBLIC ID
+    // ===============================
+    @Column(columnDefinition = "TEXT")
+    private String publicId;
+
+    // ===============================
     // 🔥 TYPE
     // ===============================
     // TEXT / IMAGE / VIDEO / FILE / VOICE

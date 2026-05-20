@@ -88,42 +88,73 @@ const UserProfile = () => {
 
   }, [id]);
 
-  // ===============================
-  // 🔥 REAL SHARED MEDIA
-  // ===============================
-  const sharedMedia =
-    useMemo(() => {
 
-      const medias =
-        messages.filter(
-          msg =>
-            (
-              msg.type ===
-                "IMAGE" ||
+// ===============================
+// 🔥 GET CONVERSATION ID
+// ===============================
+const activeChat =
+  JSON.parse(
+    localStorage.getItem(
+      "activeChat"
+    )
+  );
 
-              msg.type ===
-                "VIDEO" ||
+const conversationId =
 
-              msg.type ===
-                "MEDIA_GROUP"
-            ) &&
+  activeChat?.conversationId
 
-            (
-              msg.senderId ===
-                Number(id) ||
+  ||
 
-              msg.receiverId ===
-                Number(id)
-            )
+  activeChat?.id;
+
+
+    // ===============================
+// 🔥 SHARED MEDIA STATE
+// ===============================
+const [
+  sharedMedia,
+  setSharedMedia,
+] = useState([]);
+
+console.log(
+  "SHARED MEDIA API",
+  sharedMedia
+);
+
+// ===============================
+// 🔥 FETCH SHARED MEDIA
+// ===============================
+useEffect(() => {
+
+  const fetchSharedMedia =
+    async () => {
+
+      try {
+
+        if (!conversationId) {
+          return;
+        }
+
+        const res =
+          await API.get(
+            `/messages/media/${conversationId}`
+          );
+
+        setSharedMedia(
+          res?.data?.data || []
         );
 
-      // 🔥 LATEST FIRST
-      return medias
-        .slice()
-        .reverse()
-        .slice(0, 10);
+      } catch (err) {
 
-    }, [messages, id]);
+        console.log(err);
+      }
+    };
+
+  fetchSharedMedia();
+
+}, [conversationId]);
+
+  
 
   // ===============================
   // 🔥 LOADING
@@ -674,7 +705,7 @@ const UserProfile = () => {
               ">
 
                 {user.bio &&
-                user.bio.trim() !== ""
+                  user.bio.trim() !== ""
                   ? user.bio
                   : "Hey there! I am using Talksy 🚀"}
 
@@ -790,7 +821,7 @@ const UserProfile = () => {
 
               {/* 🔥 REAL MEDIA */}
               {sharedMedia.length >
-              0 ? (
+                0 ? (
 
                 <div className="
                   flex
@@ -946,7 +977,7 @@ const UserProfile = () => {
 
         selectedIndex={0}
 
-        setSelectedIndex={() => {}}
+        setSelectedIndex={() => { }}
       />
     </>
   );

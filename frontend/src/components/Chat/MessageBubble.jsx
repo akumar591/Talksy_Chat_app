@@ -1,8 +1,4 @@
-import {
-  useState,
-  useEffect,
-  memo,
-} from "react";
+import { useState, useEffect, memo } from "react";
 
 import MessageActions from "./MessageActions";
 import ReactionPicker from "./ReactionPicker";
@@ -19,75 +15,45 @@ const MessageBubble = ({
   setViewerMedia,
   setViewerIndex,
 }) => {
-
   // ===============================
   // 🔥 LOCAL STATES
   // ===============================
-  const [
-    showActions,
-    setShowActions,
-  ] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
-  const [
-    showReactionPicker,
-    setShowReactionPicker,
-  ] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
-  const [
-    showDeleteMenu,
-    setShowDeleteMenu,
-  ] = useState(false);
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
 
   // ===============================
   // 🔥 OUTSIDE CLICK
   // ===============================
   useEffect(() => {
+    const handleOutside = (e) => {
+      if (!e.target.closest(`.message-wrapper-${msg.id}`)) {
+        setShowActions(false);
 
-    const handleOutside =
-      (e) => {
+        setShowReactionPicker(false);
 
-        if (
-          !e.target.closest(
-            `.message-wrapper-${msg.id}`
-          )
-        ) {
-
-          setShowActions(false);
-
-          setShowReactionPicker(false);
-
-          setShowDeleteMenu(false);
-        }
-      };
-
-    document.addEventListener(
-      "mousedown",
-      handleOutside
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "mousedown",
-        handleOutside
-      );
+        setShowDeleteMenu(false);
+      }
     };
 
+    document.addEventListener("mousedown", handleOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
   }, [msg.id]);
 
   // ===============================
   // 🔥 ONLY EMOJI
   // ===============================
   const isOnlyEmoji = () => {
-
-    if (
-      msg.type !== "TEXT"
-    ) {
+    if (msg.type !== "TEXT") {
       return false;
     }
 
-    const text =
-      msg.content?.trim() || "";
+    const text = msg.content?.trim() || "";
 
     if (!text) {
       return false;
@@ -107,15 +73,15 @@ const MessageBubble = ({
     msg.type === "STATUS_REPLY" ||
     msg.type === "STATUS_REACTION";
 
-  const onlyEmoji =
-    isOnlyEmoji();
+  const onlyEmoji = isOnlyEmoji();
 
   // ===============================
   // 🔥 REACTIONS
-  // ✅ FIXED
   // ===============================
   const reactions =
-    msg?.reactions || [];
+    msg.type === "MEDIA_GROUP"
+      ? msg.medias?.[0]?.reactions || []
+      : msg?.reactions || [];
 
   return (
     <div
@@ -125,17 +91,15 @@ const MessageBubble = ({
         message-wrapper-${msg.id}
       `}
       onClick={(e) => {
-
         e.stopPropagation();
 
-        setShowActions(prev => !prev);
+        setShowActions((prev) => !prev);
 
         setShowReactionPicker(false);
 
         setShowDeleteMenu(false);
       }}
     >
-
       {/* =============================== */}
       {/* 🔥 MESSAGE CONTAINER */}
       {/* =============================== */}
@@ -173,7 +137,7 @@ const MessageBubble = ({
               duration-300
 
               ${isMe
-                ? `
+              ? `
                   bg-[var(--primary)]
 
                   text-black
@@ -208,7 +172,7 @@ const MessageBubble = ({
                   after:rounded-full
                   after:pointer-events-none
                 `
-                : `
+              : `
                   bg-[var(--card)]
 
                   text-[var(--text)]
@@ -230,7 +194,7 @@ const MessageBubble = ({
 
                   before:pointer-events-none
                 `
-              }
+            }
             `
             : ""
           }
@@ -246,7 +210,7 @@ const MessageBubble = ({
           }
 
           ${onlyEmoji
-            ? "text-[44px] leading-none"
+            ? "text-[28px] leading-none"
             : "text-[14px] leading-[1.55]"
           }
         `}
@@ -255,102 +219,183 @@ const MessageBubble = ({
           wordBreak: "break-word",
         }}
       >
-
         {/* =============================== */}
         {/* 🔥 DELETED */}
         {/* =============================== */}
-        {msg.deleted ? (
-
+        {msg.deletedForEveryone ||
+          (msg.type === "MEDIA_GROUP" && msg.medias?.[0]?.deletedForEveryone) ? (
           <span className="italic opacity-60 text-sm">
             🚫 This message was deleted
           </span>
-
         ) : (
           <>
-
             {/* =============================== */}
             {/* 🔥 REPLY PREVIEW */}
             {/* =============================== */}
-            {msg.replyTo && (
-              <div
-                className={`
-                  mb-2
-
-                  px-3
-                  py-2
-
-                  rounded-2xl
-
-                  border-l-[3px]
-
-                  backdrop-blur-xl
-
-                  ${isMe
-                    ? `
-                      bg-black/10
-                      border-black/40
-                    `
-                    : `
-                      bg-white/[0.04]
-                      border-[var(--primary)]
-                    `
-                  }
-                `}
-              >
-
-                <p
+            {(msg.replyTo ||
+              (msg.type === "MEDIA_GROUP" && msg.medias?.[0]?.replyTo)) && (
+                <div
                   className={`
-                    text-[11px]
-                    font-semibold
-                    mb-1
+      mb-2
 
-                    ${isMe
-                      ? "text-black/70"
-                      : "text-[var(--primary)]"
+      px-3
+      py-2
+
+      rounded-2xl
+
+      border-l-[3px]
+
+      backdrop-blur-xl
+
+      ${isMe
+                      ? `
+          bg-black/10
+          border-black/40
+        `
+                      : `
+          bg-white/[0.04]
+          border-[var(--primary)]
+        `
                     }
-                  `}
+    `}
                 >
-                  {msg.replyTo.senderName || "Reply"}
-                </p>
+                  {/* 🔥 SENDER */}
+                  <p
+                    className={`
+        text-[11px]
+        font-semibold
+        mb-1
 
-                <p
-                  className="
-                    text-[12px]
-                    opacity-75
+        ${isMe ? "text-black/70" : "text-[var(--primary)]"}
+      `}
+                  >
+                    {(msg.replyTo || msg.medias?.[0]?.replyTo)?.senderName ||
+                      "Reply"}
+                  </p>
 
-                    line-clamp-2
-                    break-words
-                  "
-                >
+                  {/* 🔥 CONTENT */}
+                  <div
+                    className="
+        text-[12px]
+        opacity-75
 
-                  {msg.replyTo.type === "IMAGE"
-                    ? "📷 Photo"
+        break-words
+      "
+                  >
+                    {(() => {
+                      const reply = msg.replyTo || msg.medias?.[0]?.replyTo;
 
-                    : msg.replyTo.type === "VIDEO"
-                      ? "🎥 Video"
+                      const value = reply?.content || "";
 
-                      : msg.replyTo.type === "FILE"
-                        ? "📄 File"
+                      // ===============================
+                      // 🔥 IMAGE
+                      // ===============================
+                      if (
+                        reply?.type === "IMAGE" ||
+                        (value.includes("cloudinary") &&
+                          (value.includes("/image/") ||
+                            value.match(/\.(jpg|jpeg|png|webp|gif)$/i)))
+                      ) {
+                        return (
+                          <div
+                            className="
+              flex
+              items-center
+              gap-2
+            "
+                          >
+                            <img
+                              src={value}
+                              alt="reply-media"
+                              className="
+                  w-11
+                  h-11
 
-                        : msg.replyTo.content
-                  }
+                  rounded-xl
 
-                </p>
+                  object-cover
 
-              </div>
-            )}
+                  shrink-0
+                "
+                            />
 
+                            <span
+                              className="
+                text-[12px]
+                opacity-75
+              "
+                            >
+                              📷 Photo
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      // ===============================
+                      // 🔥 VIDEO
+                      // ===============================
+                      if (
+                        reply?.type === "VIDEO" ||
+                        (value.includes("cloudinary") &&
+                          value.includes("/video/"))
+                      ) {
+                        return (
+                          <div
+                            className="
+              flex
+              items-center
+              gap-2
+            "
+                          >
+                            <video
+                              src={value}
+                              className="
+                  w-11
+                  h-11
+
+                  rounded-xl
+
+                  object-cover
+
+                  shrink-0
+                "
+                            />
+
+                            <span
+                              className="
+                text-[12px]
+                opacity-75
+              "
+                            >
+                              🎥 Video
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      // ===============================
+                      // 🔥 FILE
+                      // ===============================
+                      if (reply?.type === "FILE") {
+                        return "📄 File";
+                      }
+
+                      // ===============================
+                      // 🔥 TEXT
+                      // ===============================
+                      return value;
+                    })()}
+                  </div>
+                </div>
+              )}
             {/* =============================== */}
             {/* 🔥 MEDIA GROUP */}
             {/* =============================== */}
             {msg.type === "MEDIA_GROUP" && (
               <MediaGrid
                 medias={msg.medias}
-
                 setViewerOpen={setViewerOpen}
-
                 setViewerMedia={setViewerMedia}
-
                 setViewerIndex={setViewerIndex}
               />
             )}
@@ -358,37 +403,108 @@ const MessageBubble = ({
             {/* =============================== */}
             {/* 🔥 IMAGE */}
             {/* =============================== */}
+            {/* =============================== */}
+            {/* 🔥 IMAGE */}
+            {/* =============================== */}
             {msg.type === "IMAGE" && (
-              <div className="max-w-[260px] md:max-w-[360px] overflow-hidden rounded-[22px]">
 
-                <img
-                  src={msg.content}
-                  alt="chat-media"
-                  loading="lazy"
-                  onClick={(e) => {
+              <div className="relative">
 
-                    e.stopPropagation();
+                {/* 🔥 THREE DOT */}
+                <div className="
+      absolute
+      top-2
+      right-2
 
-                    setViewerMedia([msg]);
+      z-40
+    ">
 
-                    setViewerIndex(0);
+                  <button
+                    onClick={(e) => {
 
-                    setViewerOpen(true);
-                  }}
-                  className="
-                    w-full
-                    h-[240px]
+                      e.stopPropagation();
 
-                    object-cover
+                      setShowActions(
+                        prev => !prev
+                      );
 
-                    cursor-pointer
+                      setShowReactionPicker(false);
 
-                    hover:scale-[1.02]
+                      setShowDeleteMenu(false);
+                    }}
+                    className="
+          w-9
+          h-9
 
-                    transition-all
-                    duration-300
-                  "
-                />
+          rounded-full
+
+          bg-black/45
+
+          backdrop-blur-xl
+
+          border
+          border-white/10
+
+          text-white
+
+          flex
+          items-center
+          justify-center
+
+          hover:bg-black/60
+
+          transition-all
+          duration-200
+        "
+                  >
+
+                    ⋮
+
+                  </button>
+
+                </div>
+
+                <div className="
+      max-w-[260px]
+      md:max-w-[360px]
+
+      overflow-hidden
+      rounded-[22px]
+    ">
+
+                  <img
+                    src={msg.content}
+                    alt="chat-media"
+
+                    loading="lazy"
+
+                    onClick={(e) => {
+
+                      e.stopPropagation();
+
+                      setViewerMedia([msg]);
+
+                      setViewerIndex(0);
+
+                      setViewerOpen(true);
+                    }}
+
+                    className="
+          w-full
+          h-[240px]
+
+          object-cover
+
+          cursor-pointer
+
+          hover:scale-[1.02]
+
+          transition-all
+          duration-300
+        "
+                  />
+
+                </div>
 
               </div>
             )}
@@ -397,20 +513,82 @@ const MessageBubble = ({
             {/* 🔥 VIDEO */}
             {/* =============================== */}
             {msg.type === "VIDEO" && (
-              <video
-                src={msg.content}
-                controls
-                playsInline
-                className="
-                  w-full
-                  max-w-[260px]
-                  md:max-w-[360px]
 
-                  rounded-[22px]
+              <div className="relative">
 
-                  object-cover
-                "
-              />
+                {/* 🔥 THREE DOT */}
+                <div className="
+      absolute
+      top-2
+      right-2
+
+      z-40
+    ">
+
+                  <button
+                    onClick={(e) => {
+
+                      e.stopPropagation();
+
+                      setShowActions(
+                        prev => !prev
+                      );
+
+                      setShowReactionPicker(false);
+
+                      setShowDeleteMenu(false);
+                    }}
+                    className="
+          w-9
+          h-9
+
+          rounded-full
+
+          bg-black/45
+
+          backdrop-blur-xl
+
+          border
+          border-white/10
+
+          text-white
+
+          flex
+          items-center
+          justify-center
+
+          hover:bg-black/60
+
+          transition-all
+          duration-200
+        "
+                  >
+
+                    ⋮
+
+                  </button>
+
+                </div>
+
+                <video
+                  src={msg.content}
+
+                  controls
+                  playsInline
+
+                  className="
+        w-full
+
+        max-w-[260px]
+        md:max-w-[360px]
+
+        rounded-[22px]
+
+        object-cover
+      "
+                />
+
+              </div>
             )}
 
             {/* =============================== */}
@@ -421,9 +599,7 @@ const MessageBubble = ({
                 href={msg.content}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) =>
-                  e.stopPropagation()
-                }
+                onClick={(e) => e.stopPropagation()}
                 className={`
                   flex
                   items-center
@@ -453,8 +629,8 @@ const MessageBubble = ({
                   }
                 `}
               >
-
-                <div className="
+                <div
+                  className="
                   w-11
                   h-11
 
@@ -467,22 +643,16 @@ const MessageBubble = ({
                   justify-center
 
                   text-lg
-                ">
+                "
+                >
                   📄
                 </div>
 
                 <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold truncate">File</p>
 
-                  <p className="text-[13px] font-semibold truncate">
-                    File
-                  </p>
-
-                  <p className="text-[11px] opacity-60 truncate">
-                    Tap to open
-                  </p>
-
+                  <p className="text-[11px] opacity-60 truncate">Tap to open</p>
                 </div>
-
               </a>
             )}
 
@@ -490,9 +660,7 @@ const MessageBubble = ({
             {/* 🔥 TEXT */}
             {/* =============================== */}
             {msg.type === "TEXT" && (
-              <span className="relative z-10 font-[450]">
-                {msg.content}
-              </span>
+              <span className="relative z-10 font-[450]">{msg.content}</span>
             )}
 
             {/* =============================== */}
@@ -500,12 +668,7 @@ const MessageBubble = ({
             {/* =============================== */}
             {msg.type === "STATUS_REPLY" && (
               <span className="relative z-10 font-[450]">
-
-                {(msg.content || "").replace(
-                  "Reply to your status: ",
-                  "",
-                )}
-
+                {(msg.content || "").replace("Reply to your status: ", "")}
               </span>
             )}
 
@@ -514,21 +677,14 @@ const MessageBubble = ({
             {/* =============================== */}
             {msg.type === "STATUS_REACTION" && (
               <span className="relative z-10 font-[450]">
-
-                {(msg.content || "").replace(
-                  " reacted to your status",
-                  "",
-                )}
-
+                {(msg.content || "").replace(" reacted to your status", "")}
               </span>
             )}
-
           </>
         )}
 
         {/* =============================== */}
-        {/* 🔥 WHATSAPP STYLE REACTIONS */}
-        {/* ✅ FIXED */}
+        {/* 🔥REACTIONS */}
         {/* =============================== */}
         {reactions.length > 0 && (
           <div
@@ -536,10 +692,7 @@ const MessageBubble = ({
               absolute
               -bottom-3
 
-              ${isMe
-                ? "right-2"
-                : "left-2"
-              }
+              ${isMe ? "right-2" : "left-2"}
 
               flex
               items-center
@@ -564,74 +717,50 @@ const MessageBubble = ({
               z-20
             `}
           >
-
             {reactions.map((r, i) => (
-              <span key={i}>
+              <span key={i} className="relative top-[1px]">
                 {r.emoji}
               </span>
             ))}
-
           </div>
         )}
-
       </div>
 
       {/* =============================== */}
       {/* 🔥 ACTIONS */}
       {/* =============================== */}
+      <div className="absolute top-12 right-2 z-50">
       <MessageActions
         msg={msg}
         isMe={isMe}
-
         showActions={showActions}
-
-        setShowReactionPicker={
-          setShowReactionPicker
-        }
-
-        setShowDeleteMenu={
-          setShowDeleteMenu
-        }
+        setShowReactionPicker={setShowReactionPicker}
+        setShowDeleteMenu={setShowDeleteMenu}
       />
+      </div>
 
       {/* =============================== */}
       {/* 🔥 REACTION PICKER */}
       {/* =============================== */}
+      <div className="absolute top-12 right-2 z-[60]">
       <ReactionPicker
         isMe={isMe}
-
         msg={msg}
-
-        showReactionPicker={
-          showReactionPicker
-        }
-
-        setShowReactionPicker={
-          setShowReactionPicker
-        }
+        showReactionPicker={showReactionPicker}
+        setShowReactionPicker={setShowReactionPicker}
       />
+      </div>
 
       {/* =============================== */}
       {/* 🔥 DELETE MENU */}
       {/* =============================== */}
       <DeleteMenu
         isMe={isMe}
-
         msg={msg}
-
-        showDeleteMenu={
-          showDeleteMenu
-        }
-
-        setShowDeleteMenu={
-          setShowDeleteMenu
-        }
-
-        setShowActions={
-          setShowActions
-        }
+        showDeleteMenu={showDeleteMenu}
+        setShowDeleteMenu={setShowDeleteMenu}
+        setShowActions={setShowActions}
       />
-
     </div>
   );
 };

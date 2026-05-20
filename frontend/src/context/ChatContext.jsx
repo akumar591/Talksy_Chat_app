@@ -489,6 +489,11 @@ export const ChatProvider = ({ children }) => {
           data.map((msg) => ({
             id: msg.id,
 
+            conversationId:
+              msg.conversationId ||
+              msg.conversation?.id ||
+              null,
+
             content:
               msg.content || "",
 
@@ -507,6 +512,10 @@ export const ChatProvider = ({ children }) => {
             senderAvatar:
               msg.senderAvatar ||
               "",
+
+            receiverId:
+            msg.receiverId ||
+            null,
 
             createdAt:
               msg.createdAt,
@@ -559,6 +568,10 @@ export const ChatProvider = ({ children }) => {
             new Date(b.createdAt)
         );
 
+        console.log(
+          "MAPPED MESSAGE",
+          mapped[0]
+        );
         setMessages(mapped);
 
       } catch (err) {
@@ -683,6 +696,8 @@ export const ChatProvider = ({ children }) => {
           {
             id: tempId,
 
+            conversationId,
+
             content,
 
             type,
@@ -751,6 +766,13 @@ export const ChatProvider = ({ children }) => {
               m.id === tempId
                 ? {
                   ...realMessage,
+
+                  conversationId:
+                    realMessage.conversationId ||
+
+                    realMessage.conversation?.id ||
+
+                    conversationId,
 
                   senderId:
                     Number(
@@ -984,11 +1006,11 @@ export const ChatProvider = ({ children }) => {
             `/messages/me/${messageId}`
           );
 
+          // ✅ REMOVE ONLY CURRENT USER UI
           setMessages((prev) =>
             prev.filter(
               (m) =>
-                m.id !==
-                messageId
+                m.id !== messageId
             )
           );
 
@@ -997,6 +1019,9 @@ export const ChatProvider = ({ children }) => {
           console.log(err);
 
           toast.error(
+
+            err?.response?.data?.message ||
+
             "Delete failed"
           );
         }
@@ -1018,18 +1043,18 @@ export const ChatProvider = ({ children }) => {
             `/messages/everyone/${messageId}`
           );
 
+          // ✅ UPDATE MESSAGE STATE
           setMessages((prev) =>
             prev.map((m) =>
-              m.id ===
-                messageId
+
+              m.id === messageId
+
                 ? {
                   ...m,
 
-                  content:
-                    "This message was deleted",
-
-                  deleted: true,
+                  deletedForEveryone: true,
                 }
+
                 : m
             )
           );
@@ -1039,7 +1064,10 @@ export const ChatProvider = ({ children }) => {
           console.log(err);
 
           toast.error(
-            "Delete failed"
+
+            err?.response?.data?.message ||
+
+            "Only sender can delete this message"
           );
         }
 

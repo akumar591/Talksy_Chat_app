@@ -713,30 +713,164 @@ const ChatWindow = ({
 
       {/* 🔥 REPLY */}
       {replyTo && (
-        <div className="px-3 py-2 bg-[var(--card)] border-t border-[var(--border)]">
+        <div className="
+    px-3
+    py-2
 
-          <div className="px-3 py-2 bg-[var(--primary)]/10 rounded-2xl flex justify-between items-center text-sm">
+    bg-[var(--card)]
 
-            <div className="truncate flex-1">
+    border-t
+    border-[var(--border)]
+  ">
 
-              <span className="font-semibold">
-                Replying:
-              </span>{" "}
+          <div className="
+      px-3
+      py-2
 
-              {
-                replyTo.content
-              }
+      bg-[var(--primary)]/10
+
+      rounded-2xl
+
+      flex
+      justify-between
+      items-center
+
+      gap-3
+
+      text-sm
+    ">
+
+            {/* 🔥 LEFT */}
+            <div className="
+        flex-1
+        min-w-0
+      ">
+
+              <p className="
+          text-[12px]
+          font-semibold
+          mb-1
+        ">
+
+                Replying
+
+              </p>
+
+              {/* 🔥 IMAGE */}
+              {replyTo.type === "IMAGE" && (
+
+                <div className="
+            flex
+            items-center
+            gap-3
+          ">
+
+                  <img
+                    src={replyTo.content}
+                    alt="reply-media"
+                    className="
+                w-12
+                h-12
+
+                rounded-xl
+
+                object-cover
+
+                shrink-0
+              "
+                  />
+
+                  <p className="
+              text-[13px]
+              opacity-80
+              truncate
+            ">
+
+                    📷 Photo
+
+                  </p>
+
+                </div>
+              )}
+
+              {/* 🔥 VIDEO */}
+              {replyTo.type === "VIDEO" && (
+
+                <div className="
+            flex
+            items-center
+            gap-3
+          ">
+
+                  <video
+                    src={replyTo.content}
+                    className="
+                w-12
+                h-12
+
+                rounded-xl
+
+                object-cover
+
+                shrink-0
+              "
+                  />
+
+                  <p className="
+              text-[13px]
+              opacity-80
+            ">
+
+                    🎥 Video
+
+                  </p>
+
+                </div>
+              )}
+
+              {/* 🔥 FILE */}
+              {replyTo.type === "FILE" && (
+
+                <p className="
+            text-[13px]
+            opacity-80
+          ">
+
+                  📄 File
+
+                </p>
+              )}
+
+              {/* 🔥 TEXT */}
+              {replyTo.type === "TEXT" && (
+
+                <p className="
+            text-[13px]
+            opacity-80
+
+            truncate
+          ">
+
+                  {replyTo.content}
+
+                </p>
+              )}
 
             </div>
 
+            {/* 🔥 CLOSE */}
             <button
               aria-label="Cancel reply"
+
               onClick={() =>
-                setReplyTo(
-                  null
-                )
+                setReplyTo(null)
               }
-              className="ml-2 opacity-70 hover:opacity-100"
+              className="
+          shrink-0
+
+          opacity-70
+          hover:opacity-100
+        "
             >
 
               <FiX />

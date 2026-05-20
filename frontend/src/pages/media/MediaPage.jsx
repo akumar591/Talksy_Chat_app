@@ -10,6 +10,8 @@ import {
   FiDownload,
 } from "react-icons/fi";
 
+import API from "../../api/axios";
+
 import { useChat } from "../../context/ChatContext";
 
 import MediaViewerModal from "../../components/chat/MediaViewerModal";
@@ -20,12 +22,13 @@ const MediaPage = () => {
 
   // 🔥 NOW USING OPTIMIZED CONTEXT DATA
   const {
-    mediaMessages,
-    imageMessages,
-    videoMessages,
-    fileMessages,
-    pdfMessages,
+    selectedChat,
   } = useChat();
+
+  const [
+    mediaMessages,
+    setMediaMessages,
+  ] = useState([]);
 
   // ===============================
   // 🔥 STATES
@@ -42,63 +45,148 @@ const MediaPage = () => {
   const [viewerIndex, setViewerIndex] =
     useState(0);
 
-  const [currentUserId, setCurrentUserId] =
-    useState(null);
+  // ===============================
+  // 🔥 GET CONVERSATION ID
+  // ===============================
+  const activeChat =
+    JSON.parse(
+      localStorage.getItem(
+        "activeChat"
+      )
+    );
+
+  const conversationId =
+
+    activeChat?.conversationId
+
+    ||
+
+    activeChat?.id;
 
   // ===============================
-  // 🔥 GET USER
+  // 🔥 FETCH MEDIA
   // ===============================
   useEffect(() => {
 
-    try {
+    const fetchMedia =
+      async () => {
 
-      const user =
-        JSON.parse(
-          localStorage.getItem("user")
-        );
+        try {
 
-      setCurrentUserId(
-        Number(user?.id)
-      );
+          if (!conversationId) {
+            return;
+          }
 
-    } catch {
+          const res =
+            await API.get(
+              `/messages/media/${conversationId}`
+            );
 
-      setCurrentUserId(null);
-    }
+          setMediaMessages(
+            res?.data?.data || []
+          );
 
-  }, []);
+        } catch (err) {
+
+          console.log(err);
+        }
+      };
+
+    fetchMedia();
+
+  }, [conversationId]);
 
   // ===============================
   // 🔥 CURRENT ITEMS
   // ===============================
-  const currentItems = useMemo(() => {
+  const currentItems =
+    useMemo(() => {
 
-    switch (activeTab) {
+      const filteredMedia =
+        mediaMessages.filter(
+          (msg) => {
 
-      case "IMAGES":
-        return imageMessages;
+            const isMedia =
 
-      case "VIDEOS":
-        return videoMessages;
+              msg.type === "IMAGE" ||
 
-      case "FILES":
-        return fileMessages;
+              msg.type === "VIDEO" ||
 
-      case "PDF":
-        return pdfMessages;
+              msg.type === "FILE" ||
 
-      default:
-        return mediaMessages;
-    }
+              msg.type === "MEDIA_GROUP";
 
-  }, [
-    activeTab,
-    mediaMessages,
-    imageMessages,
-    videoMessages,
-    fileMessages,
-    pdfMessages,
-  ]);
+            return (
+              isMedia &&
+              !msg.deletedForEveryone
+            );
+          }
+        );
+
+      switch (activeTab) {
+
+        case "IMAGES":
+
+          return filteredMedia.filter(
+            (msg) =>
+
+              msg.type === "IMAGE" ||
+
+              msg.type === "MEDIA_GROUP"
+          );
+
+        case "VIDEOS":
+
+          return filteredMedia.filter(
+            (msg) =>
+              msg.type === "VIDEO"
+          );
+
+        case "FILES":
+
+          return filteredMedia.filter(
+            (msg) =>
+              msg.type === "FILE"
+          );
+
+        case "PDF":
+
+          return filteredMedia.filter(
+            (msg) =>
+
+              msg.type === "FILE" &&
+
+              msg.content
+                ?.toLowerCase()
+                .includes(".pdf")
+          );
+
+        default:
+
+          return filteredMedia;
+      }
+
+    }, [
+      activeTab,
+      mediaMessages,
+    ]);
+
+  const fileMessages =
+    currentItems.filter(
+      (msg) =>
+        msg.type === "FILE"
+    );
+
+  const pdfMessages =
+    currentItems.filter(
+      (msg) =>
+
+        msg.type === "FILE" &&
+
+        msg.content
+          ?.toLowerCase()
+          .includes(".pdf")
+    );
 
   // ===============================
   // 🔥 OPEN VIEWER
@@ -189,8 +277,7 @@ const MediaPage = () => {
 
               <p className="text-xs opacity-60">
 
-                {mediaMessages.length +
-                  fileMessages.length}
+                {currentItems.length}
 
                 {" "}items
 
@@ -287,7 +374,7 @@ const MediaPage = () => {
         {/* 🔥 FILES + PDF */}
         {/* =============================== */}
         {activeTab === "FILES" ||
-        activeTab === "PDF" ? (
+          activeTab === "PDF" ? (
 
           <div className="space-y-4">
 
@@ -341,7 +428,7 @@ const MediaPage = () => {
 
                     <p className="text-sm opacity-60">
 
-                      {activeTab === "PDF"
+                      {currentItems
 
                         ? "PDF document"
 
@@ -391,18 +478,18 @@ const MediaPage = () => {
                 : fileMessages
             ).length === 0 && (
 
-              <EmptyState
-                icon={<FiFile />}
-                text={
-                  activeTab === "PDF"
+                <EmptyState
+                  icon={<FiFile />}
+                  text={
+                    activeTab === "PDF"
 
-                    ? "No PDF files"
+                      ? "No PDF files"
 
-                    : "No shared files"
-                }
-              />
+                      : "No shared files"
+                  }
+                />
 
-            )}
+              )}
 
           </div>
 
@@ -514,9 +601,9 @@ const MediaPage = () => {
 
                     : activeTab === "IMAGES"
 
-                    ? <FiImage />
+                      ? <FiImage />
 
-                    : <FiFile />
+                      : <FiFile />
                 }
                 text={`No ${activeTab.toLowerCase()} found`}
               />
