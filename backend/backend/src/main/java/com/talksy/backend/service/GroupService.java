@@ -164,14 +164,39 @@ public class GroupService {
     }
 
     // ===============================
-    // 🔥 GET GROUP BY ID
-    // ===============================
+// 🔥 GET GROUP BY ID
+// ONLY GROUP MEMBER
+// ===============================
     public GroupResponse getGroupById(
-            Long groupId
+
+            Long groupId,
+
+            Long currentUserId
     ) {
 
         Group group =
                 getGroupOrThrow(groupId);
+
+        User currentUser =
+                getUserOrThrow(currentUserId);
+
+        boolean isMember =
+
+                groupMemberRepository
+                        .findByGroupAndUser(
+
+                                group,
+
+                                currentUser
+                        )
+                        .isPresent();
+
+        if (!isMember) {
+
+            throw new RuntimeException(
+                    "Access denied"
+            );
+        }
 
         return convertToResponse(group);
     }

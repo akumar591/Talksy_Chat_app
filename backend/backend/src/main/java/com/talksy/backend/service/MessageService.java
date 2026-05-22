@@ -166,9 +166,14 @@ public class MessageService {
                             ));
 
             if (
+
                     !replyTo.getConversation()
                             .getId()
                             .equals(conversationId)
+
+                            ||
+
+                            replyTo.isDeletedForEveryone()
             ) {
 
                 throw new RuntimeException(
@@ -178,11 +183,27 @@ public class MessageService {
         }
 
         // ===============================
+        // 🔥 EMPTY MESSAGE CHECK
+        // ===============================
+        if (
+
+                (content == null
+                        || content.isBlank())
+
+                        &&
+
+                        statusMedia == null
+        ) {
+
+            throw new RuntimeException(
+                    "Message cannot be empty"
+            );
+        }
+
+        // ===============================
         // 🔐 ENCRYPT
         // ===============================
-        String encryptedContent =
-                CryptoUtil.encrypt(content);
-
+        String encryptedContent = content != null ? CryptoUtil.encrypt(content) : "";
         Message message = Message.builder()
                 .conversation(conversation)
                 .sender(sender)
@@ -358,6 +379,45 @@ public class MessageService {
                         .findByConversationOrderByCreatedAtAsc(
                                 conversation
                         );
+        // ===============================
+// 🔥 FILTER DELETED MESSAGES
+// ===============================
+        messages = messages.stream()
+
+                .filter(m -> {
+
+                    // 🔥 GROUP CHAT
+                    if (Boolean.TRUE.equals(
+                            conversation.getIsGroup()
+                    )) {
+
+                        return true;
+                    }
+
+                    // 🔥 USER 1
+                    if (
+                            conversation.getUser1()
+                                    .getId()
+                                    .equals(userId)
+                    ) {
+
+                        return !m.isDeletedForUser1();
+                    }
+
+                    // 🔥 USER 2
+                    if (
+                            conversation.getUser2()
+                                    .getId()
+                                    .equals(userId)
+                    ) {
+
+                        return !m.isDeletedForUser2();
+                    }
+
+                    return false;
+                })
+
+                .toList();
 
         // ===============================
         // 🔐 DECRYPT
@@ -413,6 +473,7 @@ public class MessageService {
 
         return messages;
     }
+
 
     // ===============================
     // 🔥 GET MEDIA MESSAGES
@@ -519,6 +580,46 @@ public class MessageService {
                                         "MEDIA_GROUP"
                                 )
                         );
+
+        // ===============================
+        // 🔥 FILTER DELETED MEDIA
+        // ===============================
+        messages = messages.stream()
+
+                .filter(m -> {
+
+                    // 🔥 GROUP CHAT
+                    if (Boolean.TRUE.equals(
+                            conversation.getIsGroup()
+                    )) {
+
+                        return true;
+                    }
+
+                    // 🔥 USER 1
+                    if (
+                            conversation.getUser1()
+                                    .getId()
+                                    .equals(userId)
+                    ) {
+
+                        return !m.isDeletedForUser1();
+                    }
+
+                    // 🔥 USER 2
+                    if (
+                            conversation.getUser2()
+                                    .getId()
+                                    .equals(userId)
+                    ) {
+
+                        return !m.isDeletedForUser2();
+                    }
+
+                    return false;
+                })
+
+                .toList();
 
         // ===============================
         // 🔐 DECRYPT
@@ -643,6 +744,23 @@ public class MessageService {
             );
         }
 
+        // ===============================
+        // 🔥 DELETE TIME LIMIT
+        // ===============================
+        if (
+
+                message.getCreatedAt()
+                        .plusHours(24)
+                        .isBefore(
+                                java.time.LocalDateTime.now()
+                        )
+        ) {
+
+            throw new RuntimeException(
+                    "Delete time expired"
+            );
+        }
+
         message.setDeletedForEveryone(true);
 
         messageRepository.save(message);
@@ -727,8 +845,12 @@ public class MessageService {
                                 conversation
                         );
 
+        // ===============================
+// 🔥 SAFE CLEAR CHAT
+// ===============================
         for (Message m : messages) {
 
+            // 🔥 USER 1
             if (
                     conversation.getUser1()
                             .getId()
@@ -736,10 +858,25 @@ public class MessageService {
             ) {
 
                 m.setDeletedForUser1(true);
+            }
 
-            } else {
+            // 🔥 USER 2
+            else if (
+
+                    conversation.getUser2()
+                            .getId()
+                            .equals(userId)
+            ) {
 
                 m.setDeletedForUser2(true);
+            }
+
+            // 🔥 UNAUTHORIZED
+            else {
+
+                throw new RuntimeException(
+                        "Unauthorized"
+                );
             }
         }
 

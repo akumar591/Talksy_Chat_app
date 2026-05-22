@@ -105,20 +105,30 @@ public class GroupController {
     }
 
     // ===============================
-    // 🔥 GET SINGLE GROUP
-    // ===============================
+// 🔥 GET SINGLE GROUP
+// ONLY MEMBER
+// ===============================
     @GetMapping("/{groupId}")
     public ResponseEntity<ApiResponse<?>>
     getGroupById(
 
             @PathVariable
-            Long groupId
+            Long groupId,
+
+            @AuthenticationPrincipal
+            CustomUserDetails userDetails
     ) {
+
+        User currentUser =
+                userDetails.getUser();
 
         GroupResponse group =
 
                 groupService.getGroupById(
-                        groupId
+
+                        groupId,
+
+                        currentUser.getId()
                 );
 
         return ResponseEntity.ok(
