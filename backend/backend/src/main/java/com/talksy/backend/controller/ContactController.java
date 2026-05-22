@@ -138,12 +138,21 @@ public class ContactController {
                     Map<String, Object> map =
                             new HashMap<>();
 
+
                     // ===============================
-                    // 🔥 BASIC CONTACT
+                    // 🔥 CONTACT ID
+                    // ===============================
+                    map.put(
+                            "id",
+                            contact.getId()
+                    );
+
+                    // ===============================
+                    // 🔥 REAL USER ID
                     // ===============================
                     map.put(
 
-                            "id",
+                            "userId",
 
                             contact.getContactUser() != null
 
@@ -154,7 +163,7 @@ public class ContactController {
 
                                     :
 
-                                    contact.getId()
+                                    null
                     );
 
                     map.put(

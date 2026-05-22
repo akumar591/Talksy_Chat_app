@@ -20,7 +20,22 @@ export const ChatProvider = ({ children }) => {
   // ===============================
   const [contacts, setContacts] = useState([]);
 
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedChat, setSelectedChat] =
+    useState(() => {
+
+      try {
+
+        return JSON.parse(
+          localStorage.getItem(
+            "activeChat"
+          )
+        );
+
+      } catch {
+
+        return null;
+      }
+    });
 
   const [conversation, setConversation] = useState(null);
 
@@ -221,6 +236,22 @@ export const ChatProvider = ({ children }) => {
           )
         );
 
+        // ===============================
+        // 🔥 CLOSE ACTIVE CHAT
+        // ===============================
+        if (
+          selectedChat?.id === contactId
+        ) {
+
+          setSelectedChat(null);
+
+          localStorage.removeItem(
+            "activeChat"
+          );
+
+          setMessages([]);
+        }
+
         toast.success(
           "Contact deleted"
         );
@@ -257,6 +288,11 @@ export const ChatProvider = ({ children }) => {
         const data =
           res?.data?.data || [];
 
+        console.log(
+          "CONTACT API RAW",
+          data
+        );
+
         const mapped =
           data.map(
             (
@@ -264,12 +300,14 @@ export const ChatProvider = ({ children }) => {
               index
             ) => ({
               id:
-                item.contactUser
-                  ?.id ||
                 item.contactId ||
-                item.userId ||
                 item.id ||
                 index + 1,
+
+              userId:
+                item.contactUser?.id ||
+                item.userId ||
+                null,
 
               name:
                 item.contactUser
@@ -394,10 +432,7 @@ export const ChatProvider = ({ children }) => {
 
         setLoading(true);
 
-        const res =
-          await API.post(
-            `/conversations/${contact.id}`
-          );
+        const res = await API.post(`/conversations/${contact.userId || contact.id}`);
 
         const conversationData =
           res?.data?.data;
@@ -416,6 +451,11 @@ export const ChatProvider = ({ children }) => {
           conversationId:
             conversationData.id,
         };
+
+        console.log(
+          "UPDATED CHAT",
+          updatedChat
+        );
 
         setSelectedChat(
           updatedChat
@@ -514,8 +554,8 @@ export const ChatProvider = ({ children }) => {
               "",
 
             receiverId:
-            msg.receiverId ||
-            null,
+              msg.receiverId ||
+              null,
 
             createdAt:
               msg.createdAt,
@@ -1180,10 +1220,6 @@ export const ChatProvider = ({ children }) => {
   // ===============================
   const resetChatState =
     () => {
-
-      localStorage.removeItem(
-        "activeChat"
-      );
 
       sendLock.current =
         false;

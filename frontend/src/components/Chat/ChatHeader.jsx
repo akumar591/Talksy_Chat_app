@@ -63,7 +63,9 @@ const ChatHeader = ({
 
             } else {
 
-              navigate(`/user/${chat.id}`);
+              navigate(
+                `/user/${chat.userId || chat.id}`
+              );
             }
           }}
           className="flex items-center gap-3 cursor-pointer min-w-0"
@@ -174,7 +176,9 @@ const ChatHeader = ({
 
                   } else {
 
-                    navigate(`/user/${chat.id}`);
+                    navigate(
+                      `/user/${chat.userId || chat.id}`
+                    );
                   }
 
                   setShowMenu(false);
@@ -192,7 +196,9 @@ const ChatHeader = ({
               <div
                 onClick={() => {
 
-                  navigate(`/media/${chat.id}`);
+                  navigate(
+                    `/media/${chat.userId || chat.id}`
+                  );
 
                   setShowMenu(false);
                 }}

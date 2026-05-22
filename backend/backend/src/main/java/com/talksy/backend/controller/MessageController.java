@@ -973,8 +973,8 @@ public class MessageController {
     }
 
     // ===============================
-// 🔥 DELETE FOR ME
-// ===============================
+    // 🔥 DELETE FOR ME
+    // ===============================
     @DeleteMapping("/me/{messageId}")
     public ResponseEntity<ApiResponse<?>>
     deleteForMe(
@@ -1002,6 +1002,61 @@ public class MessageController {
                             true,
 
                             "Message deleted for me ✅",
+
+                            null
+                    )
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(500)
+                    .body(
+
+                            new ApiResponse<>(
+
+                                    false,
+
+                                    e.getMessage(),
+
+                                    null
+                            )
+                    );
+        }
+    }
+
+    // ===============================
+// 🔥 CLEAR CHAT
+// ===============================
+    @DeleteMapping("/clear/{conversationId}")
+    public ResponseEntity<ApiResponse<?>>
+    clearChat(
+
+            @PathVariable
+            Long conversationId
+    ) {
+
+        try {
+
+            User user =
+                    getCurrentUser();
+
+            messageService.clearChat(
+
+                    user.getId(),
+
+                    conversationId
+            );
+
+            return ResponseEntity.ok(
+
+                    new ApiResponse<>(
+
+                            true,
+
+                            "Chat cleared ✅",
 
                             null
                     )
