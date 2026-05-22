@@ -21,7 +21,7 @@ import API from "../../api/axios";
 
 import { useChat } from "../../context/ChatContext";
 
-import MediaViewerModal from "../../components/chat/MediaViewerModal";
+import MediaViewerModal from "../../components/Chat/MediaViewerModal";
 
 const UserProfile = () => {
 
