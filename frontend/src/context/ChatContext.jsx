@@ -151,13 +151,13 @@ export const ChatProvider = ({ children }) => {
   // 🚫 BLOCK / UNBLOCK CONTACT
   // ===============================
   const toggleBlockContact =
-    useCallback(async (contactId) => {
+    useCallback(async (contactRecordId) => {
 
       try {
 
         const res =
           await API.put(
-            `/contacts/${contactId}/block`
+            `/contacts/${contactRecordId}/block`
           );
 
         const updated =
@@ -165,7 +165,7 @@ export const ChatProvider = ({ children }) => {
 
         setContacts((prev) =>
           prev.map((c) =>
-            c.id === contactId
+            c.contactRecordId === contactRecordId
               ? {
                 ...c,
                 blocked:
@@ -176,7 +176,7 @@ export const ChatProvider = ({ children }) => {
         );
 
         setSelectedChat((prev) =>
-          prev?.id === contactId
+          prev?.contactRecordId === contactRecordId
             ? {
               ...prev,
               blocked:
@@ -200,26 +200,43 @@ export const ChatProvider = ({ children }) => {
         );
       }
 
-    }, []);
+    }, [selectedChat]);
 
   // ===============================
   // ❌ DELETE CONTACT
   // ===============================
   const deleteContact =
-    useCallback(async (contactId) => {
+    useCallback(async (contactRecordId) => {
 
       try {
 
         await API.delete(
-          `/contacts/${contactId}`
+          `/contacts/${contactRecordId}`
         );
 
         setContacts((prev) =>
           prev.filter(
             (c) =>
-              c.id !== contactId
+              c.contactRecordId !== contactRecordId
           )
         );
+
+        // 🔥 CLOSE ACTIVE CHAT
+        if (
+          selectedChat?.contactRecordId ===
+          contactRecordId
+        ) {
+
+          setSelectedChat(null);
+
+          setConversation(null);
+
+          setMessages([]);
+
+          localStorage.removeItem(
+            "activeChat"
+          );
+        }
 
         toast.success(
           "Contact deleted"
@@ -234,7 +251,7 @@ export const ChatProvider = ({ children }) => {
         );
       }
 
-    }, []);
+    }, [selectedChat]);
 
   // ===============================
   // 🔥 FETCH CONTACTS
@@ -263,13 +280,16 @@ export const ChatProvider = ({ children }) => {
               item,
               index
             ) => ({
+              // 🔥 REAL USER ID
               id:
-                item.contactUser
-                  ?.id ||
-                item.contactId ||
-                item.userId ||
-                item.id ||
-                index + 1,
+                item.contactUser?.id ??
+                item.userId ??
+                item.contactId ??
+                null,
+
+              // 🔥 CONTACT TABLE ID
+              contactRecordId:
+                item.id,
 
               name:
                 item.contactUser
@@ -513,9 +533,13 @@ export const ChatProvider = ({ children }) => {
               msg.senderAvatar ||
               "",
 
+            senderRole:
+              msg.senderRole ||
+              null,
+
             receiverId:
-            msg.receiverId ||
-            null,
+              msg.receiverId ||
+              null,
 
             createdAt:
               msg.createdAt,
@@ -552,12 +576,25 @@ export const ChatProvider = ({ children }) => {
               msg.replyTo
                 ? {
                   id:
-                    msg.replyTo
-                      .id,
+                    msg.replyTo.id,
 
                   content:
-                    msg.replyTo
-                      .content,
+                    msg.replyTo.content,
+
+                  type:
+                    msg.replyTo.type,
+
+                  senderId:
+                    msg.replyTo.senderId,
+
+                  senderName:
+                    msg.replyTo.senderName,
+
+                  senderAvatar:
+                    msg.replyTo.senderAvatar,
+
+                  senderRole:
+                    msg.replyTo.senderRole,
                 }
                 : null,
           }));
@@ -689,6 +726,11 @@ export const ChatProvider = ({ children }) => {
           const currentUserId =
             getCurrentUserId();
 
+          const currentUser =
+            JSON.parse(
+              localStorage.getItem("user")
+            );
+
           const tempId =
             `temp-${Date.now()}`;
 
@@ -705,6 +747,17 @@ export const ChatProvider = ({ children }) => {
             senderId:
               currentUserId,
 
+            senderName:
+              currentUser?.name || "",
+
+            senderAvatar:
+              currentUser?.avatar || "",
+
+            senderRole:
+              selectedChat?.isGroup
+                ? "MEMBER"
+                : null,
+
             createdAt:
               new Date().toISOString(),
 
@@ -719,15 +772,31 @@ export const ChatProvider = ({ children }) => {
             statusType,
             statusCaption,
 
-            replyTo: replyTo
-              ? {
-                id:
-                  replyTo.id,
+            replyTo:
+              replyTo
+                ? {
+                  id:
+                    replyTo.id,
 
-                content:
-                  "Replying...",
-              }
-              : null,
+                  content:
+                    replyTo.content,
+
+                  type:
+                    replyTo.type,
+
+                  senderId:
+                    replyTo.senderId,
+
+                  senderName:
+                    replyTo.senderName,
+
+                  senderAvatar:
+                    replyTo.senderAvatar,
+
+                  senderRole:
+                    replyTo.senderRole,
+                }
+                : null,
           };
 
           setMessages((prev) => [
@@ -787,6 +856,10 @@ export const ChatProvider = ({ children }) => {
                     realMessage.senderAvatar ||
                     "",
 
+                  senderRole:
+                    realMessage.senderRole ||
+                    null,
+
                   reactions:
                     realMessage.reactions ||
                     [],
@@ -811,14 +884,25 @@ export const ChatProvider = ({ children }) => {
                     realMessage.replyTo
                       ? {
                         id:
-                          realMessage
-                            .replyTo
-                            .id,
+                          realMessage.replyTo.id,
 
                         content:
-                          realMessage
-                            .replyTo
-                            .content,
+                          realMessage.replyTo.content,
+
+                        type:
+                          realMessage.replyTo.type,
+
+                        senderId:
+                          realMessage.replyTo.senderId,
+
+                        senderName:
+                          realMessage.replyTo.senderName,
+
+                        senderAvatar:
+                          realMessage.replyTo.senderAvatar,
+
+                        senderRole:
+                          realMessage.replyTo.senderRole,
                       }
                       : null,
                 }
@@ -1091,6 +1175,24 @@ export const ChatProvider = ({ children }) => {
           );
 
           setMessages([]);
+
+          // 🔥 RESET LAST MESSAGE
+          setContacts((prev) =>
+
+            prev.map((c) =>
+
+              c.conversationId ===
+                conversationId
+
+                ? {
+                  ...c,
+                  lastMessage: "",
+                  unreadCount: 0,
+                }
+
+                : c
+            )
+          );
 
           toast.success(
             "Chat cleared"

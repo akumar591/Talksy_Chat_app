@@ -11,7 +11,11 @@ import lombok.*;
 @Builder
 public class GroupMemberResponse {
 
+    // 🔥 membership id
     private Long id;
+
+    // 🔥 actual user id
+    private Long userId;
 
     private String name;
 

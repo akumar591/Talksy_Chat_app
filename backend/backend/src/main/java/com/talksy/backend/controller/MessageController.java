@@ -1,22 +1,14 @@
 package com.talksy.backend.controller;
-
 import com.talksy.backend.entity.*;
 import com.talksy.backend.payload.ApiResponse;
-
-import com.talksy.backend.repository.MessageReactionRepository;
-
 import com.talksy.backend.security.CustomUserDetails;
-
 import com.talksy.backend.service.MessageService;
-
+import com.talksy.backend.dto.MessageResponse;
+import com.talksy.backend.mapper.MessageMapper;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 
 @RestController
@@ -28,8 +20,8 @@ public class MessageController {
     private final MessageService
             messageService;
 
-    private final MessageReactionRepository
-            messageReactionRepository;
+    private final MessageMapper
+            messageMapper;
 
     // ===============================
     // 🔐 GET CURRENT USER
@@ -55,8 +47,8 @@ public class MessageController {
     }
 
     // ===============================
-// 🔥 SEND MESSAGE
-// ===============================
+    // 🔥 SEND MESSAGE
+    // ===============================
     @PostMapping
     public ResponseEntity<ApiResponse<?>>
     sendMessage(
@@ -158,143 +150,13 @@ public class MessageController {
                                     null
                     );
 
-            Map<String, Object> response =
-                    new HashMap<>();
-
-            response.put(
-                    "id",
-                    message.getId()
-            );
-
-            // 🔥 IMPORTANT FIX
-            response.put(
-                    "conversationId",
-                    message.getConversation()
-                            .getId()
-            );
-
-            response.put(
-                    "content",
-                    content
-            );
-
-            response.put(
-                    "type",
-                    message.getType()
-            );
-
-            response.put(
-                    "createdAt",
-                    message.getCreatedAt()
-            );
-
-            response.put(
-                    "senderId",
-                    message.getSender()
-                            .getId()
-            );
-
-            response.put(
-                    "senderName",
-                    message.getSender()
-                            .getName()
-            );
-
-            response.put(
-                    "senderAvatar",
-                    message.getSender()
-                            .getAvatar()
-            );
-
-            response.put(
-                    "isGroup",
-                    message.getConversation()
-                            .getIsGroup()
-            );
-
             // ===============================
-            // 🔥 STATUS PREVIEW DATA
+            // 🔥 DTO RESPONSE
             // ===============================
-            response.put(
-                    "statusId",
-                    message.getStatusId()
-            );
+            MessageResponse response =
 
-            response.put(
-                    "statusMedia",
-                    message.getStatusMedia()
-            );
-
-            response.put(
-                    "statusType",
-                    message.getStatusType()
-            );
-
-            response.put(
-                    "statusCaption",
-                    message.getStatusCaption()
-            );
-
-            // 🔥 REPLY DATA
-            if (message.getReplyTo() != null) {
-
-                Map<String, Object> reply =
-                        new HashMap<>();
-
-                reply.put(
-                        "id",
-                        message.getReplyTo()
-                                .getId()
-                );
-
-                // 🔥 IMPORTANT FIX
-                reply.put(
-                        "type",
-                        message.getReplyTo()
-                                .getType()
-                );
-
-                // 🔥 IMPORTANT FIX
-                reply.put(
-                        "conversationId",
-                        message.getReplyTo()
-                                .getConversation()
-                                .getId()
-                );
-
-                reply.put(
-                        "content",
-                        message.getReplyTo()
-                                .getContent()
-                );
-
-                reply.put(
-                        "senderId",
-                        message.getReplyTo()
-                                .getSender()
-                                .getId()
-                );
-
-                reply.put(
-                        "senderName",
-                        message.getReplyTo()
-                                .getSender()
-                                .getName()
-                );
-
-                // 🔥 IMPORTANT FIX
-                reply.put(
-                        "senderAvatar",
-                        message.getReplyTo()
-                                .getSender()
-                                .getAvatar()
-                );
-
-                response.put(
-                        "replyTo",
-                        reply
-                );
-            }
+                    messageMapper
+                            .toResponse(message);
 
             return ResponseEntity.ok(
 
@@ -334,26 +196,17 @@ public class MessageController {
     @GetMapping("/{conversationId}")
     public ResponseEntity<ApiResponse<?>>
     getMessages(
-
             @PathVariable
             Long conversationId
     ) {
-
         try {
-
-            User user =
-                    getCurrentUser();
-
+            User user = getCurrentUser();
             List<Message> messages =
-
                     messageService.getMessages(
-
                             user.getId(),
-
                             conversationId
                     );
-
-            List<Map<String, Object>>
+            List<MessageResponse>
                     response =
                     new ArrayList<>();
 
@@ -412,246 +265,15 @@ public class MessageController {
                     }
                 }
 
-                Map<String, Object> map =
-                        new HashMap<>();
-
-                map.put(
-                        "id",
-                        m.getId()
-                );
-
                 // ===============================
-                // 🔥 IMPORTANT FIX
+                // 🔥 DTO RESPONSE
                 // ===============================
-                map.put(
-                        "conversationId",
-                        m.getConversation()
-                                .getId()
-                );
+                MessageResponse dto =
 
-                // 🔥 DELETED
-                if (m.isDeletedForEveryone()) {
+                        messageMapper
+                                .toResponse(m);
 
-                    map.put(
-                            "content",
-                            "This message was deleted"
-                    );
-
-                } else {
-
-                    map.put(
-                            "content",
-                            m.getContent()
-                    );
-                }
-
-                map.put(
-                        "type",
-                        m.getType()
-                );
-
-                map.put(
-                        "createdAt",
-                        m.getCreatedAt()
-                );
-
-                map.put(
-                        "senderId",
-                        m.getSender()
-                                .getId()
-                );
-
-                map.put(
-                        "senderName",
-                        m.getSender()
-                                .getName()
-                );
-
-                map.put(
-                        "senderAvatar",
-                        m.getSender()
-                                .getAvatar()
-                );
-
-                // ===============================
-                // 🔥 RECEIVER ID
-                // 🔥 ONLY PRIVATE CHAT
-                // ===============================
-                if (!Boolean.TRUE.equals(
-                        c.getIsGroup()
-                )) {
-
-                    map.put(
-                            "receiverId",
-
-                            c.getUser1()
-                                    .getId()
-                                    .equals(
-                                            m.getSender()
-                                                    .getId()
-                                    )
-
-                                    ?
-
-                                    c.getUser2()
-                                            .getId()
-
-                                    :
-
-                                    c.getUser1()
-                                            .getId()
-                    );
-                }
-
-                map.put(
-                        "isRead",
-                        m.isRead()
-                );
-
-                map.put(
-                        "isGroup",
-                        c.getIsGroup()
-                );
-
-                // ===============================
-                // 🔥 STATUS PREVIEW DATA
-                // ===============================
-                map.put(
-                        "statusId",
-                        m.getStatusId()
-                );
-
-                map.put(
-                        "statusMedia",
-                        m.getStatusMedia()
-                );
-
-                map.put(
-                        "statusType",
-                        m.getStatusType()
-                );
-
-                map.put(
-                        "statusCaption",
-                        m.getStatusCaption()
-                );
-
-                // ===============================
-                // 🔥 REPLY DATA
-                // ===============================
-                if (m.getReplyTo() != null) {
-
-                    Map<String, Object> reply =
-                            new HashMap<>();
-
-                    reply.put(
-                            "id",
-                            m.getReplyTo()
-                                    .getId()
-                    );
-
-                    // 🔥 IMPORTANT FIX
-                    reply.put(
-                            "type",
-                            m.getReplyTo()
-                                    .getType()
-                    );
-
-                    // 🔥 IMPORTANT FIX
-                    reply.put(
-                            "conversationId",
-                            m.getReplyTo()
-                                    .getConversation()
-                                    .getId()
-                    );
-
-                    if (
-
-                            m.getReplyTo()
-                                    .isDeletedForEveryone()
-
-                    ) {
-
-                        reply.put(
-                                "content",
-                                "This message was deleted"
-                        );
-
-                    } else {
-
-                        reply.put(
-                                "content",
-                                m.getReplyTo()
-                                        .getContent()
-                        );
-                    }
-
-                    reply.put(
-                            "senderId",
-                            m.getReplyTo()
-                                    .getSender()
-                                    .getId()
-                    );
-
-                    reply.put(
-                            "senderName",
-                            m.getReplyTo()
-                                    .getSender()
-                                    .getName()
-                    );
-
-                    // 🔥 IMPORTANT FIX
-                    reply.put(
-                            "senderAvatar",
-                            m.getReplyTo()
-                                    .getSender()
-                                    .getAvatar()
-                    );
-
-                    map.put(
-                            "replyTo",
-                            reply
-                    );
-                }
-
-                // ===============================
-                // 🔥 REACTIONS
-                // ===============================
-                List<Map<String, Object>>
-                        reactions =
-                        new ArrayList<>();
-
-                List<MessageReaction>
-                        reactionList =
-
-                        messageReactionRepository
-                                .findByMessage(m);
-
-                for (MessageReaction r : reactionList) {
-
-                    Map<String, Object> rMap =
-                            new HashMap<>();
-
-                    rMap.put(
-                            "userId",
-                            r.getUser()
-                                    .getId()
-                    );
-
-                    rMap.put(
-                            "emoji",
-                            r.getEmoji()
-                    );
-
-                    reactions.add(rMap);
-                }
-
-                map.put(
-                        "reactions",
-                        reactions
-                );
-
-                response.add(map);
+                response.add(dto);
             }
 
             return ResponseEntity.ok(
@@ -780,54 +402,20 @@ public class MessageController {
                             conversationId
                     );
 
-            List<Map<String, Object>>
+            List<MessageResponse>
                     response =
                     new ArrayList<>();
 
             for (Message m : messages) {
+                // ===============================
+                // 🔥 DTO RESPONSE
+                // ===============================
+                MessageResponse dto =
 
-                Map<String, Object> map =
-                        new HashMap<>();
+                        messageMapper
+                                .toResponse(m);
 
-                map.put(
-                        "id",
-                        m.getId()
-                );
-
-                map.put(
-                        "content",
-                        m.getContent()
-                );
-
-                map.put(
-                        "type",
-                        m.getType()
-                );
-
-                map.put(
-                        "createdAt",
-                        m.getCreatedAt()
-                );
-
-                map.put(
-                        "senderId",
-                        m.getSender()
-                                .getId()
-                );
-
-                map.put(
-                        "senderName",
-                        m.getSender()
-                                .getName()
-                );
-
-                map.put(
-                        "senderAvatar",
-                        m.getSender()
-                                .getAvatar()
-                );
-
-                response.add(map);
+                response.add(dto);
             }
 
             return ResponseEntity.ok(

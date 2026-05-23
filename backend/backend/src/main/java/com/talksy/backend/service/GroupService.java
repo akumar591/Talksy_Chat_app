@@ -587,8 +587,8 @@ public class GroupService {
     }
 
     // ===============================
-// 🔥 CONVERT TO DTO
-// ===============================
+    // 🔥 CONVERT TO DTO
+    // ===============================
     private GroupResponse convertToResponse(
             Group group
     ) {
@@ -606,7 +606,13 @@ public class GroupService {
 
                                 GroupMemberResponse.builder()
 
+                                        // 🔥 membership id
                                         .id(
+                                                member.getId()
+                                        )
+
+                                        // 🔥 actual user id
+                                        .userId(
                                                 member.getUser()
                                                         .getId()
                                         )

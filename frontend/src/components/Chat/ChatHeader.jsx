@@ -251,7 +251,7 @@ const ChatHeader = ({
                 <div
                   onClick={async () => {
 
-                    await toggleBlockContact(chat.id);
+                    await toggleBlockContact(chat.contactRecordId)
 
                     setShowMenu(false);
                   }}
@@ -337,7 +337,7 @@ const ChatHeader = ({
                 <div
                   onClick={async () => {
 
-                    await deleteContact(chat.id);
+                    await deleteContact(chat.contactRecordId);
 
                     setShowMenu(false);
                   }}

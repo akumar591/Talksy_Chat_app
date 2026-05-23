@@ -198,8 +198,7 @@ const ChatWindow = ({
     }
 
   }, [
-    chat,
-    fetchGroupById,
+    chat?.id
   ]);
 
   // ===============================
