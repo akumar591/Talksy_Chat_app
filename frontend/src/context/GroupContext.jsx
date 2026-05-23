@@ -340,19 +340,19 @@ export const GroupProvider = ({
           mapped
         );
 
-        // // 🔥 UPDATE ACTIVE GROUP
-        // setSelectedGroup(
-        //   (prev) =>
+        // 🔥 UPDATE ACTIVE GROUP
+        setSelectedGroup(
+          (prev) =>
 
-        //     prev?.id === groupId
+            prev?.id === groupId
 
-        //       ? {
-        //         ...prev,
-        //         ...mapped,
-        //       }
+              ? {
+                ...prev,
+                ...mapped,
+              }
 
-        //       : prev
-        // );
+              : prev
+        );
 
         // 🔥 UPDATE SIDEBAR
         setGroups((prev) =>

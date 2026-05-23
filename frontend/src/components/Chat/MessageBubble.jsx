@@ -16,13 +16,22 @@ const MessageBubble = ({
   setViewerIndex,
 }) => {
   // ===============================
-  // 🔥 LOCAL STATES
+  // 🔥 STATES
   // ===============================
   const [showActions, setShowActions] = useState(false);
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
+  const [activeMessageMenu, setActiveMessageMenu] = useState(null);
+
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+
+  // ===============================
+  // 🔥 GROUP CHECK
+  // ===============================
+  const isGroupMessage =
+    !isMe &&
+    (msg?.isGroup || msg?.conversationType === "GROUP" || msg?.groupId);
 
   // ===============================
   // 🔥 OUTSIDE CLICK
@@ -31,10 +40,9 @@ const MessageBubble = ({
     const handleOutside = (e) => {
       if (!e.target.closest(`.message-wrapper-${msg.id}`)) {
         setShowActions(false);
-
         setShowReactionPicker(false);
-
         setShowDeleteMenu(false);
+        setActiveMessageMenu(null);
       }
     };
 
@@ -65,15 +73,15 @@ const MessageBubble = ({
     return emojiRegex.test(text);
   };
 
+  const onlyEmoji = isOnlyEmoji();
+
   // ===============================
-  // 🔥 MESSAGE TYPES
+  // 🔥 TYPES
   // ===============================
   const isTextMessage =
     msg.type === "TEXT" ||
     msg.type === "STATUS_REPLY" ||
     msg.type === "STATUS_REACTION";
-
-  const onlyEmoji = isOnlyEmoji();
 
   // ===============================
   // 🔥 REACTIONS
@@ -83,17 +91,37 @@ const MessageBubble = ({
       ? msg.medias?.[0]?.reactions || []
       : msg?.reactions || [];
 
+  // ===============================
+  // 🔥 REPLY
+  // ===============================
+  const replyMessage = msg.replyTo || msg.medias?.[0]?.replyTo;
+
+  // ===============================
+  // 🔥 TIME
+  // ===============================
+  const formattedTime = msg.createdAt
+    ? new Date(msg.createdAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    : "";
+
   return (
     <div
       className={`
-        relative
-        max-w-full
+        w-full
+        flex
+
+        ${isMe ? "justify-end" : "justify-start"}
+
+        ${showActions ? "mb-[70px]" : "mb-[6px]"}
+
         message-wrapper-${msg.id}
       `}
       onClick={(e) => {
         e.stopPropagation();
 
-        setShowActions((prev) => !prev);
+        setShowActions(true);
 
         setShowReactionPicker(false);
 
@@ -101,666 +129,674 @@ const MessageBubble = ({
       }}
     >
       {/* =============================== */}
-      {/* 🔥 MESSAGE CONTAINER */}
+      {/* 🔥 GROUP AVATAR */}
       {/* =============================== */}
-      <div
-        className={`
-          relative
-          w-fit
-          max-w-full
+      {isGroupMessage && (
+        <img
+          src={msg.senderAvatar || "/default-avatar.png"}
+          alt={msg.senderName}
+          className="
+            w-9
+            h-9
 
-          whitespace-pre-wrap
-          break-words
+            rounded-full
 
-          transition-all
-          duration-300
+            object-cover
 
-          ${onlyEmoji
-            ? `
-              bg-transparent
-              p-0
-              shadow-none
-            `
-            : ""
-          }
+            shrink-0
 
-          ${!onlyEmoji && isTextMessage
-            ? `
-              px-4
-              py-3
+            mr-2
+            mt-4
+          "
+        />
+      )}
 
-              border
+      {/* =============================== */}
+      {/* 🔥 MESSAGE BODY */}
+      {/* =============================== */}
+      <div className="relative w-fit min-w-[220px] sm:min-w-[260px] max-w-[85%] md:max-w-[70%] lg:max-w-[58%]">
 
-              backdrop-blur-2xl
+        {/* =============================== */}
+        {/* 🔥 GROUP HEADER */}
+        {/* =============================== */}
+        {isGroupMessage && (
+          <div
+            className="
+              flex
+              items-center
+              justify-between
 
-              transition-all
-              duration-300
+              px-2
+              mb-1
+            "
+          >
+            {/* 🔥 USER NAME */}
+            <span
+              className="
+                text-[12px]
+                font-semibold
 
-              ${isMe
+                text-[var(--primary)]
+              "
+            >
+              {msg.senderName}
+            </span>
+
+            {/* 🔥 ROLE */}
+            <span
+              className="
+                text-[10px]
+
+                uppercase
+
+                opacity-60
+
+                ml-3
+              "
+            >
+              {msg.senderRole === "CREATOR"
+                ? "Creator"
+                : msg.senderRole === "ADMIN"
+                  ? "Admin"
+                  : "Member"}
+            </span>
+          </div>
+        )}
+
+        {/* =============================== */}
+        {/* 🔥 MESSAGE CARD */}
+        {/* =============================== */}
+        <div
+          className={`
+            relative
+            z-[1]
+            w-full
+            max-w-full
+
+            whitespace-pre-wrap
+            break-words
+
+            transition-all
+            duration-300
+
+            ${onlyEmoji
               ? `
-                  bg-[var(--primary)]
+                bg-transparent
+                p-0
+                shadow-none
+              `
+              : ""
+            }
 
-                  text-black
+            ${!onlyEmoji && isTextMessage
+              ? `
+                 px-[10px]
+                 py-[5px]
+                  border
 
-                  border-[rgba(255,255,255,0.08)]
+                  backdrop-blur-2xl
 
+                  ${isMe
+                ? `
+                        bg-[var(--primary)]
+
+                        text-black
+
+                        border-[rgba(255,255,255,0.08)]
+
+                        rounded-[18px]
+rounded-br-[5px]
+
+                        shadow-[0_10px_30px_rgba(0,0,0,0.18)]
+                      `
+                : `
+                        bg-[var(--card)]
+
+                        text-[var(--text)]
+
+                        border-[rgba(255,255,255,0.05)]
+
+                        rounded-[18px]
+rounded-bl-[5px]
+
+                        shadow-[0_10px_30px_rgba(0,0,0,0.22)]
+                      `
+              }
+                `
+              : ""
+            }
+
+            ${msg.type === "MEDIA_GROUP" ||
+              msg.type === "IMAGE" ||
+              msg.type === "VIDEO"
+              ? `
                   rounded-[22px]
-                  rounded-br-[8px]
+                  overflow-visible
+                `
+              : ""
+            }
 
-                  shadow-[0_10px_30px_rgba(0,0,0,0.18)]
-
-                  before:absolute
-                  before:inset-0
-
-                  before:rounded-[22px]
-                  before:rounded-br-[8px]
-
-                  before:bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent)]
-
-                  before:pointer-events-none
-
-                  after:absolute
-                  after:top-1
-                  after:left-2
-
-                  after:w-[45%]
-                  after:h-[40%]
-
-                  after:bg-white/10
-                  after:blur-xl
-
-                  after:rounded-full
-                  after:pointer-events-none
+            ${onlyEmoji
+              ? `
+                  text-[30px]
+                  leading-none
                 `
               : `
-                  bg-[var(--card)]
-
-                  text-[var(--text)]
-
-                  border-[rgba(255,255,255,0.05)]
-
-                  rounded-[22px]
-                  rounded-bl-[8px]
-
-                  shadow-[0_10px_30px_rgba(0,0,0,0.22)]
-
-                  before:absolute
-                  before:inset-0
-
-                  before:rounded-[22px]
-                  before:rounded-bl-[8px]
-
-                  before:bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]
-
-                  before:pointer-events-none
+                  text-[14px]
+                  leading-[1.3]
                 `
             }
-            `
-            : ""
-          }
+          `}
+          style={{
+            overflowWrap: "anywhere",
 
-          ${msg.type === "MEDIA_GROUP" ||
-            msg.type === "IMAGE" ||
-            msg.type === "VIDEO"
-            ? `
-              rounded-[22px]
-              overflow-hidden
-            `
-            : ""
-          }
-
-          ${onlyEmoji
-            ? "text-[28px] leading-none"
-            : "text-[14px] leading-[1.55]"
-          }
-        `}
-        style={{
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
-        }}
-      >
-        {/* =============================== */}
-        {/* 🔥 DELETED */}
-        {/* =============================== */}
-        {msg.deletedForEveryone ||
-          (msg.type === "MEDIA_GROUP" && msg.medias?.[0]?.deletedForEveryone) ? (
-          <span className="italic opacity-60 text-sm">
-            🚫 This message was deleted
-          </span>
-        ) : (
-          <>
-            {/* =============================== */}
-            {/* 🔥 REPLY PREVIEW */}
-            {/* =============================== */}
-            {(msg.replyTo ||
-              (msg.type === "MEDIA_GROUP" && msg.medias?.[0]?.replyTo)) && (
+            wordBreak: "break-word",
+          }}
+        >
+          {/* =============================== */}
+          {/* 🔥 DELETED */}
+          {/* =============================== */}
+          {msg.deletedForEveryone ||
+            (msg.type === "MEDIA_GROUP" &&
+              msg.medias?.[0]?.deletedForEveryone) ? (
+            <span
+              className="
+                italic
+                opacity-60
+                text-sm
+              "
+            >
+              🚫 This message was deleted
+            </span>
+          ) : (
+            <>
+              {/* =============================== */}
+              {/* 🔥 REPLY PREVIEW */}
+              {/* =============================== */}
+              {replyMessage && (
                 <div
                   className={`
-      mb-2
+                    mb-1
 
-      px-3
-      py-2
+px-[9px]
+py-[6px]
 
-      rounded-2xl
+                    rounded-2xl
 
-      border-l-[3px]
+                    border-l-[3px]
 
-      backdrop-blur-xl
-
-      ${isMe
+                    ${isMe
                       ? `
-          bg-black/10
-          border-black/40
-        `
+                          bg-black/10
+                          border-black/40
+                        `
                       : `
-          bg-white/[0.04]
-          border-[var(--primary)]
-        `
+                          bg-white/[0.04]
+                          border-[var(--primary)]
+                        `
                     }
-    `}
+                  `}
                 >
-                  {/* 🔥 SENDER */}
+                  {/* 🔥 REPLY USER */}
                   <p
                     className={`
-        text-[11px]
-        font-semibold
-        mb-1
+                      text-[11px]
+                      font-semibold
 
-        ${isMe ? "text-black/70" : "text-[var(--primary)]"}
-      `}
+                      mb-1
+
+                      ${isMe ? "text-black/70" : "text-[var(--primary)]"}
+                    `}
                   >
-                    {(msg.replyTo || msg.medias?.[0]?.replyTo)?.senderName ||
-                      "Reply"}
+                    {replyMessage?.senderName || "Reply"}
                   </p>
 
-                  {/* 🔥 CONTENT */}
+                  {/* 🔥 REPLY CONTENT */}
                   <div
                     className="
-        text-[12px]
-        opacity-75
+                      text-[12px]
 
-        break-words
-      "
+opacity-75
+
+leading-[1.35]
+
+break-words
+
+whitespace-nowrap
+                    "
                   >
-                    {(() => {
-                      const reply = msg.replyTo || msg.medias?.[0]?.replyTo;
+                    {/* 🔥 IMAGE */}
+                    {replyMessage?.type === "IMAGE" ||
+                      (replyMessage?.content?.includes("cloudinary") &&
+                        replyMessage?.content?.match(
+                          /\.(jpg|jpeg|png|webp|gif)$/i,
+                        )) ? (
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-2
+                        "
+                      >
+                        <img
+                          src={replyMessage.content}
+                          alt="reply"
+                          className="
+                            w-11
+                            h-11
 
-                      const value = reply?.content || "";
+                            rounded-xl
 
-                      // ===============================
-                      // 🔥 IMAGE
-                      // ===============================
-                      if (
-                        reply?.type === "IMAGE" ||
-                        (value.includes("cloudinary") &&
-                          (value.includes("/image/") ||
-                            value.match(/\.(jpg|jpeg|png|webp|gif)$/i)))
-                      ) {
-                        return (
-                          <div
-                            className="
-              flex
-              items-center
-              gap-2
-            "
-                          >
-                            <img
-                              src={value}
-                              alt="reply-media"
-                              className="
-                  w-11
-                  h-11
+                            object-cover
 
-                  rounded-xl
+                            shrink-0
+                          "
+                        />
 
-                  object-cover
+                        <span>📷 Photo</span>
+                      </div>
+                    ) : replyMessage?.type === "VIDEO" ? (
+                      <div
+                        className="
+                          flex
+                          items-center
+                          gap-2
+                        "
+                      >
+                        <video
+                          src={replyMessage.content}
+                          className="
+                            w-11
+                            h-11
 
-                  shrink-0
-                "
-                            />
+                            rounded-xl
 
-                            <span
-                              className="
-                text-[12px]
-                opacity-75
-              "
-                            >
-                              📷 Photo
-                            </span>
-                          </div>
-                        );
-                      }
+                            object-cover
+                          "
+                        />
 
-                      // ===============================
-                      // 🔥 VIDEO
-                      // ===============================
-                      if (
-                        reply?.type === "VIDEO" ||
-                        (value.includes("cloudinary") &&
-                          value.includes("/video/"))
-                      ) {
-                        return (
-                          <div
-                            className="
-              flex
-              items-center
-              gap-2
-            "
-                          >
-                            <video
-                              src={value}
-                              className="
-                  w-11
-                  h-11
-
-                  rounded-xl
-
-                  object-cover
-
-                  shrink-0
-                "
-                            />
-
-                            <span
-                              className="
-                text-[12px]
-                opacity-75
-              "
-                            >
-                              🎥 Video
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      // ===============================
-                      // 🔥 FILE
-                      // ===============================
-                      if (reply?.type === "FILE") {
-                        return "📄 File";
-                      }
-
-                      // ===============================
-                      // 🔥 TEXT
-                      // ===============================
-                      return value;
-                    })()}
+                        <span>🎥 Video</span>
+                      </div>
+                    ) : replyMessage?.type === "FILE" ? (
+                      "📄 File"
+                    ) : (
+                      replyMessage?.content
+                    )}
                   </div>
                 </div>
               )}
-            {/* =============================== */}
-            {/* 🔥 MEDIA GROUP */}
-            {/* =============================== */}
-            {msg.type === "MEDIA_GROUP" && (
-              <MediaGrid
-                medias={msg.medias}
-                setViewerOpen={setViewerOpen}
-                setViewerMedia={setViewerMedia}
-                setViewerIndex={setViewerIndex}
-              />
-            )}
 
-            {/* =============================== */}
-            {/* 🔥 IMAGE */}
-            {/* =============================== */}
-            {/* =============================== */}
-            {/* 🔥 IMAGE */}
-            {/* =============================== */}
-            {msg.type === "IMAGE" && (
+              {/* =============================== */}
+              {/* 🔥 MEDIA GRID */}
+              {/* =============================== */}
+              {msg.type === "MEDIA_GROUP" && (
+                <MediaGrid
+                  medias={msg.medias}
+                  setViewerOpen={setViewerOpen}
+                  setViewerMedia={setViewerMedia}
+                  setViewerIndex={setViewerIndex}
+                />
+              )}
 
-              <div className="relative">
+              {/* =============================== */}
+              {/* 🔥 IMAGE */}
+              {/* =============================== */}
+              {msg.type === "IMAGE" && (
+                <img
+                  src={msg.content}
+                  alt="chat-media"
+                  loading="lazy"
+                  onClick={(e) => {
+                    e.stopPropagation();
 
-                {/* 🔥 THREE DOT */}
-                <div className="
-      absolute
-      top-2
-      right-2
+                    setViewerMedia([msg]);
 
-      z-40
-    ">
+                    setViewerIndex(0);
 
-                  <button
-                    onClick={(e) => {
+                    setViewerOpen(true);
+                  }}
+                  className="
+                    w-full
 
-                      e.stopPropagation();
+                    max-w-[260px]
+                    md:max-w-[360px]
 
-                      setShowActions(
-                        prev => !prev
-                      );
+                    max-h-[420px]
 
-                      setShowReactionPicker(false);
+                    object-cover
 
-                      setShowDeleteMenu(false);
-                    }}
-                    className="
-          w-9
-          h-9
+                    rounded-[22px]
 
-          rounded-full
+                    cursor-pointer
+                  "
+                />
+              )}
 
-          bg-black/45
-
-          backdrop-blur-xl
-
-          border
-          border-white/10
-
-          text-white
-
-          flex
-          items-center
-          justify-center
-
-          hover:bg-black/60
-
-          transition-all
-          duration-200
-        "
-                  >
-
-                    ⋮
-
-                  </button>
-
-                </div>
-
-                <div className="
-      max-w-[260px]
-      md:max-w-[360px]
-
-      overflow-hidden
-      rounded-[22px]
-    ">
-
-                  <img
-                    src={msg.content}
-                    alt="chat-media"
-
-                    loading="lazy"
-
-                    onClick={(e) => {
-
-                      e.stopPropagation();
-
-                      setViewerMedia([msg]);
-
-                      setViewerIndex(0);
-
-                      setViewerOpen(true);
-                    }}
-
-                    className="
-          w-full
-          h-[240px]
-
-          object-cover
-
-          cursor-pointer
-
-          hover:scale-[1.02]
-
-          transition-all
-          duration-300
-        "
-                  />
-
-                </div>
-
-              </div>
-            )}
-
-            {/* =============================== */}
-            {/* 🔥 VIDEO */}
-            {/* =============================== */}
-            {msg.type === "VIDEO" && (
-
-              <div className="relative">
-
-                {/* 🔥 THREE DOT */}
-                <div className="
-      absolute
-      top-2
-      right-2
-
-      z-40
-    ">
-
-                  <button
-                    onClick={(e) => {
-
-                      e.stopPropagation();
-
-                      setShowActions(
-                        prev => !prev
-                      );
-
-                      setShowReactionPicker(false);
-
-                      setShowDeleteMenu(false);
-                    }}
-                    className="
-          w-9
-          h-9
-
-          rounded-full
-
-          bg-black/45
-
-          backdrop-blur-xl
-
-          border
-          border-white/10
-
-          text-white
-
-          flex
-          items-center
-          justify-center
-
-          hover:bg-black/60
-
-          transition-all
-          duration-200
-        "
-                  >
-
-                    ⋮
-
-                  </button>
-
-                </div>
-
+              {/* =============================== */}
+              {/* 🔥 VIDEO */}
+              {/* =============================== */}
+              {msg.type === "VIDEO" && (
                 <video
                   src={msg.content}
-
                   controls
                   playsInline
-
                   className="
-        w-full
+                    w-full
 
-        max-w-[260px]
-        md:max-w-[360px]
+                    max-w-[260px]
+                    md:max-w-[360px]
 
-        rounded-[22px]
-
-        object-cover
-      "
+                    rounded-[22px]
+                  "
                 />
+              )}
 
-              </div>
-            )}
+              {/* =============================== */}
+              {/* 🔥 FILE */}
+              {/* =============================== */}
+              {msg.type === "FILE" && (
+                <a
+                  href={msg.content}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`
+                    flex
+                    items-center
+                    gap-3
 
-            {/* =============================== */}
-            {/* 🔥 FILE */}
-            {/* =============================== */}
-            {msg.type === "FILE" && (
-              <a
-                href={msg.content}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className={`
-                  flex
-                  items-center
-                  gap-3
+                    px-4
+                    py-3
 
-                  px-4
-                  py-3
+                    rounded-[20px]
 
-                  rounded-[20px]
+                    ${isMe
+                      ? `
+                          bg-black/10
+                        `
+                      : `
+                          bg-[rgba(255,255,255,0.03)]
 
-                  transition-all
-                  duration-300
-
-                  ${isMe
-                    ? `
-                      bg-black/10
-                      hover:bg-black/15
-                    `
-                    : `
-                      bg-[rgba(255,255,255,0.03)]
-
-                      hover:bg-[rgba(255,255,255,0.05)]
-
-                      border
-                      border-[rgba(255,255,255,0.05)]
-                    `
-                  }
-                `}
-              >
-                <div
-                  className="
-                  w-11
-                  h-11
-
-                  rounded-2xl
-
-                  bg-[var(--primary)]/20
-
-                  flex
-                  items-center
-                  justify-center
-
-                  text-lg
-                "
+                          border
+                          border-[rgba(255,255,255,0.05)]
+                        `
+                    }
+                  `}
                 >
-                  📄
+                  <div
+                    className="
+                      w-11
+                      h-11
+
+                      rounded-2xl
+
+                      bg-[var(--primary)]/20
+
+                      flex
+                      items-center
+                      justify-center
+                    "
+                  >
+                    📄
+                  </div>
+
+                  <div>
+                    <p
+                      className="
+                        text-[13px]
+                        font-semibold
+                      "
+                    >
+                      File
+                    </p>
+
+                    <p
+                      className="
+                        text-[11px]
+
+                        opacity-60
+                      "
+                    >
+                      Tap to open
+                    </p>
+                  </div>
+                </a>
+              )}
+
+              {/* =============================== */}
+              {/* 🔥 TEXT */}
+              {/* =============================== */}
+              {msg.type === "TEXT" && (
+                <div
+                  className="relative " >
+                  {/* 🔥 MESSAGE */}
+                  <span
+                    className="
+                      relative
+                      z-10
+
+                      font-[450]
+
+                      text-[15px]
+
+                     leading-[1.28]
+
+                      break-words
+                      whitespace-pre-wrap
+                    "
+                  >
+                    {msg.content}
+                  </span>
+
+                  {/* 🔥 TIME */}
+
+                  <div className={` flex  ${isMe ? "justify-start" : "justify-end"} mt-[1px] `}>
+                    <span
+                      className={` text-[10px] opacity-60 ${onlyEmoji ? ` dark:text-white/70 text-black/70`
+                        : isMe ? "text-black/70" : "text-white/60"} `}>
+                      {formattedTime}
+                    </span>
+                  </div>
                 </div>
+              )}
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold truncate">File</p>
+              {/* =============================== */}
+              {/* 🔥 STATUS REPLY */}
+              {/* =============================== */}
+              {msg.type === "STATUS_REPLY" && (
+                <span
+                  className="
+                    relative
+                    z-10
 
-                  <p className="text-[11px] opacity-60 truncate">Tap to open</p>
-                </div>
-              </a>
-            )}
+                    font-[450]
+                  "
+                >
+                  {(msg.content || "").replace("Reply to your status: ", "")}
+                </span>
+              )}
 
-            {/* =============================== */}
-            {/* 🔥 TEXT */}
-            {/* =============================== */}
-            {msg.type === "TEXT" && (
-              <span className="relative z-10 font-[450]">{msg.content}</span>
-            )}
+              {/* =============================== */}
+              {/* 🔥 STATUS REACTION */}
+              {/* =============================== */}
+              {msg.type === "STATUS_REACTION" && (
+                <span
+                  className="
+                    relative
+                    z-10
 
-            {/* =============================== */}
-            {/* 🔥 STATUS REPLY */}
-            {/* =============================== */}
-            {msg.type === "STATUS_REPLY" && (
-              <span className="relative z-10 font-[450]">
-                {(msg.content || "").replace("Reply to your status: ", "")}
-              </span>
-            )}
+                    font-[450]
+                  "
+                >
+                  {(msg.content || "").replace(" reacted to your status", "")}
+                </span>
+              )}
 
-            {/* =============================== */}
-            {/* 🔥 STATUS REACTION */}
-            {/* =============================== */}
-            {msg.type === "STATUS_REACTION" && (
-              <span className="relative z-10 font-[450]">
-                {(msg.content || "").replace(" reacted to your status", "")}
-              </span>
-            )}
-          </>
-        )}
+              {/* =============================== */}
+              {/* 🔥 MEDIA TIME */}
+              {/* =============================== */}
+              {(msg.type === "IMAGE" ||
+                msg.type === "VIDEO" ||
+                msg.type === "MEDIA_GROUP") && (
+                  <div
+                    className={`
+        absolute
+        bottom-2
+
+        ${isMe
+
+                        ? "left-2"
+
+                        : "right-2"
+                      }
+
+        px-2
+        py-[2px]
+
+        rounded-full
+
+        bg-black/45
+
+        backdrop-blur-xl
+      `}
+                  >
+                    <span
+                      className="
+          text-[10px]
+          text-white
+        "
+                    >
+                      {formattedTime}
+                    </span>
+                  </div>
+                )}
+            </>
+          )}
+
+          {/* =============================== */}
+          {/* 🔥 REACTIONS */}
+          {/* =============================== */}
+          {reactions.length > 0 && (
+            <div
+              className={`
+                absolute
+                -bottom-3
+
+                ${isMe ? "right-2" : "left-2"}
+
+                flex
+                items-center
+                gap-1
+
+                px-2
+                h-[28px]
+
+                rounded-full
+
+                bg-[var(--card)]
+
+                border
+                border-[rgba(255,255,255,0.08)]
+
+                shadow-[0_4px_12px_rgba(0,0,0,0.25)]
+
+                text-[15px]
+
+                backdrop-blur-xl
+
+                z-20
+              `}
+            >
+              {reactions.map((r, i) => (
+                <span
+                  key={i}
+                  className="
+                    relative
+                    top-[1px]
+                  "
+                >
+                  {r.emoji}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* =============================== */}
-        {/* 🔥REACTIONS */}
+        {/* 🔥 ACTIONS */}
         {/* =============================== */}
-        {reactions.length > 0 && (
-          <div
-            className={`
-              absolute
-              -bottom-3
 
-              ${isMe ? "right-2" : "left-2"}
+        <div className={`z-50 ${` mt-2 flex justify-center`} sm:absolute sm:top-12 sm:right-2`}>
 
-              flex
-              items-center
-              gap-1
+          {showActions && (
 
-              px-2
-              h-[28px]
+            <div className="w-full sm:w-auto">
 
-              rounded-full
+              <MessageActions
+                msg={msg}
+                isMe={isMe}
+                showActions={showActions}
+                setShowReactionPicker={setShowReactionPicker}
+                setShowDeleteMenu={setShowDeleteMenu}
+              />
 
-              bg-[var(--card)]
+            </div>
 
-              border
-              border-[rgba(255,255,255,0.08)]
+          )}
+        </div>
 
-              shadow-[0_4px_12px_rgba(0,0,0,0.25)]
+        {/* =============================== */}
+{/* 🔥 REACTION PICKER */}
+{/* =============================== */}
 
-              text-[15px]
+{showReactionPicker && (
+  <div
+  className={`
+    absolute
+    z-[9999]
 
-              backdrop-blur-xl
+   top-[145%]
 
-              z-20
-            `}
-          >
-            {reactions.map((r, i) => (
-              <span key={i} className="relative top-[1px]">
-                {r.emoji}
-              </span>
-            ))}
-          </div>
-        )}
+    ${
+      isMe
+        ? `
+            right-0
+          `
+        : `
+            left-0
+          `
+    }
+
+    sm:left-auto
+    sm:top-12
+    sm:right-2
+  `}
+>
+    <ReactionPicker
+      isMe={isMe}
+      msg={msg}
+      showReactionPicker={showReactionPicker}
+      setShowReactionPicker={(value) => {
+        setShowReactionPicker(value);
+
+        if (!value) {
+          setShowActions(false);
+        }
+      }}
+    />
+  </div>
+)}
+
+        {/* =============================== */}
+        {/* 🔥 DELETE MENU */}
+        {/* =============================== */}
+        <DeleteMenu
+          isMe={isMe}
+          msg={msg}
+          showDeleteMenu={showDeleteMenu}
+          setShowDeleteMenu={(value) => { setShowDeleteMenu(value); if (!value) { setShowActions(false); } }}
+          setShowActions={setShowActions}
+        />
       </div>
-
-      {/* =============================== */}
-      {/* 🔥 ACTIONS */}
-      {/* =============================== */}
-      <div className="absolute top-12 right-2 z-50">
-      <MessageActions
-        msg={msg}
-        isMe={isMe}
-        showActions={showActions}
-        setShowReactionPicker={setShowReactionPicker}
-        setShowDeleteMenu={setShowDeleteMenu}
-      />
-      </div>
-
-      {/* =============================== */}
-      {/* 🔥 REACTION PICKER */}
-      {/* =============================== */}
-      <div className="absolute top-12 right-2 z-[60]">
-      <ReactionPicker
-        isMe={isMe}
-        msg={msg}
-        showReactionPicker={showReactionPicker}
-        setShowReactionPicker={setShowReactionPicker}
-      />
-      </div>
-
-      {/* =============================== */}
-      {/* 🔥 DELETE MENU */}
-      {/* =============================== */}
-      <DeleteMenu
-        isMe={isMe}
-        msg={msg}
-        showDeleteMenu={showDeleteMenu}
-        setShowDeleteMenu={setShowDeleteMenu}
-        setShowActions={setShowActions}
-      />
     </div>
   );
 };
