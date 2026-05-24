@@ -42,6 +42,9 @@ export const GroupProvider = ({
   const [loading, setLoading] =
     useState(false);
 
+  const [groupMedia, setGroupMedia] =
+  useState([]);
+
   // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
@@ -843,6 +846,50 @@ export const GroupProvider = ({
 
     }, [selectedGroup]);
 
+
+// ===============================
+// 🔥 FETCH GROUP MEDIA
+// ===============================
+const fetchGroupMedia =
+  useCallback(async (
+    conversationId
+  ) => {
+
+    try {
+
+      if (!conversationId) {
+
+        setGroupMedia([]);
+
+        return [];
+      }
+
+      const res =
+        await API.get(
+          `/messages/media/${conversationId}`
+        );
+
+      const media =
+
+        res?.data?.data ||
+
+        [];
+
+      setGroupMedia(media);
+
+      return media;
+
+    } catch (error) {
+
+      console.log(error);
+
+      setGroupMedia([]);
+
+      return [];
+    }
+
+  }, []);
+
   // ===============================
   // 🔥 REFRESH GROUP
   // ===============================
@@ -898,6 +945,9 @@ export const GroupProvider = ({
 
     loading,
 
+    groupMedia,
+    setGroupMedia,
+
     // 🔥 METHODS
     fetchGroups,
     fetchGroupById,
@@ -915,6 +965,7 @@ export const GroupProvider = ({
     deleteGroup,
 
     refreshGroup,
+    fetchGroupMedia,
   };
 
   return (

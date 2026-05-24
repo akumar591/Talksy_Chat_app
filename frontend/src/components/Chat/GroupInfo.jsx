@@ -1,16 +1,11 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-} from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+
+import { useNavigate, useParams } from "react-router-dom";
 
 import {
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-
-import {
+  FiImage,
+  FiVideo,
+  FiFile,
   FiArrowLeft,
   FiCamera,
   FiUserPlus,
@@ -36,375 +31,220 @@ import AddMembersModal from "../Chat/AddMembersModal";
 import ImageCropper from "../Common/ImageCropper";
 
 const GroupInfo = () => {
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const { id } = useParams();
 
-  const { id } =
-    useParams();
-
-  const { user } =
-    useAuth();
+  const { user } = useAuth();
 
   const {
-
     fetchGroupById,
 
     groupDetails,
+    groupMedia,
+    fetchGroupMedia,
 
     loading,
 
     leaveGroup,
 
     deleteGroup,
-
   } = useGroup();
 
-  const [group, setGroup] =
-    useState(null);
+  const [group, setGroup] = useState(null);
 
-  const [showMenu, setShowMenu] =
-    useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // 🔥 IMAGE MENU
-  const [
-    showImageMenu,
-    setShowImageMenu,
-  ] = useState(false);
+  const [showImageMenu, setShowImageMenu] = useState(false);
 
-  const [
-    showAvatarViewer,
-    setShowAvatarViewer,
-  ] = useState(false);
+  const [showAvatarViewer, setShowAvatarViewer] = useState(false);
 
   // 🔥 NEW
-  const [
-    showAddMembersModal,
-    setShowAddMembersModal,
-  ] = useState(false);
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false);
 
   // 🔥 CROPPER
-  const [
-    showCropper,
-    setShowCropper,
-  ] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
-  const [preview, setPreview] =
-    useState(null);
+  const [preview, setPreview] = useState(null);
 
-  const [crop, setCrop] =
-    useState({
-      x: 0,
-      y: 0,
-    });
+  const [crop, setCrop] = useState({
+    x: 0,
+    y: 0,
+  });
 
-  const [zoom, setZoom] =
-    useState(1);
+  const [zoom, setZoom] = useState(1);
 
-  const menuRef =
-    useRef(null);
+  const menuRef = useRef(null);
 
-  const imageMenuRef =
-    useRef(null);
+  const imageMenuRef = useRef(null);
 
   // ===============================
   // 🔥 FETCH GROUP
   // ===============================
   useEffect(() => {
+    const loadGroup = async () => {
+      try {
+        const data = await fetchGroupById(id);
 
-    const loadGroup =
-      async () => {
-
-        try {
-
-          const data =
-            await fetchGroupById(
-              id
-            );
-
-          setGroup(data);
-
-        } catch (err) {
-
-          console.log(err);
-        }
-      };
+        setGroup(data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
 
     if (id) {
-
       loadGroup();
     }
-
   }, [id]);
 
   // ===============================
   // 🔥 GROUP FALLBACK
   // ===============================
   useEffect(() => {
-
-    if (
-      groupDetails &&
-      String(groupDetails.id) ===
-      String(id)
-    ) {
-
+    if (groupDetails && String(groupDetails.id) === String(id)) {
       setGroup(groupDetails);
     }
-
-  }, [
-    groupDetails,
-    id,
-  ]);
+  }, [groupDetails, id]);
 
   // ===============================
   // 🔥 CLOSE MENU OUTSIDE
   // ===============================
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
 
-    const handleClickOutside =
-      (e) => {
-
-        if (
-          menuRef.current &&
-          !menuRef.current.contains(
-            e.target
-          )
-        ) {
-
-          setShowMenu(false);
-        }
-
-        if (
-          imageMenuRef.current &&
-          !imageMenuRef.current.contains(
-            e.target
-          )
-        ) {
-
-          setShowImageMenu(false);
-        }
-      };
-
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      if (imageMenuRef.current && !imageMenuRef.current.contains(e.target)) {
+        setShowImageMenu(false);
+      }
     };
 
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
+
+  // ===============================
+  // 🔥 FETCH GROUP MEDIA
+  // ===============================
+  useEffect(() => {
+    if (group?.conversationId) {
+      fetchGroupMedia(group.conversationId);
+    }
+  }, [group, fetchGroupMedia]);
 
   // ===============================
   // 🔥 CHECK ADMIN
   // ===============================
-  const isAdmin =
-    useMemo(() => {
-
-      return group?.members?.some(
-
-        (m) =>
-
-          String(m?.id) ===
-          String(user?.id)
-
-          &&
-
-          m.role === "ADMIN"
-      );
-
-    }, [
-      group,
-      user,
-    ]);
+  const isAdmin = useMemo(() => {
+    return group?.members?.some(
+      (m) => String(m?.id) === String(user?.id) && m.role === "ADMIN",
+    );
+  }, [group, user]);
 
   // ===============================
   // 🔥 CHECK CREATOR
   // ===============================
-  const isCreator =
-    useMemo(() => {
+  const isCreator = useMemo(() => {
+    return String(group?.createdById) === String(user?.id);
+  }, [group, user]);
 
-      return (
-        String(
-          group?.createdById
-        ) ===
-        String(user?.id)
-      );
-
-    }, [
-      group,
-      user,
-    ]);
-
-  const canManageGroupPhoto =
-    isAdmin || isCreator;
+  const canManageGroupPhoto = isAdmin || isCreator;
 
   // ===============================
   // 🔥 HANDLE IMAGE
   // ===============================
-  const handleImage =
-    async (e) => {
+  const handleImage = async (e) => {
+    const file = e.target.files[0];
 
-      const file =
-        e.target.files[0];
+    if (!file) return;
 
-      if (!file)
-        return;
+    // 🔥 TYPE
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image allowed ❌");
 
-      // 🔥 TYPE
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
+      return;
+    }
 
-        toast.error(
-          "Only image allowed ❌"
-        );
+    // 🔥 SIZE
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
 
-        return;
-      }
+      return;
+    }
 
-      // 🔥 SIZE
-      if (
-        file.size >
-        5 *
-        1024 *
-        1024
-      ) {
+    // 🔥 PREVIEW
+    const localPreview = URL.createObjectURL(file);
 
-        toast.error(
-          "Image must be under 5MB"
-        );
+    setPreview(localPreview);
 
-        return;
-      }
+    setShowImageMenu(false);
 
-      // 🔥 PREVIEW
-      const localPreview =
-        URL.createObjectURL(
-          file
-        );
-
-      setPreview(
-        localPreview
-      );
-
-      setShowImageMenu(
-        false
-      );
-
-      setShowCropper(
-        true
-      );
-    };
+    setShowCropper(true);
+  };
 
   // ===============================
   // 🔥 REMOVE GROUP IMAGE
   // ===============================
-  const removeGroupImage =
-    async () => {
+  const removeGroupImage = async () => {
+    try {
+      await API.put(`/groups/${group.id}`, {
+        avatar: "",
+      });
 
-      try {
+      const updated = await fetchGroupById(id);
 
-        await API.put(
-          `/groups/${group.id}`,
-          {
-            avatar: "",
-          }
-        );
+      setGroup(updated);
 
-        const updated =
-          await fetchGroupById(
-            id
-          );
+      toast.success("Group image removed ✅");
+    } catch (err) {
+      console.log(err);
 
-        setGroup(updated);
-
-        toast.success(
-          "Group image removed ✅"
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Failed to remove image"
-        );
-      }
-    };
+      toast.error("Failed to remove image");
+    }
+  };
 
   // ===============================
   // 🔥 REMOVE MEMBER
   // ===============================
-  const removeMember =
-    async (memberId) => {
+  const removeMember = async (memberId) => {
+    try {
+      const confirmRemove = window.confirm("Remove this member?");
 
-      try {
-
-        const confirmRemove =
-          window.confirm(
-            "Remove this member?"
-          );
-
-        if (
-          !confirmRemove
-        ) {
-
-          return;
-        }
-
-        await API.delete(
-          `/groups/${group.id}/members/${memberId}`
-        );
-
-        const updated =
-          await fetchGroupById(
-            id
-          );
-
-        setGroup(updated);
-
-        toast.success(
-          "Member removed ✅"
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        const msg =
-          err.response?.data
-            ?.message ||
-          "Failed to remove member";
-
-        toast.error(msg);
+      if (!confirmRemove) {
+        return;
       }
-    };
+
+      await API.delete(`/groups/${group.id}/members/${memberId}`);
+
+      const updated = await fetchGroupById(id);
+
+      setGroup(updated);
+
+      toast.success("Member removed ✅");
+    } catch (err) {
+      console.log(err);
+
+      const msg = err.response?.data?.message || "Failed to remove member";
+
+      toast.error(msg);
+    }
+  };
 
   // ===============================
   // 🔥 LOADING
   // ===============================
   if (loading) {
-
     return (
-
       <div className="w-full h-screen bg-[var(--bg)] flex items-center justify-center text-[var(--text)]">
-
         <div className="flex flex-col items-center gap-3">
-
           <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
 
-          <p className="text-sm opacity-70">
-
-            Loading group...
-          </p>
+          <p className="text-sm opacity-70">Loading group...</p>
         </div>
       </div>
     );
@@ -414,32 +254,18 @@ const GroupInfo = () => {
   // 🔥 GROUP NOT FOUND
   // ===============================
   if (!group) {
-
     return (
-
       <div className="w-full h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col">
-
         <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)]">
-
-          <button
-            onClick={() =>
-              navigate(-1)
-            }
-            className="text-xl"
-          >
+          <button onClick={() => navigate(-1)} className="text-xl">
             <FiArrowLeft />
           </button>
 
-          <h2 className="font-semibold">
-
-            Group Info
-          </h2>
+          <h2 className="font-semibold">Group Info</h2>
         </div>
 
         <div className="flex-1 flex items-center justify-center text-sm opacity-70">
-
           Group not found
-
         </div>
       </div>
     );
@@ -460,7 +286,6 @@ const GroupInfo = () => {
         md:mt-16
       "
     >
-
       {/* CONTAINER */}
       <div
         className="
@@ -473,7 +298,6 @@ const GroupInfo = () => {
           flex-col
         "
       >
-
         {/* HEADER */}
         <div
           className="
@@ -495,14 +319,10 @@ const GroupInfo = () => {
             backdrop-blur-xl
           "
         >
-
           {/* LEFT */}
           <div className="flex items-center gap-3">
-
             <button
-              onClick={() =>
-                navigate(-1)
-              }
+              onClick={() => navigate(-1)}
               className="
                 w-10
                 h-10
@@ -519,26 +339,13 @@ const GroupInfo = () => {
               <FiArrowLeft />
             </button>
 
-            <h2 className="font-semibold text-lg">
-
-              Group Info
-            </h2>
+            <h2 className="font-semibold text-lg">Group Info</h2>
           </div>
 
           {/* RIGHT */}
-          <div
-            className="relative"
-            ref={menuRef}
-          >
-
+          <div className="relative" ref={menuRef}>
             <button
-
-              onClick={() =>
-                setShowMenu(
-                  !showMenu
-                )
-              }
-
+              onClick={() => setShowMenu(!showMenu)}
               className="
                 w-10
                 h-10
@@ -557,7 +364,6 @@ const GroupInfo = () => {
 
             {/* MENU */}
             {showMenu && (
-
               <div
                 className="
                   absolute
@@ -580,19 +386,13 @@ const GroupInfo = () => {
                   z-50
                 "
               >
-
                 {/* OPEN CHAT */}
                 <button
-
                   onClick={() => {
-
-                    navigate(
-                      `/group/${group.id}`
-                    );
+                    navigate(`/group/${group.id}`);
 
                     setShowMenu(false);
                   }}
-
                   className="
                     w-full
 
@@ -610,18 +410,12 @@ const GroupInfo = () => {
 
                 {/* ADD MEMBER */}
                 {isAdmin && (
-
                   <button
-
                     onClick={() => {
-
-                      setShowAddMembersModal(
-                        true
-                      );
+                      setShowAddMembersModal(true);
 
                       setShowMenu(false);
                     }}
-
                     className="
                       w-full
 
@@ -640,38 +434,23 @@ const GroupInfo = () => {
 
                 {/* DELETE */}
                 {isCreator && (
-
                   <button
-
                     onClick={async () => {
-
                       const confirmDelete =
-                        window.confirm(
-                          "Delete this group?"
-                        );
+                        window.confirm("Delete this group?");
 
-                      if (
-                        !confirmDelete
-                      ) {
-
+                      if (!confirmDelete) {
                         return;
                       }
 
-                      const res =
-                        await deleteGroup(
-                          group.id
-                        );
+                      const res = await deleteGroup(group.id);
 
-                      if (
-                        res.success
-                      ) {
-
+                      if (res.success) {
                         navigate("/");
                       }
 
                       setShowMenu(false);
                     }}
-
                     className="
                       w-full
 
@@ -709,47 +488,27 @@ const GroupInfo = () => {
             border-[var(--border)]
           "
         >
-
           {/* GROUP AVATAR */}
-          <div
-            className="relative"
-            ref={imageMenuRef}
-          >
-
+          <div className="relative" ref={imageMenuRef}>
             {group.avatar ? (
-
               <img
                 src={
-
-                  group.avatar?.startsWith(
-                    "http"
-                  )
-
+                  group.avatar?.startsWith("http")
                     ? group.avatar
-
                     : `http://localhost:8080${group.avatar}`
                 }
                 alt={group.name}
                 onClick={(e) => {
-
                   e.stopPropagation();
 
                   // 🔥 ADMIN / CREATOR
-                  if (
-                    canManageGroupPhoto
-                  ) {
-
-                    setShowImageMenu(
-                      !showImageMenu
-                    );
+                  if (canManageGroupPhoto) {
+                    setShowImageMenu(!showImageMenu);
                   }
 
                   // 🔥 MEMBER
                   else {
-
-                    setShowAvatarViewer(
-                      true
-                    );
+                    setShowAvatarViewer(true);
                   }
                 }}
                 className="
@@ -765,33 +524,21 @@ const GroupInfo = () => {
                   cursor-pointer
                 "
               />
-
             ) : (
-
               <div
                 onClick={(e) => {
-
                   e.stopPropagation();
 
                   // 🔥 ADMIN / CREATOR
-                  if (
-                    canManageGroupPhoto
-                  ) {
-
-                    setShowImageMenu(
-                      !showImageMenu
-                    );
+                  if (canManageGroupPhoto) {
+                    setShowImageMenu(!showImageMenu);
                   }
 
                   // 🔥 MEMBER
                   else {
-
-                    setShowAvatarViewer(
-                      true
-                    );
+                    setShowAvatarViewer(true);
                   }
                 }}
-
                 className="
                   w-32
                   h-32
@@ -821,13 +568,8 @@ const GroupInfo = () => {
 
             {/* CAMERA */}
             {canManageGroupPhoto && (
-
               <button
-                onClick={() =>
-                  setShowImageMenu(
-                    !showImageMenu
-                  )
-                }
+                onClick={() => setShowImageMenu(!showImageMenu)}
                 className="
                   absolute
                   bottom-1
@@ -854,11 +596,9 @@ const GroupInfo = () => {
             )}
 
             {/* IMAGE MENU */}
-            {showImageMenu &&
-              canManageGroupPhoto && (
-
-                <div
-                  className="
+            {showImageMenu && canManageGroupPhoto && (
+              <div
+                className="
                   absolute
                   top-36
                   left-1/2
@@ -879,28 +619,17 @@ const GroupInfo = () => {
 
                   z-50
                 "
-                >
+              >
+                {/* VIEW */}
+                <button
+                  onClick={() => {
+                    if (group.avatar) {
+                      setShowAvatarViewer(true);
+                    }
 
-                  {/* VIEW */}
-                  <button
-
-                    onClick={() => {
-
-                      if (
-                        group.avatar
-                      ) {
-
-                        setShowAvatarViewer(
-                          true
-                        );
-                      }
-
-                      setShowImageMenu(
-                        false
-                      );
-                    }}
-
-                    className="
+                    setShowImageMenu(false);
+                  }}
+                  className="
                     w-full
 
                     px-4
@@ -911,13 +640,13 @@ const GroupInfo = () => {
 
                     hover:bg-white/5
                   "
-                  >
-                    View Group Photo
-                  </button>
+                >
+                  View Group Photo
+                </button>
 
-                  {/* UPDATE */}
-                  <label
-                    className="
+                {/* UPDATE */}
+                <label
+                  className="
                     block
 
                     px-4
@@ -929,28 +658,20 @@ const GroupInfo = () => {
 
                     hover:bg-white/5
                   "
-                  >
+                >
+                  Change Group Photo
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleImage}
+                  />
+                </label>
 
-                    Change Group Photo
-
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={
-                        handleImage
-                      }
-                    />
-                  </label>
-
-                  {/* REMOVE */}
-                  <button
-
-                    onClick={
-                      removeGroupImage
-                    }
-
-                    className="
+                {/* REMOVE */}
+                <button
+                  onClick={removeGroupImage}
+                  className="
                     w-full
 
                     px-4
@@ -963,11 +684,11 @@ const GroupInfo = () => {
 
                     hover:bg-red-500/10
                   "
-                  >
-                    Remove Group Photo
-                  </button>
-                </div>
-              )}
+                >
+                  Remove Group Photo
+                </button>
+              </div>
+            )}
           </div>
 
           {/* NAME */}
@@ -998,8 +719,7 @@ const GroupInfo = () => {
               max-w-md
             "
           >
-            {group.about ||
-              "No description"}
+            {group.about || "No description"}
           </p>
 
           {/* META */}
@@ -1015,25 +735,14 @@ const GroupInfo = () => {
               opacity-60
             "
           >
+            <span>{group.memberCount || 0} members</span>
 
-            <span>
-              {group.memberCount || 0}
-              {" "}
-              members
-            </span>
-
-            <span className="mt-1">
-
-              Created by
-              {" "}
-              {group.createdByName}
-            </span>
+            <span className="mt-1">Created by {group.createdByName}</span>
           </div>
         </div>
 
         {/* ACTION */}
         {isAdmin && (
-
           <div
             className="
               px-4
@@ -1043,16 +752,10 @@ const GroupInfo = () => {
               border-[var(--border)]
             "
           >
-
             <button
-
               onClick={() => {
-
-                setShowAddMembersModal(
-                  true
-                );
+                setShowAddMembersModal(true);
               }}
-
               className="
                 w-full
 
@@ -1073,23 +776,264 @@ const GroupInfo = () => {
                 transition
               "
             >
-
               <FiUserPlus className="text-xl" />
 
-              <span className="text-sm font-medium">
-
-                Add Member
-              </span>
+              <span className="text-sm font-medium">Add Member</span>
             </button>
           </div>
         )}
 
+        {/* =============================== */}
+        {/* 🔥 MEDIA LINKS DOCS */}
+        {/* =============================== */}
+        <div
+          className="
+    px-4
+    py-5
+
+    border-b
+    border-[var(--border)]
+  "
+        >
+          {/* 🔥 HEADER */}
+          <div
+            onClick={() => navigate(`/group-media/${group.id}`)}
+            className="
+      flex
+      items-center
+      justify-between
+
+      cursor-pointer
+    "
+          >
+            {/* LEFT */}
+            <div>
+              <h3
+                className="
+          text-sm
+          font-semibold
+        "
+              >
+                Media, Links & Docs
+              </h3>
+
+              <p
+                className="
+          text-xs
+          opacity-60
+          mt-1
+        "
+              >
+                Shared photos, videos and files
+              </p>
+            </div>
+
+            {/* RIGHT */}
+            <div
+              className="
+        text-sm
+        opacity-60
+      "
+            >
+              →
+            </div>
+          </div>
+
+         {/* 🔥 STATS */}
+<div className="flex items-center gap-3 mt-4 overflow-x-auto hide-scrollbar">
+
+  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--card)] border border-[var(--border)] shrink-0">
+
+    <FiImage className="text-[var(--primary)]" />
+
+    <span className="text-xs">
+
+      {
+        groupMedia.filter(
+          (m) =>
+            m.type === "IMAGE"
+        ).length
+      }
+
+      {" "}
+      Photos
+
+    </span>
+
+  </div>
+
+  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--card)] border border-[var(--border)] shrink-0">
+
+    <FiVideo className="text-[var(--primary)]" />
+
+    <span className="text-xs">
+
+      {
+        groupMedia.filter(
+          (m) =>
+            m.type === "VIDEO"
+        ).length
+      }
+
+      {" "}
+      Videos
+
+    </span>
+
+  </div>
+
+  <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--card)] border border-[var(--border)] shrink-0">
+
+    <FiFile className="text-[var(--primary)]" />
+
+    <span className="text-xs">
+
+      {
+        groupMedia.filter(
+          (m) =>
+            m.type === "FILE"
+        ).length
+      }
+
+      {" "}
+      Files
+
+    </span>
+
+  </div>
+
+</div>
+
+{/* 🔥 PREVIEW */}
+<div
+  className="
+    flex
+    gap-2
+
+    mt-4
+
+    overflow-x-auto
+    hide-scrollbar
+  "
+>
+
+  {groupMedia
+    .filter(
+      (m) =>
+
+        m.type === "IMAGE" ||
+
+        m.type === "VIDEO"
+    )
+    .slice(0, 8)
+    .map((item) => (
+
+      <div
+        key={item.id}
+
+        onClick={() =>
+          navigate(
+            `/group-media/${group.id}`
+          )
+        }
+
+        className="
+          relative
+
+          w-20
+          h-20
+
+          rounded-2xl
+
+          overflow-hidden
+
+          shrink-0
+
+          cursor-pointer
+
+          bg-[var(--card)]
+
+          border
+          border-[var(--border)]
+
+          group
+        "
+      >
+
+        {/* 🔥 IMAGE */}
+        {item.type === "IMAGE" && (
+
+          <img
+            src={item.content}
+            alt=""
+
+            className="
+              w-full
+              h-full
+
+              object-cover
+
+              transition-all
+              duration-300
+
+              group-hover:scale-105
+            "
+          />
+        )}
+
+        {/* 🔥 VIDEO */}
+        {item.type === "VIDEO" && (
+
+          <>
+            <video
+              src={item.content}
+
+              className="
+                w-full
+                h-full
+
+                object-cover
+              "
+            />
+
+            <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+
+              <FiVideo className="text-white text-lg" />
+
+            </div>
+          </>
+        )}
+
+      </div>
+    ))}
+
+  {/* 🔥 EMPTY */}
+  {groupMedia.length === 0 && (
+
+    <div
+      className="
+        w-full
+
+        py-8
+
+        text-center
+        text-sm
+
+        opacity-60
+      "
+    >
+      No shared media yet
+    </div>
+
+  )}
+
+</div>
+        </div>
+
         {/* MEMBERS */}
         <div className="flex-1">
-
           {/* TITLE */}
           <div className="px-4 py-4">
-
             <h3
               className="
                 text-sm
@@ -1103,48 +1047,25 @@ const GroupInfo = () => {
 
           {/* MEMBER LIST */}
           <div className="pb-10">
+            {group.members?.map((member) => {
+              const memberUser = member;
 
-            {group.members?.map(
-              (member) => {
+              const memberIsAdmin = member.role === "ADMIN";
 
-                const memberUser =
-                  member;
+              const memberIsCreator =
+                String(memberUser?.id) === String(group.createdById);
 
-                const memberIsAdmin =
-                  member.role ===
-                  "ADMIN";
+              return (
+                <div
+                  key={member.id}
+                  onClick={() => {
+                    if (String(memberUser?.id) === String(user?.id)) {
+                      return;
+                    }
 
-                const memberIsCreator =
-
-                  String(
-                    memberUser?.id
-                  ) ===
-
-                  String(
-                    group.createdById
-                  );
-
-                return (
-
-                  <div
-                    key={member.id}
-
-                    onClick={() => {
-
-                      if (
-                        String(memberUser?.id) ===
-                        String(user?.id)
-                      ) {
-
-                        return;
-                      }
-
-                      navigate(
-                        `/chat/${memberUser.id}`
-                      );
-                    }}
-
-                    className="
+                    navigate(`/chat/${memberUser.id}`);
+                  }}
+                  className="
                       flex
                       items-center
                       gap-3
@@ -1161,47 +1082,32 @@ const GroupInfo = () => {
 
                       cursor-pointer
                     "
-                  >
-
-                    {/* AVATAR */}
-                    <div className="relative shrink-0">
-
-                      <img
-                        src={
-
-                          memberUser?.avatar?.startsWith(
-                            "http"
-                          )
-
-                            ? memberUser.avatar
-
-                            : `http://localhost:8080${memberUser?.avatar}`
-                        }
-
-                        alt={
-                          memberUser?.name
-                        }
-
-                        onError={(e) => {
-
-                          e.target.src =
-                            `https://ui-avatars.com/api/?name=${memberUser?.name}`;
-                        }}
-
-                        className="
+                >
+                  {/* AVATAR */}
+                  <div className="relative shrink-0">
+                    <img
+                      src={
+                        memberUser?.avatar?.startsWith("http")
+                          ? memberUser.avatar
+                          : `http://localhost:8080${memberUser?.avatar}`
+                      }
+                      alt={memberUser?.name}
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${memberUser?.name}`;
+                      }}
+                      className="
                           w-12
                           h-12
 
                           rounded-full
                           object-cover
                         "
-                      />
+                    />
 
-                      {/* ONLINE */}
-                      {memberUser?.online && (
-
-                        <span
-                          className="
+                    {/* ONLINE */}
+                    {memberUser?.online && (
+                      <span
+                        className="
                             absolute
                             bottom-0
                             right-0
@@ -1216,36 +1122,33 @@ const GroupInfo = () => {
                             border-2
                             border-[var(--bg)]
                           "
-                        />
-                      )}
-                    </div>
+                      />
+                    )}
+                  </div>
 
-                    {/* INFO */}
-                    <div className="flex-1 min-w-0">
-
-                      <div
-                        className="
+                  {/* INFO */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="
                           flex
                           items-center
                           gap-2
                           flex-wrap
                         "
-                      >
-
-                        <h4
-                          className="
+                    >
+                      <h4
+                        className="
                             font-medium
                             truncate
                           "
-                        >
-                          {memberUser?.name}
-                        </h4>
+                      >
+                        {memberUser?.name}
+                      </h4>
 
-                        {/* CREATOR */}
-                        {memberIsCreator && (
-
-                          <span
-                            className="
+                      {/* CREATOR */}
+                      {memberIsCreator && (
+                        <span
+                          className="
                               px-2
                               py-[2px]
 
@@ -1256,16 +1159,15 @@ const GroupInfo = () => {
                               bg-yellow-500/15
                               text-yellow-400
                             "
-                          >
-                            Creator
-                          </span>
-                        )}
+                        >
+                          Creator
+                        </span>
+                      )}
 
-                        {/* ADMIN */}
-                        {memberIsAdmin && (
-
-                          <span
-                            className="
+                      {/* ADMIN */}
+                      {memberIsAdmin && (
+                        <span
+                          className="
                               flex
                               items-center
                               gap-1
@@ -1280,52 +1182,35 @@ const GroupInfo = () => {
                               bg-[var(--primary)]/15
                               text-[var(--primary)]
                             "
-                          >
+                        >
+                          <FiShield size={10} />
+                          Admin
+                        </span>
+                      )}
+                    </div>
 
-                            <FiShield size={10} />
-
-                            Admin
-                          </span>
-                        )}
-                      </div>
-
-                      <p
-                        className="
+                    <p
+                      className="
                           text-xs
                           opacity-60
                         "
-                      >
+                    >
+                      {memberUser?.online ? "online" : "offline"}
+                    </p>
+                  </div>
 
-                        {memberUser?.online
-                          ? "online"
-                          : "offline"}
-                      </p>
-                    </div>
+                  {/* REMOVE */}
+                  {isAdmin &&
+                    !memberIsAdmin &&
+                    !memberIsCreator &&
+                    String(memberUser?.id) !== String(user?.id) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
 
-                    {/* REMOVE */}
-                    {isAdmin &&
-                      !memberIsAdmin &&
-                      !memberIsCreator &&
-
-                      String(
-                        memberUser?.id
-                      ) !==
-                      String(
-                        user?.id
-                      ) && (
-
-                        <button
-
-                          onClick={(e) => {
-
-                            e.stopPropagation();
-
-                            removeMember(
-                              memberUser.id
-                            );
-                          }}
-
-                          className="
+                          removeMember(memberUser.id);
+                        }}
+                        className="
                           w-10
                           h-10
 
@@ -1341,16 +1226,13 @@ const GroupInfo = () => {
 
                           transition
                         "
-                        >
-
-                          <FiTrash2 />
-
-                        </button>
-                      )}
-                  </div>
-                );
-              }
-            )}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1364,36 +1246,20 @@ const GroupInfo = () => {
             border-[var(--border)]
           "
         >
-
           <button
-
             onClick={async () => {
+              const confirmLeave = window.confirm("Leave this group?");
 
-              const confirmLeave =
-                window.confirm(
-                  "Leave this group?"
-                );
-
-              if (
-                !confirmLeave
-              ) {
-
+              if (!confirmLeave) {
                 return;
               }
 
-              const res =
-                await leaveGroup(
-                  group.id
-                );
+              const res = await leaveGroup(group.id);
 
-              if (
-                res.success
-              ) {
-
+              if (res.success) {
                 navigate("/");
               }
             }}
-
             className="
               w-full
 
@@ -1425,7 +1291,6 @@ const GroupInfo = () => {
               duration-300
             "
           >
-
             <div
               className="
                 absolute
@@ -1461,7 +1326,6 @@ const GroupInfo = () => {
                 z-10
               "
             >
-
               Leave Group
             </span>
           </button>
@@ -1470,184 +1334,98 @@ const GroupInfo = () => {
 
       {/* 🔥 ADD MEMBERS MODAL */}
       {showAddMembersModal && (
-
         <AddMembersModal
-
           group={group}
-
-          onClose={() =>
-            setShowAddMembersModal(
-              false
-            )
-          }
+          onClose={() => setShowAddMembersModal(false)}
         />
       )}
 
       {/* 🔥 CROPPER */}
-      {showCropper &&
-        preview && (
-
-          <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
-
-            <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
-
-              <ImageCropper
-                image={preview}
-                crop={crop}
-                setCrop={setCrop}
-                zoom={zoom}
-                setZoom={setZoom}
-                aspect={1 / 1}
-                cropShape="round"
-                showGrid={false}
-
-                onCropDone={
-                  async (
-                    croppedFile
-                  ) => {
-
-                    try {
-
-                      if (
-                        !croppedFile
-                      ) {
-
-                        return;
-                      }
-
-                      // 🔥 NEW PREVIEW
-                      const croppedPreview =
-                        URL.createObjectURL(
-                          croppedFile
-                        );
-
-                      setPreview(
-                        croppedPreview
-                      );
-
-                      setShowCropper(
-                        false
-                      );
-
-                      // 🔥 UPLOAD
-                      const formData =
-                        new FormData();
-
-                      formData.append(
-                        "file",
-                        croppedFile
-                      );
-
-                      formData.append(
-                        "type",
-                        "profile"
-                      );
-
-                      const uploadRes =
-                        await API.post(
-                          "/file/upload",
-                          formData,
-                          {
-                            headers:
-                            {
-                              "Content-Type":
-                                "multipart/form-data",
-                            },
-                          }
-                        );
-
-                      // 🔥 FINAL URL
-                      const imageUrl =
-                        uploadRes
-                          .data
-                          ?.data
-                          ?.url ||
-                        "";
-
-                      if (
-                        !imageUrl
-                      ) {
-
-                        toast.error(
-                          "Image upload failed"
-                        );
-
-                        return;
-                      }
-
-                      // 🔥 UPDATE GROUP
-                      await API.put(
-                        `/groups/${group.id}`,
-                        {
-                          avatar:
-                            imageUrl,
-                        }
-                      );
-
-                      const updated =
-                        await fetchGroupById(
-                          id
-                        );
-
-                      setGroup(updated);
-
-                      toast.success(
-                        "Group image updated ✅"
-                      );
-
-                    } catch (
-                    err
-                    ) {
-
-                      console.log(
-                        err
-                      );
-
-                      const msg =
-                        err.response
-                          ?.data
-                          ?.message ||
-                        "Upload failed ❌";
-
-                      toast.error(
-                        msg
-                      );
-                    }
+      {showCropper && preview && (
+        <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+            <ImageCropper
+              image={preview}
+              crop={crop}
+              setCrop={setCrop}
+              zoom={zoom}
+              setZoom={setZoom}
+              aspect={1 / 1}
+              cropShape="round"
+              showGrid={false}
+              onCropDone={async (croppedFile) => {
+                try {
+                  if (!croppedFile) {
+                    return;
                   }
+
+                  // 🔥 NEW PREVIEW
+                  const croppedPreview = URL.createObjectURL(croppedFile);
+
+                  setPreview(croppedPreview);
+
+                  setShowCropper(false);
+
+                  // 🔥 UPLOAD
+                  const formData = new FormData();
+
+                  formData.append("file", croppedFile);
+
+                  formData.append("type", "profile");
+
+                  const uploadRes = await API.post("/file/upload", formData, {
+                    headers: {
+                      "Content-Type": "multipart/form-data",
+                    },
+                  });
+
+                  // 🔥 FINAL URL
+                  const imageUrl = uploadRes.data?.data?.url || "";
+
+                  if (!imageUrl) {
+                    toast.error("Image upload failed");
+
+                    return;
+                  }
+
+                  // 🔥 UPDATE GROUP
+                  await API.put(`/groups/${group.id}`, {
+                    avatar: imageUrl,
+                  });
+
+                  const updated = await fetchGroupById(id);
+
+                  setGroup(updated);
+
+                  toast.success("Group image updated ✅");
+                } catch (err) {
+                  console.log(err);
+
+                  const msg = err.response?.data?.message || "Upload failed ❌";
+
+                  toast.error(msg);
                 }
-              />
-
-            </div>
-
+              }}
+            />
           </div>
-        )}
+        </div>
+      )}
 
       {/* 🔥 GROUP IMAGE VIEWER */}
       <MediaViewerModal
         open={showAvatarViewer}
-
-        onClose={() =>
-          setShowAvatarViewer(false)
-        }
-
+        onClose={() => setShowAvatarViewer(false)}
         medias={[
           {
             type: "IMAGE",
 
-            content:
-              group.avatar?.startsWith(
-                "http"
-              )
-
-                ? group.avatar
-
-                : `http://localhost:8080${group.avatar}`,
+            content: group.avatar?.startsWith("http")
+              ? group.avatar
+              : `http://localhost:8080${group.avatar}`,
           },
         ]}
-
         selectedIndex={0}
-
-        setSelectedIndex={() => { }}
+        setSelectedIndex={() => {}}
       />
     </div>
   );

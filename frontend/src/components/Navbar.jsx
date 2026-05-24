@@ -70,6 +70,8 @@ const Navbar = () => {
 
     "/media/",
 
+    "/group-media/",
+
     "/user/",
   ];
 

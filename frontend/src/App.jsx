@@ -10,6 +10,7 @@ import ProfileSetup from "./components/Auth/ProfileSetup";
 
 import Profile from "./components/Profile/Profile";
 import MediaPage from "./pages/media/MediaPage";
+import GroupMediaPage from "./pages/media/GroupMediaPage";
 
 // SETTINGS
 import Privacy from "./components/Settings/Privacy";
@@ -33,25 +34,13 @@ import CallLayout from "./components/Call/CallLayout";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
-import {
-  AuthProvider,
-  useAuth,
-} from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import { SettingsProvider } from "./context/SettingsContext";
 
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+import { useState, useEffect, useRef } from "react";
 
 import UserProfile from "./components/User/UserProfile";
 
@@ -71,89 +60,49 @@ import { StatusProvider } from "./context/StatusContext";
 // =====================================
 // 🔥 VALID STEPS
 // =====================================
-const VALID_STEPS = [
-  "splash",
-  "onboarding",
-  "login",
-  "otp",
-  "profile",
-  "app",
-];
+const VALID_STEPS = ["splash", "onboarding", "login", "otp", "profile", "app"];
 
 function AppRoutes() {
-
-  const {
-    user,
-    authLoading,
-  } = useAuth();
+  const { user, authLoading } = useAuth();
 
   // =====================================
   // 🔥 INITIAL STEP
   // =====================================
-  const getInitialStep =
-    () => {
+  const getInitialStep = () => {
+    const seenSplash = localStorage.getItem("seenSplash");
 
-      const seenSplash =
-        localStorage.getItem(
-          "seenSplash"
-        );
+    const savedStep = localStorage.getItem("step");
 
-      const savedStep =
-        localStorage.getItem(
-          "step"
-        );
+    if (!seenSplash) {
+      return "splash";
+    }
 
-      if (!seenSplash) {
+    if (VALID_STEPS.includes(savedStep)) {
+      return savedStep;
+    }
 
-        return "splash";
-      }
-
-      if (
-        VALID_STEPS.includes(
-          savedStep
-        )
-      ) {
-
-        return savedStep;
-      }
-
-      return "onboarding";
-    };
+    return "onboarding";
+  };
 
   // =====================================
   // 🔥 STEP STATE
   // =====================================
-  const [step, setStep] =
-    useState(
-      getInitialStep
-    );
+  const [step, setStep] = useState(getInitialStep);
 
   // =====================================
   // 🔥 MOUNT SAFETY
   // =====================================
-  const mountedRef =
-    useRef(false);
+  const mountedRef = useRef(false);
 
   // =====================================
   // 🔥 UPDATE STEP
   // =====================================
-  const updateStep = (
-    newStep
-  ) => {
-
-    if (
-      !VALID_STEPS.includes(
-        newStep
-      )
-    ) {
-
+  const updateStep = (newStep) => {
+    if (!VALID_STEPS.includes(newStep)) {
       return;
     }
 
-    localStorage.setItem(
-      "step",
-      newStep
-    );
+    localStorage.setItem("step", newStep);
 
     setStep(newStep);
   };
@@ -162,96 +111,54 @@ function AppRoutes() {
   // 🔥 BODY BG
   // =====================================
   useEffect(() => {
-
-    document.body.style.background =
-      "var(--bg)";
-
+    document.body.style.background = "var(--bg)";
   }, []);
 
   // =====================================
   // 🔥 STEP SYNC
   // =====================================
   useEffect(() => {
-
-    if (
-      !mountedRef.current
-    ) {
-
-      mountedRef.current =
-        true;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
     }
 
-    localStorage.setItem(
-      "step",
-      step
-    );
-
+    localStorage.setItem("step", step);
   }, [step]);
 
   // =====================================
   // 🔥 REFRESH SAFETY
   // =====================================
   useEffect(() => {
-
-    const handleBeforeUnload =
-      () => {
-
-        localStorage.setItem(
-          "step",
-          step
-        );
-      };
-
-    window.addEventListener(
-      "beforeunload",
-      handleBeforeUnload
-    );
-
-    return () => {
-
-      window.removeEventListener(
-        "beforeunload",
-        handleBeforeUnload
-      );
+    const handleBeforeUnload = () => {
+      localStorage.setItem("step", step);
     };
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
   }, [step]);
 
   // =====================================
   // 🔥 AUTO APP RESTORE
   // =====================================
   useEffect(() => {
+    if (authLoading) return;
 
-    if (authLoading)
-      return;
-
-    if (
-      step === "otp" ||
-      step === "profile"
-    ) {
-
+    if (step === "otp" || step === "profile") {
       return;
     }
 
-    if (
-      user &&
-      step !== "app"
-    ) {
-
+    if (user && step !== "app") {
       updateStep("app");
     }
-
-  }, [
-    user,
-    authLoading,
-    step,
-  ]);
+  }, [user, authLoading, step]);
 
   // =====================================
   // 🔥 LOADING
   // =====================================
   if (authLoading) {
-
     return (
       <div
         className="
@@ -272,53 +179,33 @@ function AppRoutes() {
   // 🔥 SPLASH
   // =====================================
   if (step === "splash") {
-
     return (
       <>
         <Toaster position="top-center" />
 
         <Splash
           onFinish={() => {
-
-            localStorage.setItem(
-              "seenSplash",
-              "true"
-            );
+            localStorage.setItem("seenSplash", "true");
 
             if (user) {
-
-              updateStep(
-                "app"
-              );
+              updateStep("app");
 
               return;
             }
 
-            const savedStep =
-              localStorage.getItem(
-                "step"
-              );
+            const savedStep = localStorage.getItem("step");
 
             if (
               savedStep &&
-              savedStep !==
-              "splash" &&
-              VALID_STEPS.includes(
-                savedStep
-              )
+              savedStep !== "splash" &&
+              VALID_STEPS.includes(savedStep)
             ) {
-
-              updateStep(
-                savedStep
-              );
+              updateStep(savedStep);
 
               return;
             }
 
-            updateStep(
-              "onboarding"
-            );
-
+            updateStep("onboarding");
           }}
         />
       </>
@@ -328,22 +215,14 @@ function AppRoutes() {
   // =====================================
   // 🔥 ONBOARDING
   // =====================================
-  if (
-    step ===
-    "onboarding"
-  ) {
-
+  if (step === "onboarding") {
     return (
       <>
         <Toaster position="top-center" />
 
         <Onboarding
           onFinish={() => {
-
-            updateStep(
-              "login"
-            );
-
+            updateStep("login");
           }}
         />
       </>
@@ -353,21 +232,14 @@ function AppRoutes() {
   // =====================================
   // 🔥 LOGIN
   // =====================================
-  if (
-    step === "login"
-  ) {
-
+  if (step === "login") {
     return (
       <>
         <Toaster position="top-center" />
 
         <Login
           onLogin={() => {
-
-            updateStep(
-              "otp"
-            );
-
+            updateStep("otp");
           }}
         />
       </>
@@ -377,28 +249,16 @@ function AppRoutes() {
   // =====================================
   // 🔥 OTP
   // =====================================
-  if (
-    step === "otp"
-  ) {
-
+  if (step === "otp") {
     return (
       <>
         <Toaster position="top-center" />
 
         <OTP
-          onVerify={(
-            nextStep
-          ) => {
+          onVerify={(nextStep) => {
+            if (!nextStep) return;
 
-            if (
-              !nextStep
-            )
-              return;
-
-            updateStep(
-              nextStep
-            );
-
+            updateStep(nextStep);
           }}
         />
       </>
@@ -408,22 +268,14 @@ function AppRoutes() {
   // =====================================
   // 🔥 PROFILE SETUP
   // =====================================
-  if (
-    step ===
-    "profile"
-  ) {
-
+  if (step === "profile") {
     return (
       <>
         <Toaster position="top-center" />
 
         <ProfileSetup
           onComplete={() => {
-
-            updateStep(
-              "app"
-            );
-
+            updateStep("app");
           }}
         />
       </>
@@ -438,206 +290,106 @@ function AppRoutes() {
       <Toaster position="top-center" />
 
       <ProtectedRoute>
-
         {/* 🔥 GLOBAL NAVBAR */}
         <Navbar />
 
         <Routes>
-
           {/* ================= CHAT ================= */}
 
-          <Route
-            path="/"
-            element={<ChatLayout />}
-          />
+          <Route path="/" element={<ChatLayout />} />
 
           {/* 🔥 CHAT WINDOW FULLSCREEN */}
-          <Route
-            path="/chat/:id"
-            element={<ChatLayout />}
-          />
+          <Route path="/chat/:id" element={<ChatLayout />} />
 
           {/* 🔥 GROUP CHAT */}
-          <Route
-            path="/group/:id"
-            element={<ChatLayout />}
-          />
+          <Route path="/group/:id" element={<ChatLayout />} />
 
-          <Route
-            path="/groups"
-            element={<ChatLayout />}
-          />
+          <Route path="/groups" element={<ChatLayout />} />
 
-          <Route
-            path="/community"
-            element={<ChatLayout />}
-          />
+          <Route path="/community" element={<ChatLayout />} />
 
-          <Route
-            path="/community/:id"
-            element={<ChatLayout />}
-          />
+          <Route path="/community/:id" element={<ChatLayout />} />
 
           {/* ================= NEW CHAT ================= */}
 
-          <Route
-            path="/new-chat"
-            element={<NewChat />}
-          />
+          <Route path="/new-chat" element={<NewChat />} />
 
-          <Route
-            path="/new-group"
-            element={<NewGroup />}
-          />
+          <Route path="/new-group" element={<NewGroup />} />
 
           {/* 🔥 GROUP INFO FULLSCREEN */}
-          <Route
-            path="/group-info/:id"
-            element={<GroupInfo />}
-          />
+          <Route path="/group-info/:id" element={<GroupInfo />} />
 
           {/* ================= USER ================= */}
 
           {/* 🔥 USER PROFILE FULLSCREEN */}
-          <Route
-            path="/user/:id"
-            element={<UserProfile />}
-          />
+          <Route path="/user/:id" element={<UserProfile />} />
 
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
+          <Route path="/profile" element={<Profile />} />
 
           {/* 🔥 MEDIA FULLSCREEN */}
-          <Route
-            path="/media/:id"
-            element={<MediaPage />}
-          />
+          <Route path="/media/:id" element={<MediaPage />} />
+
+          <Route path="/group-media/:id" element={<GroupMediaPage />} />
 
           {/* ================= SETTINGS ================= */}
 
-          <Route
-            path="/settings"
-            element={<Settings />}
-          />
+          <Route path="/settings" element={<Settings />} />
 
-          <Route
-            path="/settings/privacy"
-            element={<Privacy />}
-          />
+          <Route path="/settings/privacy" element={<Privacy />} />
 
-          <Route
-            path="/settings/security"
-            element={<Security />}
-          />
+          <Route path="/settings/security" element={<Security />} />
 
-          <Route
-            path="/settings/chats"
-            element={<ChatsSettings />}
-          />
+          <Route path="/settings/chats" element={<ChatsSettings />} />
 
-          <Route
-            path="/settings/notifications"
-            element={<Notifications />}
-          />
+          <Route path="/settings/notifications" element={<Notifications />} />
 
-          <Route
-            path="/settings/storage"
-            element={<Storage />}
-          />
+          <Route path="/settings/storage" element={<Storage />} />
 
-          <Route
-            path="/settings/two-step"
-            element={<TwoStep />}
-          />
+          <Route path="/settings/two-step" element={<TwoStep />} />
 
-          <Route
-            path="/settings/help"
-            element={<Help />}
-          />
+          <Route path="/settings/help" element={<Help />} />
 
-          <Route
-            path="/settings/change-number"
-            element={<ChangeNumber />}
-          />
+          <Route path="/settings/change-number" element={<ChangeNumber />} />
 
-          <Route
-            path="/linked-devices"
-            element={<LinkedDevices />}
-          />
+          <Route path="/linked-devices" element={<LinkedDevices />} />
 
-          <Route
-            path="/settings/theme-drawer"
-            element={<SettingsDrawer />}
-          />
+          <Route path="/settings/theme-drawer" element={<SettingsDrawer />} />
 
           {/* ================= STATUS ================= */}
 
           {/* 🔥 STATUS FULLSCREEN */}
-          <Route
-            path="/status"
-            element={<StatusLayout />}
-          />
+          <Route path="/status" element={<StatusLayout />} />
 
           {/* ================= CALL ================= */}
 
           {/* 🔥 CALL FULLSCREEN */}
-          <Route
-            path="/call"
-            element={<CallLayout />}
-          />
+          <Route path="/call" element={<CallLayout />} />
 
           {/* ================= INVALID ================= */}
 
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to="/"
-                replace
-              />
-            }
-          />
-
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-
       </ProtectedRoute>
     </>
   );
 }
 
 function App() {
-
   return (
     <AuthProvider>
-
       <ChatProvider>
-
         <GroupProvider>
-
           <StatusProvider>
-
             <ThemeProvider>
-
               <SettingsProvider>
-
                 <BrowserRouter>
-
                   <AppRoutes />
-
                 </BrowserRouter>
-
               </SettingsProvider>
-
             </ThemeProvider>
-
           </StatusProvider>
-
         </GroupProvider>
-
       </ChatProvider>
-
     </AuthProvider>
   );
 }
