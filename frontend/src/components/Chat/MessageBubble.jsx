@@ -19,11 +19,8 @@ const MessageBubble = ({
   // 🔥 STATES
   // ===============================
   const [showActions, setShowActions] = useState(false);
-
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-
   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
-
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
 
   // ===============================
@@ -40,8 +37,11 @@ const MessageBubble = ({
     const handleOutside = (e) => {
       if (!e.target.closest(`.message-wrapper-${msg.id}`)) {
         setShowActions(false);
+
         setShowReactionPicker(false);
+
         setShowDeleteMenu(false);
+
         setActiveMessageMenu(null);
       }
     };
@@ -75,6 +75,8 @@ const MessageBubble = ({
 
   const onlyEmoji = isOnlyEmoji();
 
+  const emojiCount = (msg.content || "").trim().length;
+
   // ===============================
   // 🔥 TYPES
   // ===============================
@@ -101,23 +103,19 @@ const MessageBubble = ({
   // ===============================
   const formattedTime = msg.createdAt
     ? new Date(msg.createdAt).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "";
 
   return (
     <div
       className={`
-        w-full
-        flex
-
-        ${isMe ? "justify-end" : "justify-start"}
-
-        ${showActions ? "mb-[70px]" : "mb-[6px]"}
-
-        message-wrapper-${msg.id}
-      `}
+    w-full flex
+    ${isMe ? "justify-end" : "justify-start"}
+    ${showActions ? "mb-[70px]" : "mb-[6px]"}
+    message-wrapper-${msg.id}
+  `}
       onClick={(e) => {
         e.stopPropagation();
 
@@ -135,65 +133,32 @@ const MessageBubble = ({
         <img
           src={msg.senderAvatar || "/default-avatar.png"}
           alt={msg.senderName}
-          className="
-            w-9
-            h-9
-
-            rounded-full
-
-            object-cover
-
-            shrink-0
-
-            mr-2
-            mt-4
-          "
+          className="w-9 h-9 rounded-full object-cover shrink-0 mr-2 mt-4"
         />
       )}
 
       {/* =============================== */}
       {/* 🔥 MESSAGE BODY */}
       {/* =============================== */}
-      <div className="relative w-fit min-w-[220px] sm:min-w-[260px] max-w-[85%] md:max-w-[70%] lg:max-w-[58%]">
-
+      <div
+        className={
+          onlyEmoji
+            ? "relative w-fit"
+            : "relative w-fit min-w-[220px] sm:min-w-[260px] max-w-[85%] md:max-w-[70%] lg:max-w-[58%]"
+        }
+      >
         {/* =============================== */}
         {/* 🔥 GROUP HEADER */}
         {/* =============================== */}
         {isGroupMessage && (
-          <div
-            className="
-              flex
-              items-center
-              justify-between
-
-              px-2
-              mb-1
-            "
-          >
+          <div className="flex items-center justify-between px-2 mb-1">
             {/* 🔥 USER NAME */}
-            <span
-              className="
-                text-[12px]
-                font-semibold
-
-                text-[var(--primary)]
-              "
-            >
+            <span className="text-[12px] font-semibold text-[var(--primary)]">
               {msg.senderName}
             </span>
 
             {/* 🔥 ROLE */}
-            <span
-              className="
-                text-[10px]
-
-                uppercase
-
-                opacity-60
-
-                ml-3
-              "
-            >
+            <span className="text-[10px] uppercase opacity-60 ml-3">
               {msg.senderRole === "CREATOR"
                 ? "Creator"
                 : msg.senderRole === "ADMIN"
@@ -208,88 +173,61 @@ const MessageBubble = ({
         {/* =============================== */}
         <div
           className={`
-            relative
-            z-[1]
-            w-full
-            max-w-full
+      relative z-[1] ${onlyEmoji ? "w-fit max-w-fit" : "w-full max-w-full"} whitespace-pre-wrap break-words transition-all duration-300
 
-            whitespace-pre-wrap
-            break-words
+      ${
+        onlyEmoji
+          ? `
+            bg-transparent p-0 shadow-none
+          `
+          : ""
+      }
 
-            transition-all
-            duration-300
+      ${
+        !onlyEmoji && isTextMessage
+          ? `
+            px-[10px] pt-[7px] pb-[2px] border backdrop-blur-2xl
 
-            ${onlyEmoji
-              ? `
-                bg-transparent
-                p-0
-                shadow-none
-              `
-              : ""
-            }
-
-            ${!onlyEmoji && isTextMessage
-              ? `
-                 px-[10px]
-                 py-[5px]
-                  border
-
-                  backdrop-blur-2xl
-
-                  ${isMe
+            ${
+              isMe
                 ? `
-                        bg-[var(--primary)]
-
-                        text-black
-
-                        border-[rgba(255,255,255,0.08)]
-
-                        rounded-[18px]
-rounded-br-[5px]
-
-                        shadow-[0_10px_30px_rgba(0,0,0,0.18)]
-                      `
+                  bg-[var(--primary)] text-black border-[rgba(255,255,255,0.08)]
+                  rounded-[18px] rounded-br-[5px]
+                  shadow-[0_10px_30px_rgba(0,0,0,0.18)]
+                `
                 : `
-                        bg-[var(--card)]
-
-                        text-[var(--text)]
-
-                        border-[rgba(255,255,255,0.05)]
-
-                        rounded-[18px]
-rounded-bl-[5px]
-
-                        shadow-[0_10px_30px_rgba(0,0,0,0.22)]
-                      `
-              }
-                `
-              : ""
-            }
-
-            ${msg.type === "MEDIA_GROUP" ||
-              msg.type === "IMAGE" ||
-              msg.type === "VIDEO"
-              ? `
-                  rounded-[22px]
-                  overflow-visible
-                `
-              : ""
-            }
-
-            ${onlyEmoji
-              ? `
-                  text-[30px]
-                  leading-none
-                `
-              : `
-                  text-[14px]
-                  leading-[1.3]
+                  bg-[var(--card)] text-[var(--text)] border-[rgba(255,255,255,0.05)]
+                  rounded-[18px] rounded-bl-[5px]
+                  shadow-[0_10px_30px_rgba(0,0,0,0.22)]
                 `
             }
-          `}
+          `
+          : ""
+      }
+
+      ${
+        msg.type === "MEDIA_GROUP" ||
+        msg.type === "IMAGE" ||
+        msg.type === "VIDEO"
+          ? `
+            rounded-[22px] overflow-visible
+          `
+          : ""
+      }
+
+      ${
+        onlyEmoji
+          ? `
+            text-[42px] leading-none inline-flex flex-wrap gap-x-[2px] gap-y-[2px] w-fit max-w-[220px]
+            ${isMe ? "justify-end" : "justify-start"}
+          `
+          : `
+            text-[14px] leading-[1.3]
+          `
+      }
+    `}
           style={{
             overflowWrap: "anywhere",
-
             wordBreak: "break-word",
           }}
         >
@@ -297,15 +235,9 @@ rounded-bl-[5px]
           {/* 🔥 DELETED */}
           {/* =============================== */}
           {msg.deletedForEveryone ||
-            (msg.type === "MEDIA_GROUP" &&
-              msg.medias?.[0]?.deletedForEveryone) ? (
-            <span
-              className="
-                italic
-                opacity-60
-                text-sm
-              "
-            >
+          (msg.type === "MEDIA_GROUP" &&
+            msg.medias?.[0]?.deletedForEveryone) ? (
+            <span className="italic opacity-60 text-sm">
               🚫 This message was deleted
             </span>
           ) : (
@@ -316,103 +248,51 @@ rounded-bl-[5px]
               {replyMessage && (
                 <div
                   className={`
-                    mb-1
+              mb-1 px-[9px] py-[6px] rounded-2xl border-l-[3px]
 
-px-[9px]
-py-[6px]
-
-                    rounded-2xl
-
-                    border-l-[3px]
-
-                    ${isMe
-                      ? `
-                          bg-black/10
-                          border-black/40
-                        `
-                      : `
-                          bg-white/[0.04]
-                          border-[var(--primary)]
-                        `
-                    }
-                  `}
+              ${
+                isMe
+                  ? `
+                    bg-black/10 border-black/40
+                  `
+                  : `
+                    bg-white/[0.04] border-[var(--primary)]
+                  `
+              }
+            `}
                 >
                   {/* 🔥 REPLY USER */}
                   <p
                     className={`
-                      text-[11px]
-                      font-semibold
-
-                      mb-1
-
-                      ${isMe ? "text-black/70" : "text-[var(--primary)]"}
-                    `}
+                text-[11px] font-semibold mb-1
+                ${isMe ? "text-black/70" : "text-[var(--primary)]"}
+              `}
                   >
                     {replyMessage?.senderName || "Reply"}
                   </p>
 
                   {/* 🔥 REPLY CONTENT */}
-                  <div
-                    className="
-                      text-[12px]
-
-opacity-75
-
-leading-[1.35]
-
-break-words
-
-whitespace-nowrap
-                    "
-                  >
+                  <div className="text-[12px] opacity-75 leading-[1.35] break-words whitespace-nowrap">
                     {/* 🔥 IMAGE */}
                     {replyMessage?.type === "IMAGE" ||
-                      (replyMessage?.content?.includes("cloudinary") &&
-                        replyMessage?.content?.match(
-                          /\.(jpg|jpeg|png|webp|gif)$/i,
-                        )) ? (
-                      <div
-                        className="
-                          flex
-                          items-center
-                          gap-2
-                        "
-                      >
+                    (replyMessage?.content?.includes("cloudinary") &&
+                      replyMessage?.content?.match(
+                        /\.(jpg|jpeg|png|webp|gif)$/i,
+                      )) ? (
+                      <div className="flex items-center gap-2">
                         <img
                           src={replyMessage.content}
                           alt="reply"
-                          className="
-                            w-11
-                            h-11
-
-                            rounded-xl
-
-                            object-cover
-
-                            shrink-0
-                          "
+                          className="w-11 h-11 rounded-xl object-cover shrink-0"
                         />
 
                         <span>📷 Photo</span>
                       </div>
                     ) : replyMessage?.type === "VIDEO" ? (
-                      <div
-                        className="
-                          flex
-                          items-center
-                          gap-2
-                        "
-                      >
+                      <div className="flex items-center gap-2">
                         <video
                           src={replyMessage.content}
-                          className="
-                            w-11
-                            h-11
-
-                            rounded-xl
-
-                            object-cover
-                          "
+                          className="w-11 h-11 rounded-xl object-cover"
                         />
 
                         <span>🎥 Video</span>
@@ -455,20 +335,7 @@ whitespace-nowrap
 
                     setViewerOpen(true);
                   }}
-                  className="
-                    w-full
-
-                    max-w-[260px]
-                    md:max-w-[360px]
-
-                    max-h-[420px]
-
-                    object-cover
-
-                    rounded-[22px]
-
-                    cursor-pointer
-                  "
+                  className="w-full max-w-[260px] md:max-w-[360px] max-h-[420px] object-cover rounded-[22px] cursor-pointer"
                 />
               )}
 
@@ -480,14 +347,7 @@ whitespace-nowrap
                   src={msg.content}
                   controls
                   playsInline
-                  className="
-                    w-full
-
-                    max-w-[260px]
-                    md:max-w-[360px]
-
-                    rounded-[22px]
-                  "
+                  className="w-full max-w-[260px] md:max-w-[360px] rounded-[22px]"
                 />
               )}
 
@@ -500,64 +360,27 @@ whitespace-nowrap
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`
-                    flex
-                    items-center
-                    gap-3
+              flex items-center gap-3 px-4 py-3 rounded-[20px]
 
-                    px-4
-                    py-3
-
-                    rounded-[20px]
-
-                    ${isMe
-                      ? `
-                          bg-black/10
-                        `
-                      : `
-                          bg-[rgba(255,255,255,0.03)]
-
-                          border
-                          border-[rgba(255,255,255,0.05)]
-                        `
-                    }
-                  `}
+              ${
+                isMe
+                  ? `
+                    bg-black/10
+                  `
+                  : `
+                    bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]
+                  `
+              }
+            `}
                 >
-                  <div
-                    className="
-                      w-11
-                      h-11
-
-                      rounded-2xl
-
-                      bg-[var(--primary)]/20
-
-                      flex
-                      items-center
-                      justify-center
-                    "
-                  >
+                  <div className="w-11 h-11 rounded-2xl bg-[var(--primary)]/20 flex items-center justify-center">
                     📄
                   </div>
 
                   <div>
-                    <p
-                      className="
-                        text-[13px]
-                        font-semibold
-                      "
-                    >
-                      File
-                    </p>
+                    <p className="text-[13px] font-semibold">File</p>
 
-                    <p
-                      className="
-                        text-[11px]
-
-                        opacity-60
-                      "
-                    >
-                      Tap to open
-                    </p>
+                    <p className="text-[11px] opacity-60">Tap to open</p>
                   </div>
                 </a>
               )}
@@ -566,33 +389,40 @@ whitespace-nowrap
               {/* 🔥 TEXT */}
               {/* =============================== */}
               {msg.type === "TEXT" && (
-                <div
-                  className="relative " >
+                <div className={`${onlyEmoji ? "w-fit" : "relative"}`}>
                   {/* 🔥 MESSAGE */}
                   <span
-                    className="
-                      relative
-                      z-10
-
-                      font-[450]
-
-                      text-[15px]
-
-                     leading-[1.28]
-
-                      break-words
-                      whitespace-pre-wrap
-                    "
+                    className={`relative z-10 font-[450] break-words whitespace-pre-wrap ${
+                      onlyEmoji
+                        ? "text-[30px] leading-[1.05]"
+                        : "text-[15px] leading-[1.28]"
+                    }`}
                   >
                     {msg.content}
                   </span>
 
                   {/* 🔥 TIME */}
-
-                  <div className={` flex  ${isMe ? "justify-start" : "justify-end"} mt-[1px] `}>
+                  <div
+                    className={`flex
+                ${
+                  onlyEmoji
+                    ? isMe
+                      ? "justify-end pr-[4px]"
+                      : "justify-start pl-[4px]"
+                    : "justify-end"
+                }
+                ${onlyEmoji ? "mt-[4px]" : "mt-[2px]"}
+              `}
+                  >
                     <span
-                      className={` text-[10px] opacity-60 ${onlyEmoji ? ` dark:text-white/70 text-black/70`
-                        : isMe ? "text-black/70" : "text-white/60"} `}>
+                      className={`text-[10px] opacity-60 ${
+                        onlyEmoji
+                          ? `dark:text-white/70 text-black/70`
+                          : isMe
+                            ? "text-black/70"
+                            : "text-white/60"
+                      }`}
+                    >
                       {formattedTime}
                     </span>
                   </div>
@@ -603,14 +433,7 @@ whitespace-nowrap
               {/* 🔥 STATUS REPLY */}
               {/* =============================== */}
               {msg.type === "STATUS_REPLY" && (
-                <span
-                  className="
-                    relative
-                    z-10
-
-                    font-[450]
-                  "
-                >
+                <span className="relative z-10 font-[450]">
                   {(msg.content || "").replace("Reply to your status: ", "")}
                 </span>
               )}
@@ -619,14 +442,7 @@ whitespace-nowrap
               {/* 🔥 STATUS REACTION */}
               {/* =============================== */}
               {msg.type === "STATUS_REACTION" && (
-                <span
-                  className="
-                    relative
-                    z-10
-
-                    font-[450]
-                  "
-                >
+                <span className="relative z-10 font-[450]">
                   {(msg.content || "").replace(" reacted to your status", "")}
                 </span>
               )}
@@ -637,38 +453,18 @@ whitespace-nowrap
               {(msg.type === "IMAGE" ||
                 msg.type === "VIDEO" ||
                 msg.type === "MEDIA_GROUP") && (
-                  <div
-                    className={`
-        absolute
-        bottom-2
-
-        ${isMe
-
-                        ? "left-2"
-
-                        : "right-2"
-                      }
-
-        px-2
-        py-[2px]
-
-        rounded-full
-
-        bg-black/45
-
-        backdrop-blur-xl
-      `}
-                  >
-                    <span
-                      className="
-          text-[10px]
-          text-white
-        "
-                    >
-                      {formattedTime}
-                    </span>
-                  </div>
-                )}
+                <div
+                  className={`
+              absolute bottom-2
+              ${isMe ? "left-2" : "right-2"}
+              px-2 py-[2px] rounded-full bg-black/45 backdrop-blur-xl
+            `}
+                >
+                  <span className="text-[10px] text-white">
+                    {formattedTime}
+                  </span>
+                </div>
+              )}
             </>
           )}
 
@@ -678,42 +474,16 @@ whitespace-nowrap
           {reactions.length > 0 && (
             <div
               className={`
-                absolute
-                -bottom-3
-
-                ${isMe ? "right-2" : "left-2"}
-
-                flex
-                items-center
-                gap-1
-
-                px-2
-                h-[28px]
-
-                rounded-full
-
-                bg-[var(--card)]
-
-                border
-                border-[rgba(255,255,255,0.08)]
-
-                shadow-[0_4px_12px_rgba(0,0,0,0.25)]
-
-                text-[15px]
-
-                backdrop-blur-xl
-
-                z-20
-              `}
+          absolute -bottom-3 ${isMe ? "left-2" : "left-2"}
+          flex items-center gap-1 px-2 h-[28px]
+          rounded-full bg-[var(--card)]
+          border border-[rgba(255,255,255,0.08)]
+          shadow-[0_4px_12px_rgba(0,0,0,0.25)]
+          text-[15px] backdrop-blur-xl z-20
+        `}
             >
               {reactions.map((r, i) => (
-                <span
-                  key={i}
-                  className="
-                    relative
-                    top-[1px]
-                  "
-                >
+                <span key={i} className="relative top-[1px]">
                   {r.emoji}
                 </span>
               ))}
@@ -724,13 +494,11 @@ whitespace-nowrap
         {/* =============================== */}
         {/* 🔥 ACTIONS */}
         {/* =============================== */}
-
-        <div className={`z-50 ${` mt-2 flex justify-center`} sm:absolute sm:top-12 sm:right-2`}>
-
+        <div
+          className={`z-50 mt-2 flex justify-center sm:absolute sm:top-12 sm:right-2`}
+        >
           {showActions && (
-
             <div className="w-full sm:w-auto">
-
               <MessageActions
                 msg={msg}
                 isMe={isMe}
@@ -738,53 +506,45 @@ whitespace-nowrap
                 setShowReactionPicker={setShowReactionPicker}
                 setShowDeleteMenu={setShowDeleteMenu}
               />
-
             </div>
-
           )}
         </div>
 
         {/* =============================== */}
-{/* 🔥 REACTION PICKER */}
-{/* =============================== */}
+        {/* 🔥 REACTION PICKER */}
+        {/* =============================== */}
+        {showReactionPicker && (
+          <div
+            className={`
+        absolute z-[9999] top-[145%]
 
-{showReactionPicker && (
-  <div
-  className={`
-    absolute
-    z-[9999]
-
-   top-[145%]
-
-    ${
-      isMe
-        ? `
-            right-0
-          `
-        : `
-            left-0
-          `
-    }
-
-    sm:left-auto
-    sm:top-12
-    sm:right-2
-  `}
->
-    <ReactionPicker
-      isMe={isMe}
-      msg={msg}
-      showReactionPicker={showReactionPicker}
-      setShowReactionPicker={(value) => {
-        setShowReactionPicker(value);
-
-        if (!value) {
-          setShowActions(false);
+        ${
+          isMe
+            ? `
+              right-0
+            `
+            : `
+              left-0
+            `
         }
-      }}
-    />
-  </div>
-)}
+
+        sm:left-auto sm:top-12 sm:right-2
+      `}
+          >
+            <ReactionPicker
+              isMe={isMe}
+              msg={msg}
+              showReactionPicker={showReactionPicker}
+              setShowReactionPicker={(value) => {
+                setShowReactionPicker(value);
+
+                if (!value) {
+                  setShowActions(false);
+                }
+              }}
+            />
+          </div>
+        )}
 
         {/* =============================== */}
         {/* 🔥 DELETE MENU */}
@@ -793,7 +553,13 @@ whitespace-nowrap
           isMe={isMe}
           msg={msg}
           showDeleteMenu={showDeleteMenu}
-          setShowDeleteMenu={(value) => { setShowDeleteMenu(value); if (!value) { setShowActions(false); } }}
+          setShowDeleteMenu={(value) => {
+            setShowDeleteMenu(value);
+
+            if (!value) {
+              setShowActions(false);
+            }
+          }}
           setShowActions={setShowActions}
         />
       </div>
