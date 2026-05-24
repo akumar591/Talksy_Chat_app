@@ -537,6 +537,16 @@ export const ChatProvider = ({ children }) => {
               msg.senderRole ||
               null,
 
+            isGroup:
+              msg.conversation?.isGroup ||
+              msg.isGroup ||
+              false,
+
+            conversationType:
+              msg.conversation?.isGroup
+                ? "GROUP"
+                : "PRIVATE",
+
             receiverId:
               msg.receiverId ||
               null,
@@ -752,6 +762,14 @@ export const ChatProvider = ({ children }) => {
 
             senderAvatar:
               currentUser?.avatar || "",
+
+            isGroup:
+              selectedChat?.isGroup || false,
+
+            conversationType:
+              selectedChat?.isGroup
+                ? "GROUP"
+                : "PRIVATE",
 
             senderRole:
               selectedChat?.isGroup
