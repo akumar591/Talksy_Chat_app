@@ -10,13 +10,20 @@ import com.talksy.backend.repository.ConversationRepository;
 import com.talksy.backend.repository.GroupMemberRepository;
 import com.talksy.backend.repository.GroupRepository;
 import com.talksy.backend.repository.UserRepository;
+import com.talksy.backend.repository.MessageRepository;
+import com.talksy.backend.repository.MessageReactionRepository;
 
+import com.talksy.backend.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +41,18 @@ public class GroupService {
     // 🔥 NEW
     private final ConversationRepository
             conversationRepository;
+
+    private final MessageRepository
+            messageRepository;
+
+    private final MessageReactionRepository
+            messageReactionRepository;
+
+    private final CloudinaryService
+            cloudinaryService;
+
+    private final ObjectMapper
+            objectMapper;
 
     // ===============================
     // 🔥 CREATE GROUP
@@ -233,9 +252,69 @@ public class GroupService {
                 request.getAbout()
         );
 
-        group.setAvatar(
-                request.getAvatar()
-        );
+        String newAvatar =
+                request.getAvatar();
+
+        String oldAvatar =
+                group.getAvatar();
+
+// ===============================
+// 🔥 DELETE OLD AVATAR
+// ===============================
+        if (
+
+                oldAvatar != null
+
+                        &&
+
+                        !oldAvatar.isBlank()
+
+                        &&
+
+                        (
+                                newAvatar == null
+
+                                        ||
+
+                                        !oldAvatar.equals(newAvatar)
+                        )
+
+        ) {
+
+            String publicId =
+
+                    cloudinaryService
+                            .extractPublicId(
+                                    oldAvatar
+                            );
+
+            cloudinaryService.deleteFile(
+
+                    publicId,
+
+                    "image"
+            );
+        }
+
+        // ===============================
+        // 🔥 UPDATE AVATAR
+        // ===============================
+        if (
+
+                newAvatar == null
+
+                        ||
+
+                        newAvatar.isBlank()
+
+        ) {
+
+            group.setAvatar(null);
+
+        } else {
+
+            group.setAvatar(newAvatar);
+        }
 
         return groupRepository.save(group);
     }
@@ -466,6 +545,7 @@ public class GroupService {
     // ===============================
     // 🔥 DELETE GROUP
     // ===============================
+    @Transactional
     public void deleteGroup(
             Long groupId,
             Long currentUserId
@@ -483,6 +563,226 @@ public class GroupService {
             );
         }
 
+        // ===============================
+        // 🔥 DELETE CONVERSATION FIRST
+        // ===============================
+        conversationRepository
+                .findByGroup(group)
+                .ifPresent(conversation -> {
+
+                    // 🔥 GET ALL MESSAGES
+                    List<Message> messages =
+                            messageRepository
+                                    .findByConversationOrderByCreatedAtAsc(
+                                            conversation
+                                    );
+
+                    // 🔥 DELETE REACTIONS + MEDIA
+                    for (Message message : messages) {
+
+                        // ===============================
+                        // 🔥 REMOVE REPLY REFERENCES
+                        // ===============================
+                        messageRepository
+                                .clearReplyReferences(
+                                        message.getId()
+                                );
+
+                        // ===============================
+                        // 🔥 DELETE REACTIONS
+                        // ===============================
+                        messageReactionRepository
+                                .deleteByMessage(message);
+
+                        // ===============================
+                        // 🔥 DELETE MEDIA
+                        // ===============================
+                        if (
+
+                                message.getType() != null
+
+                                        &&
+
+                                        List.of(
+
+                                                "IMAGE",
+
+                                                "VIDEO",
+
+                                                "FILE",
+
+                                                "MEDIA_GROUP"
+
+                                        ).contains(
+
+                                                message.getType()
+                                        )
+
+                                        &&
+
+                                        message.getContent() != null
+
+                        ) {
+
+                            try {
+
+                                String mediaUrl;
+
+                                try {
+
+                                    mediaUrl =
+                                            CryptoUtil.decrypt(
+                                                    message.getContent()
+                                            );
+
+                                } catch (Exception e) {
+
+                                    mediaUrl =
+                                            message.getContent();
+                                }
+
+                                String resourceType;
+
+                                if (
+
+                                        message.getType()
+                                                .equalsIgnoreCase("VIDEO")
+
+                                ) {
+
+                                    resourceType = "video";
+
+                                } else if (
+
+                                        message.getType()
+                                                .equalsIgnoreCase("FILE")
+
+                                ) {
+
+                                    resourceType = "raw";
+
+                                } else {
+
+                                    resourceType = "image";
+                                }
+
+                                // ===============================
+                                // 🔥 MEDIA GROUP
+                                // ===============================
+                                if (
+
+                                        message.getType()
+                                                .equalsIgnoreCase("MEDIA_GROUP")
+
+                                ) {
+
+                                    try {
+
+                                        List<String> mediaUrls =
+
+                                                objectMapper.readValue(
+
+                                                        mediaUrl,
+
+                                                        new TypeReference<List<String>>() {}
+                                                );
+
+                                        for (String url : mediaUrls) {
+
+                                            String publicId =
+
+                                                    cloudinaryService
+                                                            .extractPublicId(url);
+
+                                            cloudinaryService.deleteFile(
+
+                                                    publicId,
+
+                                                    "image"
+                                            );
+                                        }
+
+                                    } catch (Exception e) {
+
+                                        e.printStackTrace();
+                                    }
+
+                                } else {
+
+                                    String publicId =
+
+                                            cloudinaryService
+                                                    .extractPublicId(
+                                                            mediaUrl
+                                                    );
+
+                                    cloudinaryService.deleteFile(
+
+                                            publicId,
+
+                                            resourceType
+                                    );
+                                }
+
+                            } catch (Exception e) {
+
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                    // 🔥 DELETE ALL MESSAGES
+                    messageRepository
+                            .deleteByConversation(
+                                    conversation
+                            );
+
+                // 🔥 DELETE CONVERSATION
+                    conversationRepository
+                            .delete(conversation);
+                });
+
+        // ===============================
+        // 🔥 DELETE MEMBERS
+        // ===============================
+        List<GroupMember> members =
+                groupMemberRepository
+                        .findByGroup(group);
+
+        groupMemberRepository
+                .deleteAll(members);
+
+        // ===============================
+        // 🔥 DELETE GROUP AVATAR
+        // ===============================
+        if (
+
+                group.getAvatar() != null
+
+                        &&
+
+                        !group.getAvatar().isBlank()
+
+        ) {
+
+            String publicId =
+
+                    cloudinaryService
+                            .extractPublicId(
+                                    group.getAvatar()
+                            );
+
+            cloudinaryService.deleteFile(
+
+                    publicId,
+
+                    "image"
+            );
+        }
+
+        // ===============================
+        // 🔥 DELETE GROUP
+        // ===============================
         groupRepository.delete(group);
     }
 

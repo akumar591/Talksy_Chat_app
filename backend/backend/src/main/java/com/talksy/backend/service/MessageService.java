@@ -5,6 +5,7 @@ import com.talksy.backend.repository.*;
 import com.talksy.backend.util.CryptoUtil;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class MessageService {
     private final UserRepository userRepository;
     private final MessageReactionRepository messageReactionRepository;
     private final ContactRepository contactRepository;
+    private final CloudinaryService cloudinaryService;
 
     // 🔥 NEW
     private final GroupMemberRepository groupMemberRepository;
@@ -721,22 +723,35 @@ public class MessageService {
     // ===============================
     // 🔥 DELETE FOR EVERYONE
     // ===============================
+    @Transactional
     public void deleteForEveryone(
+
             Long userId,
+
             Long messageId
     ) {
 
         Message message =
-                messageRepository.findById(messageId)
+
+                messageRepository
+                        .findById(messageId)
+
                         .orElseThrow(() ->
+
                                 new RuntimeException(
                                         "Message not found"
-                                ));
+                                )
+                        );
 
+        // ===============================
+        // 🔥 ONLY SENDER
+        // ===============================
         if (
+
                 !message.getSender()
                         .getId()
                         .equals(userId)
+
         ) {
 
             throw new RuntimeException(
@@ -751,9 +766,11 @@ public class MessageService {
 
                 message.getCreatedAt()
                         .plusHours(24)
+
                         .isBefore(
                                 java.time.LocalDateTime.now()
                         )
+
         ) {
 
             throw new RuntimeException(
@@ -761,9 +778,92 @@ public class MessageService {
             );
         }
 
-        message.setDeletedForEveryone(true);
+        // ===============================
+        // 🔥 REMOVE REPLY REFERENCES
+        // ===============================
+        messageRepository
+                .clearReplyReferences(
+                        message.getId()
+                );
 
-        messageRepository.save(message);
+        // ===============================
+        // 🔥 DELETE REACTIONS
+        // ===============================
+        List<MessageReaction> reactions =
+
+                messageReactionRepository
+                        .findByMessage(message);
+
+        messageReactionRepository
+                .deleteAll(reactions);
+
+        // ===============================
+        // 🔥 DELETE MEDIA FROM CLOUDINARY
+        // ===============================
+        if (
+
+                message.getType() != null
+
+                        &&
+
+                        (
+                                message.getType()
+                                        .equalsIgnoreCase("IMAGE")
+
+                                        ||
+
+                                        message.getType()
+                                                .equalsIgnoreCase("VIDEO")
+                        )
+
+                        &&
+
+                        message.getContent() != null
+
+        ) {
+
+            try {
+
+                String mediaUrl =
+                        CryptoUtil.decrypt(
+                                message.getContent()
+                        );
+
+                String publicId =
+                        extractPublicId(
+                                mediaUrl
+                        );
+
+                String resourceType =
+
+                        message.getType()
+                                .equalsIgnoreCase("VIDEO")
+
+                                ?
+
+                                "video"
+
+                                :
+
+                                "image";
+
+                cloudinaryService.deleteFile(
+
+                        publicId,
+
+                        resourceType
+                );
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        }
+
+        // ===============================
+        // 🔥 DELETE MESSAGE
+        // ===============================
+        messageRepository.delete(message);
     }
 
     // ===============================
@@ -997,6 +1097,61 @@ public class MessageService {
             messageReactionRepository.save(
                     reaction
             );
+        }
+    }
+
+    // ===============================
+    // 🔥 EXTRACT PUBLIC ID
+    // ===============================
+    private String extractPublicId(
+            String url
+    ) {
+
+        try {
+
+            if (
+                    url == null ||
+
+                            url.isBlank()
+            ) {
+
+                return null;
+            }
+
+            String[] parts =
+                    url.split("/upload/");
+
+            if (parts.length < 2) {
+
+                return null;
+            }
+
+            String path =
+                    parts[1];
+
+            path =
+                    path.replaceAll(
+                            "^v\\d+/",
+                            ""
+                    );
+
+            int dotIndex =
+                    path.lastIndexOf(".");
+
+            if (dotIndex != -1) {
+
+                path =
+                        path.substring(
+                                0,
+                                dotIndex
+                        );
+            }
+
+            return path;
+
+        } catch (Exception e) {
+
+            return null;
         }
     }
 }

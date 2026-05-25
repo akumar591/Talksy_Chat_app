@@ -1,13 +1,6 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  useParams,
-  useNavigate,
-} from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import {
   FiArrowLeft,
@@ -24,146 +17,88 @@ import { useChat } from "../../context/ChatContext";
 import MediaViewerModal from "../../components/Chat/MediaViewerModal";
 
 const UserProfile = () => {
+  const { id } = useParams();
 
-  const { id } =
-    useParams();
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
-
-  const {
-    messages,
-  } = useChat();
+  const { messages } = useChat();
 
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [user, setUser] =
-    useState(null);
+  const [user, setUser] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [
-    showAvatarViewer,
-    setShowAvatarViewer,
-  ] = useState(false);
+  const [showAvatarViewer, setShowAvatarViewer] = useState(false);
 
   // ===============================
   // 🔥 FETCH USER
   // ===============================
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
 
-    const fetchUser =
-      async () => {
+        const res = await API.get(`/users/${id}`);
 
-        try {
+        const userData = res?.data?.data;
 
-          setLoading(true);
-
-          const res =
-            await API.get(
-              `/users/${id}`
-            );
-
-          const userData =
-            res?.data?.data;
-
-          setUser(userData);
-
-        } catch (err) {
-
-          console.log(err);
-
-        } finally {
-
-          setLoading(false);
-        }
-      };
+        setUser(userData);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     if (id) {
-
       fetchUser();
     }
-
   }, [id]);
 
+  // ===============================
+  // 🔥 GET CONVERSATION ID
+  // ===============================
+  const activeChat = JSON.parse(localStorage.getItem("activeChat"));
 
-// ===============================
-// 🔥 GET CONVERSATION ID
-// ===============================
-const activeChat =
-  JSON.parse(
-    localStorage.getItem(
-      "activeChat"
-    )
-  );
+  const conversationId = activeChat?.conversationId || activeChat?.id;
 
-const conversationId =
+  // ===============================
+  // 🔥 SHARED MEDIA STATE
+  // ===============================
+  const [sharedMedia, setSharedMedia] = useState([]);
 
-  activeChat?.conversationId
+  console.log("SHARED MEDIA API", sharedMedia);
 
-  ||
-
-  activeChat?.id;
-
-
-    // ===============================
-// 🔥 SHARED MEDIA STATE
-// ===============================
-const [
-  sharedMedia,
-  setSharedMedia,
-] = useState([]);
-
-console.log(
-  "SHARED MEDIA API",
-  sharedMedia
-);
-
-// ===============================
-// 🔥 FETCH SHARED MEDIA
-// ===============================
-useEffect(() => {
-
-  const fetchSharedMedia =
-    async () => {
-
+  // ===============================
+  // 🔥 FETCH SHARED MEDIA
+  // ===============================
+  useEffect(() => {
+    const fetchSharedMedia = async () => {
       try {
-
         if (!conversationId) {
           return;
         }
 
-        const res =
-          await API.get(
-            `/messages/media/${conversationId}`
-          );
+        const res = await API.get(`/messages/media/${conversationId}`);
 
-        setSharedMedia(
-          res?.data?.data || []
-        );
-
+        setSharedMedia(res?.data?.data || []);
       } catch (err) {
-
         console.log(err);
       }
     };
 
-  fetchSharedMedia();
-
-}, [conversationId]);
-
-  
+    fetchSharedMedia();
+  }, [conversationId]);
 
   // ===============================
   // 🔥 LOADING
   // ===============================
   if (loading) {
-
     return (
-
-      <div className="
+      <div
+        className="
         w-full
         h-screen
 
@@ -174,17 +109,19 @@ useEffect(() => {
         justify-center
 
         text-[var(--text)]
-      ">
-
-        <div className="
+      "
+      >
+        <div
+          className="
           flex
           flex-col
           items-center
 
           gap-3
-        ">
-
-          <div className="
+        "
+        >
+          <div
+            className="
             w-10
             h-10
 
@@ -195,17 +132,18 @@ useEffect(() => {
             rounded-full
 
             animate-spin
-          "></div>
+          "
+          ></div>
 
-          <p className="
+          <p
+            className="
             text-sm
             opacity-70
-          ">
+          "
+          >
             Loading profile...
           </p>
-
         </div>
-
       </div>
     );
   }
@@ -214,10 +152,9 @@ useEffect(() => {
   // 🔥 USER NOT FOUND
   // ===============================
   if (!user) {
-
     return (
-
-      <div className="
+      <div
+        className="
         w-full
         h-screen
 
@@ -228,10 +165,9 @@ useEffect(() => {
         justify-center
 
         text-[var(--text)]
-      ">
-
+      "
+      >
         User not found
-
       </div>
     );
   }
@@ -239,26 +175,30 @@ useEffect(() => {
   return (
     <>
       <div className="
-        w-full
+  w-full
 
-        bg-[var(--bg)]
-        text-[var(--text)]
+  bg-[var(--bg)]
+  text-[var(--text)]
 
-        flex
-        flex-col
-        md:items-center
+  flex
+  flex-col
+  md:items-center
 
-        mt-0
-        md:mt-16
+  mt-0
+  md:mt-16
 
-        min-h-screen
-        md:min-h-[calc(100vh-4rem)]
-      ">
+  h-screen
+  md:h-[calc(100vh-4rem)]
 
+  min-h-0
+
+  overflow-hidden
+">
         {/* =============================== */}
         {/* 🔥 HEADER */}
         {/* =============================== */}
-        <div className="
+        <div
+          className="
           sticky
           top-0
 
@@ -279,35 +219,31 @@ useEffect(() => {
 
           bg-[var(--bg)]/80
           backdrop-blur-xl
-        ">
-
+        "
+        >
           {/* 🔥 MOBILE BACK */}
           <button
-            onClick={() =>
-              navigate(-1)
-            }
+            onClick={() => navigate(-1)}
             className="
               text-xl
               md:hidden
             "
           >
-
             <FiArrowLeft />
-
           </button>
 
-          <h2 className="
+          <h2
+            className="
             font-semibold
             text-lg
-          ">
+          "
+          >
             Contact info
           </h2>
 
           {/* 🔥 DESKTOP BACK */}
           <button
-            onClick={() =>
-              navigate(-1)
-            }
+            onClick={() => navigate(-1)}
             className="
               hidden
               md:flex
@@ -324,27 +260,31 @@ useEffect(() => {
               transition
             "
           >
-
             <FiArrowLeft />
-
             Back
-
           </button>
-
         </div>
 
         {/* =============================== */}
         {/* 🔥 MAIN */}
         {/* =============================== */}
-        <div className="
-          w-full
-          md:max-w-xl
-        ">
+        <div
+          className="
+            w-full
+            md:max-w-xl
 
+            flex-1
+            min-h-0
+
+            overflow-y-auto
+            hide-scrollbar
+          "
+        >
           {/* =============================== */}
           {/* 🔥 PROFILE TOP */}
           {/* =============================== */}
-          <div className="
+          <div
+            className="
             relative
 
             flex
@@ -353,10 +293,11 @@ useEffect(() => {
 
             py-8
             px-4
-          ">
-
+          "
+          >
             {/* 🔥 BG */}
-            <div className="
+            <div
+              className="
               absolute
               top-0
 
@@ -370,26 +311,21 @@ useEffect(() => {
               rounded-full
 
               pointer-events-none
-            "></div>
+            "
+            ></div>
 
             {/* 🔥 AVATAR */}
-            <div className="
+            <div
+              className="
               relative
               z-10
-            ">
-
+            "
+            >
               {user.avatar ? (
-
                 <img
                   src={user.avatar}
                   alt={user.name}
-
-                  onClick={() =>
-                    setShowAvatarViewer(
-                      true
-                    )
-                  }
-
+                  onClick={() => setShowAvatarViewer(true)}
                   className="
                     w-32
                     h-32
@@ -414,10 +350,9 @@ useEffect(() => {
                     duration-300
                   "
                 />
-
               ) : (
-
-                <div className="
+                <div
+                  className="
                   w-32
                   h-32
 
@@ -436,17 +371,16 @@ useEffect(() => {
                   font-semibold
 
                   uppercase
-                ">
-
+                "
+                >
                   {user.name?.charAt(0)}
-
                 </div>
               )}
 
               {/* 🔥 ONLINE */}
               {user.online && (
-
-                <span className="
+                <span
+                  className="
                   absolute
                   bottom-2
                   right-2
@@ -460,13 +394,14 @@ useEffect(() => {
 
                   border-4
                   border-[var(--bg)]
-                "></span>
+                "
+                ></span>
               )}
-
             </div>
 
             {/* 🔥 NAME */}
-            <h3 className="
+            <h3
+              className="
               relative
               z-10
 
@@ -476,14 +411,14 @@ useEffect(() => {
               font-semibold
 
               mt-4
-            ">
-
+            "
+            >
               {user.name}
-
             </h3>
 
             {/* 🔥 STATUS */}
-            <p className="
+            <p
+              className="
               relative
               z-10
 
@@ -492,20 +427,17 @@ useEffect(() => {
               opacity-60
 
               mt-2
-            ">
-
-              {user.online
-                ? "online"
-                : "last seen recently"}
-
+            "
+            >
+              {user.online ? "online" : "last seen recently"}
             </p>
-
           </div>
 
           {/* =============================== */}
           {/* 🔥 ACTIONS */}
           {/* =============================== */}
-          <div className="
+          <div
+            className="
             flex
             justify-center
 
@@ -513,13 +445,11 @@ useEffect(() => {
 
             py-4
             px-4
-          ">
-
+          "
+          >
             {/* 🔥 MESSAGE */}
             <button
-              onClick={() =>
-                navigate(`/chat/${id}`)
-              }
+              onClick={() => navigate(`/chat/${id}`)}
               className="
                 flex
                 flex-col
@@ -532,8 +462,8 @@ useEffect(() => {
                 transition
               "
             >
-
-              <div className="
+              <div
+                className="
                 w-14
                 h-14
 
@@ -548,14 +478,11 @@ useEffect(() => {
                 mb-2
 
                 shadow-lg
-              ">
-
+              "
+              >
                 <FiMessageCircle className="text-2xl" />
-
               </div>
-
               Message
-
             </button>
 
             {/* 🔥 AUDIO */}
@@ -583,8 +510,8 @@ useEffect(() => {
                 transition
               "
             >
-
-              <div className="
+              <div
+                className="
                 w-14
                 h-14
 
@@ -599,14 +526,11 @@ useEffect(() => {
                 mb-2
 
                 shadow-lg
-              ">
-
+              "
+              >
                 <FiPhone className="text-2xl" />
-
               </div>
-
               Call
-
             </button>
 
             {/* 🔥 VIDEO */}
@@ -634,8 +558,8 @@ useEffect(() => {
                 transition
               "
             >
-
-              <div className="
+              <div
+                className="
                 w-14
                 h-14
 
@@ -650,31 +574,29 @@ useEffect(() => {
                 mb-2
 
                 shadow-lg
-              ">
-
+              "
+              >
                 <FiVideo className="text-2xl" />
-
               </div>
-
               Video
-
             </button>
-
           </div>
 
           {/* =============================== */}
           {/* 🔥 INFO */}
           {/* =============================== */}
-          <div className="
+          <div
+            className="
             px-4
 
             space-y-4
 
             pb-10
-          ">
-
+          "
+          >
             {/* 🔥 ABOUT */}
-            <div className="
+            <div
+              className="
               bg-[var(--card)]
 
               p-5
@@ -683,38 +605,39 @@ useEffect(() => {
 
               border
               border-[rgba(255,255,255,0.04)]
-            ">
-
-              <p className="
+            "
+            >
+              <p
+                className="
                 text-xs
 
                 opacity-60
 
                 uppercase
                 tracking-wide
-              ">
+              "
+              >
                 About
               </p>
 
-              <p className="
+              <p
+                className="
                 mt-2
 
                 break-words
 
                 leading-relaxed
-              ">
-
-                {user.bio &&
-                  user.bio.trim() !== ""
+              "
+              >
+                {user.bio && user.bio.trim() !== ""
                   ? user.bio
                   : "Hey there! I am using Talksy 🚀"}
-
               </p>
-
             </div>
 
             {/* 🔥 PHONE */}
-            <div className="
+            <div
+              className="
               bg-[var(--card)]
 
               p-5
@@ -723,32 +646,27 @@ useEffect(() => {
 
               border
               border-[rgba(255,255,255,0.04)]
-            ">
-
-              <p className="
+            "
+            >
+              <p
+                className="
                 text-xs
 
                 opacity-60
 
                 uppercase
                 tracking-wide
-              ">
+              "
+              >
                 Phone
               </p>
 
-              <p className="mt-2">
-
-                {user.phone || "Not available"}
-
-              </p>
-
+              <p className="mt-2">{user.phone || "Not available"}</p>
             </div>
 
             {/* 🔥 MEDIA */}
             <div
-              onClick={() =>
-                navigate(`/media/${id}`)
-              }
+              onClick={() => navigate(`/media/${id}`)}
               className="
                 bg-[var(--card)]
 
@@ -766,103 +684,85 @@ useEffect(() => {
                 transition
               "
             >
-
               {/* 🔥 TOP */}
-              <div className="
+              <div
+                className="
                 flex
                 items-center
                 justify-between
 
                 mb-4
-              ">
-
+              "
+              >
                 <div>
-
-                  <p className="
+                  <p
+                    className="
                     text-base
                     font-medium
-                  ">
+                  "
+                  >
                     Media, links & docs
                   </p>
 
-                  <p className="
+                  <p
+                    className="
                     text-xs
                     opacity-60
 
                     mt-1
-                  ">
+                  "
+                  >
                     Latest shared media
                   </p>
-
                 </div>
 
-                <div className="
+                <div
+                  className="
                   flex
                   items-center
                   gap-2
-                ">
-
-                  <span className="
+                "
+                >
+                  <span
+                    className="
                     text-xs
                     opacity-60
-                  ">
-
-                    {
-                      sharedMedia.length
-                    }
-
+                  "
+                  >
+                    {sharedMedia.length}
                   </span>
 
                   <FiChevronRight className="opacity-50" />
-
                 </div>
-
               </div>
 
               {/* 🔥 REAL MEDIA */}
-              {sharedMedia.length >
-                0 ? (
-
-                <div className="
+              {sharedMedia.length > 0 ? (
+                <div
+                  className="
                   flex
                   gap-3
 
                   overflow-x-auto
 
                   hide-scrollbar
-                ">
-
-                  {sharedMedia.map(
-                    (
-                      media,
-                      index
-                    ) => {
-
-                      // 🔥 VIDEO
-                      if (
-                        media.type ===
-                        "VIDEO"
-                      ) {
-
-                        return (
-
-                          <div
-                            key={
-                              media.id ||
-                              index
-                            }
-                            className="
+                "
+                >
+                  {sharedMedia.map((media, index) => {
+                    // 🔥 VIDEO
+                    if (media.type === "VIDEO") {
+                      return (
+                        <div
+                          key={media.id || index}
+                          className="
                               relative
 
                               shrink-0
                             "
-                          >
-
-                            <video
-                              src={
-                                media.content
-                              }
-                              className="
+                        >
+                          <video
+                            src={media.content}
+                            className="
                                 w-24
                                 h-24
 
@@ -873,9 +773,10 @@ useEffect(() => {
 
                                 object-cover
                               "
-                            />
+                          />
 
-                            <div className="
+                          <div
+                            className="
                               absolute
                               inset-0
 
@@ -886,29 +787,21 @@ useEffect(() => {
                               flex
                               items-center
                               justify-center
-                            ">
-
-                              <FiVideo className="text-white text-xl" />
-
-                            </div>
-
+                            "
+                          >
+                            <FiVideo className="text-white text-xl" />
                           </div>
-                        );
-                      }
+                        </div>
+                      );
+                    }
 
-                      // 🔥 IMAGE
-                      return (
-
-                        <img
-                          key={
-                            media.id ||
-                            index
-                          }
-                          src={
-                            media.content
-                          }
-                          alt=""
-                          className="
+                    // 🔥 IMAGE
+                    return (
+                      <img
+                        key={media.id || index}
+                        src={media.content}
+                        alt=""
+                        className="
                             w-24
                             h-24
 
@@ -921,17 +814,13 @@ useEffect(() => {
 
                             shrink-0
                           "
-                        />
-
-                      );
-                    }
-                  )}
-
+                      />
+                    );
+                  })}
                 </div>
-
               ) : (
-
-                <div className="
+                <div
+                  className="
                   h-24
 
                   rounded-2xl
@@ -944,40 +833,28 @@ useEffect(() => {
 
                   text-sm
                   opacity-60
-                ">
-
+                "
+                >
                   No shared media yet
-
                 </div>
-
               )}
-
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       {/* 🔥 PROFILE IMAGE VIEWER */}
       <MediaViewerModal
         open={showAvatarViewer}
-
-        onClose={() =>
-          setShowAvatarViewer(false)
-        }
-
+        onClose={() => setShowAvatarViewer(false)}
         medias={[
           {
             type: "IMAGE",
             content: user.avatar,
           },
         ]}
-
         selectedIndex={0}
-
-        setSelectedIndex={() => { }}
+        setSelectedIndex={() => {}}
       />
     </>
   );

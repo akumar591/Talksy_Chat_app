@@ -1,8 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { motion } from "framer-motion";
 
@@ -16,540 +12,307 @@ import { useAuth } from "../../context/AuthContext";
 
 import ImageCropper from "../Common/ImageCropper";
 
-function ProfileSetup({
-  onComplete,
-}) {
-
+function ProfileSetup({ onComplete }) {
   // =====================================
   // 🔥 STATES
   // =====================================
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
 
-  const [bio, setBio] =
-    useState("");
+  const [bio, setBio] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [email, setEmail] = useState("");
 
-  const [preview, setPreview] =
-    useState(null);
+  const [preview, setPreview] = useState(null);
 
-  const [
-    uploadedUrl,
-    setUploadedUrl,
-  ] = useState("");
+  const [uploadedUrl, setUploadedUrl] = useState("");
 
-  const [errors, setErrors] =
-    useState({});
+  const [errors, setErrors] = useState({});
 
-  const [
-    emailVerified,
-    setEmailVerified,
-  ] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
-  const [
-    sendingOTP,
-    setSendingOTP,
-  ] = useState(false);
+  const [sendingOTP, setSendingOTP] = useState(false);
 
-  const [otp, setOtp] =
-    useState("");
+  const [otp, setOtp] = useState("");
 
-  const [
-    generatedOTP,
-    setGeneratedOTP,
-  ] = useState(false);
+  const [generatedOTP, setGeneratedOTP] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   // =====================================
   // 🔥 CROPPER STATES
   // =====================================
-  const [showCropper, setShowCropper] =
-    useState(false);
+  const [showCropper, setShowCropper] = useState(false);
 
-  const [crop, setCrop] =
-    useState({
-      x: 0,
-      y: 0,
-    });
+  const [crop, setCrop] = useState({
+    x: 0,
+    y: 0,
+  });
 
-  const [zoom, setZoom] =
-    useState(1);
+  const [zoom, setZoom] = useState(1);
 
   // =====================================
   // 🔥 AUTH
   // =====================================
-  const {
-    user,
-    phone,
-    fetchUser,
-  } = useAuth();
+  const { user, phone, fetchUser } = useAuth();
 
   // =====================================
   // 🔥 STRICT MODE SAFETY
   // =====================================
-  const initializedRef =
-    useRef(false);
+  const initializedRef = useRef(false);
 
   // =====================================
   // 🔥 ACCESS SAFETY
   // =====================================
   useEffect(() => {
+    if (initializedRef.current) {
+      return;
+    }
 
-    if (
-      initializedRef.current
-    ) {
+    initializedRef.current = true;
+
+    const savedPhone = sessionStorage.getItem("phone");
+
+    if (!phone && !savedPhone && !user) {
+      localStorage.setItem("step", "login");
+
+      onComplete?.("login");
 
       return;
     }
 
-    initializedRef.current =
-      true;
-
-    const savedPhone =
-      sessionStorage.getItem(
-        "phone"
-      );
-
-    if (
-      !phone &&
-      !savedPhone &&
-      !user
-    ) {
-
-      localStorage.setItem(
-        "step",
-        "login"
-      );
-
-      onComplete?.(
-        "login"
-      );
-
-      return;
-    }
-
-    localStorage.setItem(
-      "step",
-      "profile"
-    );
-
-  }, [
-    phone,
-    user,
-    onComplete,
-  ]);
+    localStorage.setItem("step", "profile");
+  }, [phone, user, onComplete]);
 
   // =====================================
   // 🔥 PREFILL USER
   // =====================================
   useEffect(() => {
+    if (!user) return;
 
-    if (!user)
-      return;
+    setName(user.name || "");
 
-    setName(
-      user.name || ""
-    );
+    setBio(user.bio || "");
 
-    setBio(
-      user.bio || ""
-    );
+    setEmail(user.email || "");
 
-    setEmail(
-      user.email || ""
-    );
-
-    setPreview(
-      user.avatar || null
-    );
+    setPreview(user.avatar || null);
 
     if (user.email) {
-
-      setEmailVerified(
-        true
-      );
+      setEmailVerified(true);
     }
-
   }, [user]);
 
   // =====================================
   // 🔥 CLEANUP
   // =====================================
   useEffect(() => {
-
     return () => {
-
-      if (
-        preview &&
-        preview.startsWith(
-          "blob:"
-        )
-      ) {
-
-        URL.revokeObjectURL(
-          preview
-        );
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
       }
     };
-
   }, [preview]);
 
   // =====================================
   // 🔥 VALIDATION
   // =====================================
   const validate = () => {
-
     let newErrors = {};
 
-    if (
-      name.trim()
-        .length < 3
-    ) {
-
-      newErrors.name =
-        "Enter valid name";
+    if (name.trim().length < 3) {
+      newErrors.name = "Enter valid name";
     }
 
-    if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        email
-      )
-    ) {
-
-      newErrors.email =
-        "Enter valid email";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Enter valid email";
     }
 
-    if (
-      bio.trim()
-        .length < 3
-    ) {
-
-      newErrors.bio =
-        "Write something about you";
+    if (bio.trim().length < 3) {
+      newErrors.bio = "Write something about you";
     }
 
-    setErrors(
-      newErrors
-    );
+    setErrors(newErrors);
 
-    return (
-      Object.keys(
-        newErrors
-      ).length === 0
-    );
+    return Object.keys(newErrors).length === 0;
   };
 
   // =====================================
   // 🔥 IMAGE SELECT
   // =====================================
-  const handleImage =
-    async (e) => {
+  const handleImage = async (e) => {
+    const file = e.target.files[0];
 
-      const file =
-        e.target.files[0];
+    if (!file) return;
 
-      if (!file)
-        return;
+    // 🔥 TYPE
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image allowed ❌");
 
-      // 🔥 TYPE
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
+      return;
+    }
 
-        toast.error(
-          "Only image allowed ❌"
-        );
+    // 🔥 SIZE
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
 
-        return;
-      }
+      return;
+    }
 
-      // 🔥 SIZE
-      if (
-        file.size >
-        5 *
-        1024 *
-        1024
-      ) {
+    // 🔥 CLEAN OLD
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
 
-        toast.error(
-          "Image must be under 5MB"
-        );
+    // 🔥 PREVIEW
+    const localPreview = URL.createObjectURL(file);
 
-        return;
-      }
+    setPreview(localPreview);
 
-      // 🔥 CLEAN OLD
-      if (
-        preview &&
-        preview.startsWith(
-          "blob:"
-        )
-      ) {
+    // 🔥 RESET OLD URL
+    setUploadedUrl("");
 
-        URL.revokeObjectURL(
-          preview
-        );
-      }
-
-      // 🔥 PREVIEW
-      const localPreview =
-        URL.createObjectURL(
-          file
-        );
-
-      setPreview(
-        localPreview
-      );
-
-      // 🔥 RESET OLD URL
-      setUploadedUrl("");
-
-      // 🔥 OPEN CROPPER
-      setShowCropper(
-        true
-      );
-    };
+    // 🔥 OPEN CROPPER
+    setShowCropper(true);
+  };
 
   // =====================================
   // 🔥 SEND OTP
   // =====================================
-  const sendOTP =
-    async () => {
+  const sendOTP = async () => {
+    if (sendingOTP || loading) return;
 
-      if (
-        sendingOTP ||
-        loading
-      )
-        return;
+    setErrors({});
 
-      setErrors({});
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrors({
+        email: "Enter valid email",
+      });
 
-      if (
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-          email
-        )
-      ) {
+      return;
+    }
 
-        setErrors({
-          email:
-            "Enter valid email",
-        });
+    try {
+      setSendingOTP(true);
 
-        return;
-      }
+      await API.post("/auth/send-email-otp", {
+        email,
+      });
 
-      try {
+      setGeneratedOTP(true);
 
-        setSendingOTP(
-          true
-        );
+      setOtp("");
 
-        await API.post(
-          "/auth/send-email-otp",
-          {
-            email,
-          }
-        );
+      toast.success("OTP sent to email ✅");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to send OTP";
 
-        setGeneratedOTP(
-          true
-        );
+      setErrors({
+        email: msg,
+      });
 
-        setOtp("");
-
-        toast.success(
-          "OTP sent to email ✅"
-        );
-
-      } catch (err) {
-
-        const msg =
-          err.response
-            ?.data
-            ?.message ||
-          "Failed to send OTP";
-
-        setErrors({
-          email: msg,
-        });
-
-        toast.error(msg);
-
-      } finally {
-
-        setSendingOTP(
-          false
-        );
-      }
-    };
+      toast.error(msg);
+    } finally {
+      setSendingOTP(false);
+    }
+  };
 
   // =====================================
   // 🔥 VERIFY OTP
   // =====================================
-  const verifyOTP =
-    async () => {
+  const verifyOTP = async () => {
+    if (otp.trim().length < 6) {
+      toast.error("Enter valid OTP");
 
-      if (
-        otp.trim()
-          .length < 6
-      ) {
+      return;
+    }
 
-        toast.error(
-          "Enter valid OTP"
-        );
+    try {
+      await API.post("/auth/verify-email", {
+        phone,
+        email,
+        otp,
+      });
 
-        return;
-      }
+      setEmailVerified(true);
 
-      try {
+      setOtp("");
 
-        await API.post(
-          "/auth/verify-email",
-          {
-            phone,
-            email,
-            otp,
-          }
-        );
+      toast.success("Email verified ✅");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Verification failed";
 
-        setEmailVerified(
-          true
-        );
+      setOtp("");
 
-        setOtp("");
+      setErrors({
+        email: msg,
+      });
 
-        toast.success(
-          "Email verified ✅"
-        );
-
-      } catch (err) {
-
-        const msg =
-          err.response
-            ?.data
-            ?.message ||
-          "Verification failed";
-
-        setOtp("");
-
-        setErrors({
-          email: msg,
-        });
-
-        toast.error(msg);
-      }
-    };
+      toast.error(msg);
+    }
+  };
 
   // =====================================
   // 🔥 SUBMIT
   // =====================================
-  const handleSubmit =
-    async () => {
+  const handleSubmit = async () => {
+    if (loading || !validate()) {
+      return;
+    }
 
-      if (
-        loading ||
-        !validate()
-      ) {
+    if (!emailVerified) {
+      setErrors({
+        email: "Please verify your email",
+      });
 
-        return;
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // 🔥 ONLY STRING URL
+      const avatarUrl = typeof uploadedUrl === "string" ? uploadedUrl : "";
+
+      console.log("FINAL AVATAR:", avatarUrl);
+
+      const payload = {
+        phone,
+        name: name.trim(),
+        bio: bio.trim(),
+        email: email.trim(),
+      };
+
+      if (avatarUrl?.trim()) {
+        payload.avatar = avatarUrl;
       }
 
-      if (
-        !emailVerified
-      ) {
+      const res = await API.post("/auth/register", payload);
 
-        setErrors({
-          email:
-            "Please verify your email",
-        });
+      // 🔥 FRESH USER ONLY
+      await fetchUser();
 
-        return;
-      }
+      localStorage.setItem("step", "app");
 
-      try {
+      toast.success("Profile updated 🎉");
 
-        setLoading(true);
+      onComplete?.();
+    } catch (err) {
+      console.log(err);
 
-        // 🔥 ONLY STRING URL
-        const avatarUrl =
-          typeof uploadedUrl ===
-            "string"
+      const msg = err.response?.data?.message || "Something went wrong";
 
-            ? uploadedUrl
+      toast.error(msg);
 
-            : "";
-
-        console.log(
-          "FINAL AVATAR:",
-          avatarUrl
-        );
-
-        const res =
-          await API.post(
-            "/auth/register",
-            {
-              phone,
-
-              name:
-                name.trim(),
-
-              bio:
-                bio.trim(),
-
-              email:
-                email.trim(),
-
-              avatar:
-                avatarUrl,
-            }
-          );
-
-        // 🔥 FRESH USER ONLY
-        await fetchUser();
-
-        localStorage.setItem(
-          "step",
-          "app"
-        );
-
-        toast.success(
-          "Profile updated 🎉"
-        );
-
-        onComplete?.();
-
-      } catch (err) {
-
-        console.log(err);
-
-        const msg =
-          err.response
-            ?.data
-            ?.message ||
-          "Something went wrong";
-
-        toast.error(msg);
-
-        setErrors({
-          email: msg,
-        });
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
+      setErrors({
+        email: msg,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#0b0f1a] text-white relative overflow-hidden">
-
       {/* BG */}
       <div className="absolute w-[250px] h-[250px] sm:w-[450px] sm:h-[450px] bg-[#00c896] blur-[120px] opacity-10 top-[-80px] left-[-80px]" />
 
@@ -560,7 +323,6 @@ function ProfileSetup({
 
       {/* CONTENT */}
       <div className="relative z-10 w-full flex flex-col items-center">
-
         {/* LOGO */}
         <motion.img
           src={assets.Logo}
@@ -577,333 +339,182 @@ function ProfileSetup({
 
         {/* IMAGE */}
         <div className="mb-8">
-
           <label className="cursor-pointer">
-
             <div className="w-24 h-24 rounded-full overflow-hidden border border-white/20 flex items-center justify-center hover:scale-105 transition">
-
               {preview ? (
-
-                <img
-                  src={preview}
-                  className="w-full h-full object-cover"
-                />
-
+                <img src={preview} className="w-full h-full object-cover" />
               ) : (
-
-                <span className="text-white/40 text-sm">
-                  Image
-                </span>
+                <span className="text-white/40 text-sm">Image</span>
               )}
-
             </div>
 
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={
-                handleImage
-              }
-            />
-
+            <input type="file" hidden accept="image/*" onChange={handleImage} />
           </label>
-
         </div>
 
         {/* 🔥 CROPPER */}
-        {showCropper &&
-          preview && (
-
-            <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
-
-              <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
-
-                <ImageCropper
-                  image={preview}
-                  crop={crop}
-                  setCrop={setCrop}
-                  zoom={zoom}
-                  setZoom={setZoom}
-                  aspect={1 / 1}
-                  cropShape="round"
-                  showGrid={false}
-
-                  onCropDone={
-                    async (
-                      croppedFile
-                    ) => {
-
-                      try {
-
-                        if (
-                          !croppedFile
-                        ) {
-
-                          return;
-                        }
-
-                        setLoading(
-                          true
-                        );
-
-                        // 🔥 NEW PREVIEW
-                        const croppedPreview =
-                          URL.createObjectURL(
-                            croppedFile
-                          );
-
-                        setPreview(
-                          croppedPreview
-                        );
-
-                        // 🔥 CLOSE
-                        setShowCropper(
-                          false
-                        );
-
-                        // 🔥 UPLOAD
-                        const formData =
-                          new FormData();
-
-                        formData.append(
-                          "file",
-                          croppedFile
-                        );
-
-                        formData.append(
-                          "type",
-                          "profile"
-                        );
-
-                        const uploadRes =
-                          await API.post(
-                            "/file/upload",
-                            formData,
-                            {
-                              headers: {
-                                "Content-Type":
-                                  "multipart/form-data",
-                              },
-                            }
-                          );
-
-                        console.log(
-                          "UPLOAD RESPONSE:",
-                          uploadRes.data
-                        );
-
-                        // 🔥 ONLY STRING
-                        const imageUrl =
-                          uploadRes.data
-                            ?.data?.url || "";
-
-                        console.log(
-                          "IMAGE URL:",
-                          imageUrl
-                        );
-
-                        if (
-                          !imageUrl
-                        ) {
-
-                          toast.error(
-                            "Image upload failed"
-                          );
-
-                          return;
-                        }
-
-                        // 🔥 SAVE URL
-                        setUploadedUrl(
-                          imageUrl
-                        );
-
-                        toast.success(
-                          "Image uploaded ✅"
-                        );
-
-                      } catch (err) {
-
-                        console.log(
-                          err
-                        );
-
-                        const msg =
-                          err.response
-                            ?.data
-                            ?.message ||
-
-                          "Image upload failed";
-
-                        toast.error(
-                          msg
-                        );
-
-                      } finally {
-
-                        setLoading(
-                          false
-                        );
-                      }
+        {showCropper && preview && (
+          <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
+            <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+              <ImageCropper
+                image={preview}
+                crop={crop}
+                setCrop={setCrop}
+                zoom={zoom}
+                setZoom={setZoom}
+                aspect={1 / 1}
+                cropShape="round"
+                showGrid={false}
+                onCropDone={async (croppedFile) => {
+                  try {
+                    if (!croppedFile) {
+                      return;
                     }
+
+                    setLoading(true);
+
+                    // 🔥 NEW PREVIEW
+                    const croppedPreview = URL.createObjectURL(croppedFile);
+
+                    setPreview(croppedPreview);
+
+                    // 🔥 CLOSE
+                    setShowCropper(false);
+
+                    // 🔥 UPLOAD
+                    const formData = new FormData();
+
+                    formData.append("file", croppedFile);
+
+                    formData.append("type", "profile");
+
+                    const uploadRes = await API.post("/file/upload", formData, {
+                      headers: {
+                        "Content-Type": "multipart/form-data",
+                      },
+                    });
+
+                    console.log("UPLOAD RESPONSE:", uploadRes.data);
+
+                    // 🔥 ONLY STRING
+                    const imageUrl = uploadRes.data?.data?.url || "";
+
+                    console.log("IMAGE URL:", imageUrl);
+
+                    if (!imageUrl) {
+                      toast.error("Image upload failed");
+
+                      return;
+                    }
+
+                    // 🔥 SAVE URL
+                    setUploadedUrl(imageUrl);
+
+                    toast.success("Image uploaded ✅");
+                  } catch (err) {
+                    console.log(err);
+
+                    const msg =
+                      err.response?.data?.message || "Image upload failed";
+
+                    toast.error(msg);
+                  } finally {
+                    setLoading(false);
                   }
-                />
-
-              </div>
-
+                }}
+              />
             </div>
-          )}
+          </div>
+        )}
 
         {/* FORM */}
         <div className="w-full max-w-sm flex flex-col gap-6">
-
           {/* NAME */}
           <div>
-
             <input
               placeholder="Your Name *"
               value={name}
-              onChange={(e) =>
-                setName(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setName(e.target.value)}
               className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#00c896] w-full"
             />
 
             {errors.name && (
-              <p className="text-red-400 text-xs mt-1">
-                {
-                  errors.name
-                }
-              </p>
+              <p className="text-red-400 text-xs mt-1">{errors.name}</p>
             )}
-
           </div>
 
           {/* EMAIL */}
           <div>
-
             <div className="flex gap-2 items-center">
-
               <input
                 placeholder="Email *"
                 value={email}
                 onChange={(e) => {
+                  setEmail(e.target.value);
 
-                  setEmail(
-                    e.target
-                      .value
-                  );
+                  setEmailVerified(false);
 
-                  setEmailVerified(
-                    false
-                  );
-
-                  setGeneratedOTP(
-                    false
-                  );
+                  setGeneratedOTP(false);
                 }}
                 className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#0ea5e9] w-full"
               />
 
               <button
-                onClick={
-                  sendOTP
-                }
-                disabled={
-                  sendingOTP
-                }
+                onClick={sendOTP}
+                disabled={sendingOTP}
                 className="text-xs px-2 py-1 border border-white/20 rounded hover:bg-white/10 cursor-pointer disabled:opacity-50"
               >
-
-                {sendingOTP
-                  ? "Sending..."
-                  : "Verify"}
-
+                {sendingOTP ? "Sending..." : "Verify"}
               </button>
-
             </div>
 
             {errors.email && (
-              <p className="text-red-400 text-xs mt-1">
-                {
-                  errors.email
-                }
-              </p>
+              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
             )}
 
             {/* OTP */}
-            {generatedOTP &&
-              !emailVerified && (
+            {generatedOTP && !emailVerified && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  placeholder="OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="bg-transparent border-b border-white/20 pb-1 outline-none"
+                />
 
-                <div className="flex gap-2 mt-2">
-
-                  <input
-                    placeholder="OTP"
-                    value={otp}
-                    onChange={(e) =>
-                      setOtp(
-                        e.target
-                          .value
-                      )
-                    }
-                    className="bg-transparent border-b border-white/20 pb-1 outline-none"
-                  />
-
-                  <button
-                    onClick={
-                      verifyOTP
-                    }
-                    className="text-xs border px-2 rounded cursor-pointer"
-                  >
-                    OK
-                  </button>
-
-                </div>
-              )}
+                <button
+                  onClick={verifyOTP}
+                  className="text-xs border px-2 rounded cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
+            )}
 
             {/* VERIFIED */}
             {emailVerified && (
-              <p className="text-green-400 text-xs mt-1">
-                Verified ✅
-              </p>
+              <p className="text-green-400 text-xs mt-1">Verified ✅</p>
             )}
-
           </div>
 
           {/* BIO */}
           <div>
-
             <input
               placeholder="About *"
               value={bio}
-              onChange={(e) =>
-                setBio(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setBio(e.target.value)}
               className="bg-transparent border-b border-white/20 pb-2 outline-none focus:border-[#0ea5e9] w-full"
             />
 
             {errors.bio && (
-              <p className="text-red-400 text-xs mt-1">
-                {
-                  errors.bio
-                }
-              </p>
+              <p className="text-red-400 text-xs mt-1">{errors.bio}</p>
             )}
-
           </div>
-
         </div>
 
         {/* SUBMIT */}
         <motion.button
-          onClick={
-            handleSubmit
-          }
+          onClick={handleSubmit}
           disabled={loading}
           whileTap={{
             scale: 0.95,
@@ -911,20 +522,15 @@ function ProfileSetup({
           whileHover={{
             scale: 1.02,
           }}
-          className={`mt-10 w-full max-w-sm py-3 rounded-full font-medium cursor-pointer transition ${loading
+          className={`mt-10 w-full max-w-sm py-3 rounded-full font-medium cursor-pointer transition ${
+            loading
               ? "bg-white/10 text-white/30"
               : "bg-gradient-to-r from-[#00c896] to-[#0ea5e9] text-black"
-            }`}
+          }`}
         >
-
-          {loading
-            ? "Saving..."
-            : "Continue"}
-
+          {loading ? "Saving..." : "Continue"}
         </motion.button>
-
       </div>
-
     </div>
   );
 }

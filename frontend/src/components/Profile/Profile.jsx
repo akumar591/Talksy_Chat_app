@@ -506,7 +506,7 @@ const Profile = () => {
       </div>
 
       {/* MAIN */}
-      <div className="w-full md:max-w-2xl px-3 overflow-y-auto hide-scrollbar space-y-4">
+      <div className="w-full md:max-w-2xl flex-1 min-h-0 px-3 overflow-y-auto hide-scrollbar space-y-4 pb-6">
 
         {/* PROFILE CARD */}
         <div className="glass rounded-2xl p-6 flex flex-col items-center shadow-xl">

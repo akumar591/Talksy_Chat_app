@@ -1,172 +1,104 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  FiSearch,
-  FiUserPlus,
-  FiX,
-} from "react-icons/fi";
+import { FiSearch, FiUserPlus, FiX } from "react-icons/fi";
 
 import API from "../../api/axios";
 
 import { useGroup } from "../../context/GroupContext";
 
-const AddMembersModal = ({
-  group,
-  onClose,
-}) => {
-
-  const {
-    addMember,
-    fetchGroupById,
-  } = useGroup();
+const AddMembersModal = ({ group, onClose, setGroup }) => {
+  const { addMember, fetchGroupById } = useGroup();
 
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [contacts, setContacts] =
-    useState([]);
+  const [contacts, setContacts] = useState([]);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [addingId, setAddingId] =
-    useState(null);
+  const [addingId, setAddingId] = useState(null);
 
   // ===============================
   // 🔥 FETCH CONTACTS
   // ===============================
   useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        setLoading(true);
 
-    const fetchContacts =
-      async () => {
+        const res = await API.get("/contacts");
 
-        try {
+        const mappedContacts = (res?.data?.data || []).map((item) => ({
+          id: item.contactUser?.id ?? item.userId ?? item.contactId ?? item.id,
 
-          setLoading(true);
+          name: item.contactUser?.name || item.name || "Unknown",
 
-          const res =
-            await API.get(
-              "/contacts"
-            );
+          avatar: item.contactUser?.avatar || item.avatar || "",
 
-          setContacts(
-            res?.data?.data || []
-          );
+          bio: item.contactUser?.bio || item.bio || "",
 
-        } catch (err) {
+          phone: item.contactUser?.phone || item.phone || "",
+        }));
 
-          console.log(err);
-
-        } finally {
-
-          setLoading(false);
-        }
-      };
+        setContacts(mappedContacts);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     fetchContacts();
-
   }, []);
 
   // ===============================
   // 🔥 EXISTING MEMBER IDS
   // ===============================
-  const existingMemberIds =
-    useMemo(() => {
-
-      return (
-        group?.members?.map(
-          (m) =>
-            String(m.id)
-        ) || []
-      );
-
-    }, [group]);
+  const existingMemberIds = group?.members?.map((member) =>
+    String(member.userId || member.id),
+  );
 
   // ===============================
   // 🔥 FILTER CONTACTS
   // ===============================
-  const filteredContacts =
-    useMemo(() => {
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((contact) => {
+      // 🔥 REMOVE EXISTING MEMBERS
+      if (existingMemberIds.includes(String(contact.id))) {
+        return false;
+      }
 
-      return contacts.filter(
-        (contact) => {
+      // 🔥 SEARCH
+      if (search.trim()) {
+        return contact.name?.toLowerCase().includes(search.toLowerCase());
+      }
 
-          // 🔥 REMOVE EXISTING MEMBERS
-          if (
-            existingMemberIds.includes(
-              String(contact.id)
-            )
-          ) {
-
-            return false;
-          }
-
-          // 🔥 SEARCH
-          if (
-            search.trim()
-          ) {
-
-            return (
-              contact.name
-                ?.toLowerCase()
-                .includes(
-                  search.toLowerCase()
-                )
-            );
-          }
-
-          return true;
-        }
-      );
-
-    }, [
-      contacts,
-      existingMemberIds,
-      search,
-    ]);
+      return true;
+    });
+  }, [contacts, existingMemberIds, search]);
 
   // ===============================
   // 🔥 ADD MEMBER
   // ===============================
-  const handleAddMember =
-    async (memberId) => {
+  const handleAddMember = async (memberId) => {
+    try {
+      setAddingId(memberId);
 
-      try {
+      const res = await addMember(group.id, memberId);
 
-        setAddingId(memberId);
-
-        const res =
-          await addMember(
-            group.id,
-            memberId
-          );
-
-        if (
-          res?.success
-        ) {
-
-          // 🔥 REFRESH GROUP
-          await fetchGroupById(
-            group.id
-          );
-        }
-
-      } catch (err) {
-
-        console.log(err);
-
-      } finally {
-
-        setAddingId(null);
+      if (res?.success) {
+        // 🔥 REFRESH GROUP
+        const updated = await fetchGroupById(group.id);
+        setGroup(updated);
       }
-    };
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   return (
     <div
@@ -186,7 +118,6 @@ const AddMembersModal = ({
         px-4
       "
     >
-
       {/* MODAL */}
       <div
         className="
@@ -210,7 +141,6 @@ const AddMembersModal = ({
           flex-col
         "
       >
-
         {/* HEADER */}
         <div
           className="
@@ -225,9 +155,7 @@ const AddMembersModal = ({
             border-[var(--border)]
           "
         >
-
           <div>
-
             <h2
               className="
                 text-lg
@@ -244,17 +172,13 @@ const AddMembersModal = ({
                 mt-1
               "
             >
-              Add people to
-              {" "}
-              {group?.name}
+              Add people to {group?.name}
             </p>
           </div>
 
           {/* CLOSE */}
           <button
-
             onClick={onClose}
-
             className="
               w-10
               h-10
@@ -282,7 +206,6 @@ const AddMembersModal = ({
             border-[var(--border)]
           "
         >
-
           <div
             className="
               flex
@@ -297,7 +220,6 @@ const AddMembersModal = ({
               bg-[var(--card)]
             "
           >
-
             <FiSearch
               className="
                 opacity-60
@@ -308,11 +230,7 @@ const AddMembersModal = ({
               type="text"
               placeholder="Search contacts..."
               value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSearch(e.target.value)}
               className="
                 flex-1
 
@@ -333,10 +251,8 @@ const AddMembersModal = ({
             overflow-y-auto
           "
         >
-
           {/* LOADING */}
           {loading && (
-
             <div
               className="
                 py-16
@@ -346,7 +262,6 @@ const AddMembersModal = ({
                 justify-center
               "
             >
-
               <div
                 className="
                   w-10
@@ -365,9 +280,7 @@ const AddMembersModal = ({
           )}
 
           {/* EMPTY */}
-          {!loading &&
-            filteredContacts.length === 0 && (
-
+          {!loading && filteredContacts.length === 0 && (
             <div
               className="
                 py-16
@@ -384,14 +297,10 @@ const AddMembersModal = ({
 
           {/* CONTACTS */}
           {!loading &&
-
-            filteredContacts.map(
-              (contact) => (
-
-                <div
-                  key={contact.id}
-
-                  className="
+            filteredContacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="
                     flex
                     items-center
                     justify-between
@@ -408,49 +317,37 @@ const AddMembersModal = ({
 
                     transition
                   "
-                >
-
-                  {/* LEFT */}
-                  <div
-                    className="
+              >
+                {/* LEFT */}
+                <div
+                  className="
                       flex
                       items-center
                       gap-3
 
                       min-w-0
                     "
-                  >
-
-                    {/* AVATAR */}
-                    {contact.avatar ? (
-
-                      <img
-                        src={
-
-                          contact.avatar?.startsWith(
-                            "http"
-                          )
-
-                            ? contact.avatar
-
-                            : `http://localhost:8080${contact.avatar}`
-                        }
-
-                        alt={contact.name}
-
-                        className="
+                >
+                  {/* AVATAR */}
+                  {contact.avatar ? (
+                    <img
+                      src={
+                        contact.avatar?.startsWith("http")
+                          ? contact.avatar
+                          : `http://localhost:8080${contact.avatar}`
+                      }
+                      alt={contact.name}
+                      className="
                           w-12
                           h-12
 
                           rounded-full
                           object-cover
                         "
-                      />
-
-                    ) : (
-
-                      <div
-                        className="
+                    />
+                  ) : (
+                    <div
+                      className="
                           w-12
                           h-12
 
@@ -465,52 +362,39 @@ const AddMembersModal = ({
                           font-semibold
                           uppercase
                         "
-                      >
-                        {contact.name?.charAt(0)}
-                      </div>
-                    )}
+                    >
+                      {contact.name?.charAt(0)}
+                    </div>
+                  )}
 
-                    {/* INFO */}
-                    <div className="min-w-0">
-
-                      <h4
-                        className="
+                  {/* INFO */}
+                  <div className="min-w-0">
+                    <h4
+                      className="
                           font-medium
                           truncate
                         "
-                      >
-                        {contact.name}
-                      </h4>
+                    >
+                      {contact.name}
+                    </h4>
 
-                      <p
-                        className="
+                    <p
+                      className="
                           text-xs
                           opacity-60
                           truncate
                         "
-                      >
-                        {contact.bio ||
-                          contact.phone ||
-                          "No bio"}
-                      </p>
-                    </div>
+                    >
+                      {contact.bio || contact.phone || "No bio"}
+                    </p>
                   </div>
+                </div>
 
-                  {/* ADD BUTTON */}
-                  <button
-
-                    onClick={() =>
-                      handleAddMember(
-                        contact.id
-                      )
-                    }
-
-                    disabled={
-                      addingId ===
-                      contact.id
-                    }
-
-                    className="
+                {/* ADD BUTTON */}
+                <button
+                  onClick={() => handleAddMember(contact.userId || contact.id)}
+                  disabled={addingId === contact.id}
+                  className="
                       shrink-0
 
                       flex
@@ -534,13 +418,10 @@ const AddMembersModal = ({
 
                       disabled:opacity-50
                     "
-                  >
-
-                    {addingId ===
-                    contact.id ? (
-
-                      <div
-                        className="
+                >
+                  {addingId === contact.id ? (
+                    <div
+                      className="
                           w-4
                           h-4
 
@@ -552,20 +433,16 @@ const AddMembersModal = ({
 
                           animate-spin
                         "
-                      />
-
-                    ) : (
-
-                      <>
-                        <FiUserPlus />
-
-                        Add
-                      </>
-                    )}
-                  </button>
-                </div>
-              )
-            )}
+                    />
+                  ) : (
+                    <>
+                      <FiUserPlus />
+                      Add
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
         </div>
       </div>
     </div>

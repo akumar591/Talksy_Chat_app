@@ -13,6 +13,7 @@ import com.talksy.backend.repository.TokenBlacklistRepository;
 import com.talksy.backend.security.JwtService;
 import com.talksy.backend.service.OtpService;
 import com.talksy.backend.service.UserService;
+import com.talksy.backend.service.CloudinaryService;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +37,8 @@ public class AuthController {
     private final OtpService otpService;
 
     private final UserService userService;
+
+    private final CloudinaryService cloudinaryService;
 
     private final JwtService jwtService;
 
@@ -443,15 +446,80 @@ public class AuthController {
             );
         }
 
-        if (
-                req.getAvatar() != null
-                        &&
-                        !req.getAvatar().isBlank()
-        ) {
+        // ===============================
+        // 🔥 AVATAR UPDATE
+        // ===============================
+        if (req.getAvatar() != null) {
 
-            user.setAvatar(
-                    req.getAvatar().trim()
-            );
+            String newAvatar = req.getAvatar().trim();
+
+            String oldAvatar = user.getAvatar();
+
+            // 🔥 SKIP IF SAME
+            if (
+                    oldAvatar != null
+                            &&
+                            oldAvatar.equals(newAvatar)
+            ) {
+
+                // do nothing
+            }
+
+            // ===============================
+            // 🔥 REMOVE AVATAR EXPLICITLY
+            // ===============================
+            else if (
+                    "__REMOVE__".equalsIgnoreCase(newAvatar)
+            ) {
+
+                // 🔥 DELETE OLD CLOUDINARY IMAGE
+                if (
+                        oldAvatar != null
+                                &&
+                                !oldAvatar.isBlank()
+                ) {
+
+                    String publicId =
+                            cloudinaryService.extractPublicId(
+                                    oldAvatar
+                            );
+
+                    cloudinaryService.deleteFile(
+                            publicId,
+                            "image"
+                    );
+                }
+
+                user.setAvatar(null);
+            }
+
+            // ===============================
+            // 🔥 NEW AVATAR UPLOADED
+            // ===============================
+            else if (!newAvatar.isBlank()) {
+
+                // 🔥 DELETE OLD IMAGE
+                if (
+                        oldAvatar != null
+                                &&
+                                !oldAvatar.isBlank()
+                                &&
+                                !oldAvatar.equals(newAvatar)
+                ) {
+
+                    String publicId =
+                            cloudinaryService.extractPublicId(
+                                    oldAvatar
+                            );
+
+                    cloudinaryService.deleteFile(
+                            publicId,
+                            "image"
+                    );
+                }
+
+                user.setAvatar(newAvatar);
+            }
         }
 
         User updated =

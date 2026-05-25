@@ -9,490 +9,297 @@ import {
 
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import { useChat } from "./ChatContext";
 
 // ===============================
 // 🔥 CONTEXT
 // ===============================
-const GroupContext =
-  createContext();
+const GroupContext = createContext();
 
 // ===============================
 // 🔥 PROVIDER
 // ===============================
-export const GroupProvider = ({
-  children,
-}) => {
-
+export const GroupProvider = ({ children }) => {
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [groups, setGroups] =
-    useState([]);
 
-  const [
-    selectedGroup,
-    setSelectedGroup,
-  ] = useState(null);
+  const { resetChatState } = useChat();
 
-  const [
-    groupDetails,
-    setGroupDetails,
-  ] = useState(null);
+  const [groups, setGroups] = useState([]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
-  const [groupMedia, setGroupMedia] =
-  useState([]);
+  const [groupDetails, setGroupDetails] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+
+  const [groupMedia, setGroupMedia] = useState([]);
 
   // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
-  const getCurrentUserId =
-    () => {
+  const getCurrentUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
 
-      try {
-
-        const user =
-          JSON.parse(
-            localStorage.getItem(
-              "user"
-            )
-          );
-
-        return Number(
-          user?.id
-        );
-
-      } catch {
-
-        return null;
-      }
-    };
+      return Number(user?.id);
+    } catch {
+      return null;
+    }
+  };
 
   // ===============================
   // 🔥 MAP GROUP
   // ===============================
-  const mapGroup =
-    useCallback((group) => {
+  const mapGroup = useCallback((group) => {
+    const currentUserId = getCurrentUserId();
 
-      const currentUserId =
-        getCurrentUserId();
+    const members = group.members || [];
 
-      const members =
-        group.members || [];
+    const currentMember = members.find(
+      (m) => Number(m.userId) === Number(currentUserId),
+    );
 
-      const currentMember =
-        members.find(
-          (m) =>
+    const isCreator = Number(group.createdById) === Number(currentUserId);
 
-            Number(m.userId) ===
-            Number(currentUserId)
-        );
+    return {
+      // ===============================
+      // 🔥 BASIC
+      // ===============================
+      id: group.id,
 
-      const isCreator =
+      name: group.name || "Group",
 
-        Number(
-          group.createdById
-        ) ===
-        Number(
-          currentUserId
-        );
+      about: group.about || "",
 
-      return {
+      avatar: group.avatar || "",
 
-        // ===============================
-        // 🔥 BASIC
-        // ===============================
-        id: group.id,
+      // ===============================
+      // 🔥 CHAT
+      // ===============================
+      isGroup: true,
 
-        name:
-          group.name ||
-          "Group",
+      conversationId: group.conversationId || null,
 
-        about:
-          group.about ||
-          "",
+      // ===============================
+      // 🔥 CREATOR
+      // ===============================
+      createdById: group.createdById,
 
-        avatar:
-          group.avatar ||
-          "",
+      createdByName: group.createdByName || "",
 
-        // ===============================
-        // 🔥 CHAT
-        // ===============================
-        isGroup: true,
+      createdByAvatar: group.createdByAvatar || "",
 
-        conversationId:
-          group.conversationId ||
-          null,
+      // ===============================
+      // 🔥 MEMBERS
+      // ===============================
+      members,
 
-        // ===============================
-        // 🔥 CREATOR
-        // ===============================
-        createdById:
-          group.createdById,
+      memberCount: group.memberCount || members.length || 0,
 
-        createdByName:
-          group.createdByName ||
-          "",
+      // ===============================
+      // 🔥 CURRENT USER ROLE
+      // ===============================
+      isCreator,
 
-        createdByAvatar:
-          group.createdByAvatar ||
-          "",
+      isAdmin: isCreator || currentMember?.role === "ADMIN",
 
-        // ===============================
-        // 🔥 MEMBERS
-        // ===============================
-        members,
+      myRole: isCreator ? "CREATOR" : currentMember?.role || "MEMBER",
 
-        memberCount:
-          group.memberCount ||
+      // ===============================
+      // 🔥 UI
+      // ===============================
+      online: false,
 
-          members.length ||
+      unreadCount: group.unreadCount || 0,
 
-          0,
+      lastMessage: group.lastMessage || "",
 
-        // ===============================
-        // 🔥 CURRENT USER ROLE
-        // ===============================
-        isCreator,
+      lastMessageTime: group.lastMessageTime || null,
 
-        isAdmin:
-
-          isCreator ||
-
-          currentMember?.role ===
-          "ADMIN",
-
-        myRole:
-
-          isCreator
-            ? "CREATOR"
-            : currentMember
-              ?.role ||
-            "MEMBER",
-
-        // ===============================
-        // 🔥 UI
-        // ===============================
-        online: false,
-
-        unreadCount:
-          group.unreadCount ||
-          0,
-
-        lastMessage:
-          group.lastMessage ||
-          "",
-
-        lastMessageTime:
-          group.lastMessageTime ||
-          null,
-
-        // ===============================
-        // 🔥 TIME
-        // ===============================
-        createdAt:
-          group.createdAt ||
-          null,
-      };
-
-    }, []);
+      // ===============================
+      // 🔥 TIME
+      // ===============================
+      createdAt: group.createdAt || null,
+    };
+  }, []);
 
   // ===============================
   // 🔥 SORT GROUPS
   // ===============================
-  const sortGroups =
-    useCallback((list) => {
+  const sortGroups = useCallback((list) => {
+    return [...list].sort((a, b) => {
+      if (!a.lastMessageTime) return 1;
 
-      return [...list].sort(
-        (a, b) => {
+      if (!b.lastMessageTime) return -1;
 
-          if (
-            !a.lastMessageTime
-          )
-            return 1;
-
-          if (
-            !b.lastMessageTime
-          )
-            return -1;
-
-          return (
-            new Date(
-              b.lastMessageTime
-            ) -
-            new Date(
-              a.lastMessageTime
-            )
-          );
-        }
-      );
-
-    }, []);
+      return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
+    });
+  }, []);
 
   // ===============================
   // 🔥 FETCH GROUPS
   // ===============================
-  const fetchGroups =
-    async () => {
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
 
-      try {
+      const res = await API.get("/groups/my");
 
-        setLoading(true);
+      const data = res?.data?.data || [];
 
-        const res =
-          await API.get(
-            "/groups/my"
-          );
+      const mapped = data.map(mapGroup);
 
-        const data =
+      console.log("GROUPS API DATA", data);
 
-          res?.data?.data ||
+      console.log("MAPPED GROUPS", mapped);
 
-          [];
+      setGroups(sortGroups(mapped));
+    } catch (error) {
+      console.log(error);
 
-        const mapped =
-          data.map(
-            mapGroup
-          );
-
-        console.log(
-          "GROUPS API DATA",
-          data
-        );
-
-        console.log(
-          "MAPPED GROUPS",
-          mapped
-        );
-
-        setGroups(
-          sortGroups(mapped)
-        );
-
-      } catch (error) {
-
-        console.log(error);
-
-        // 🔥 IGNORE AUTH ERRORS
-        if (
-
-          error?.response?.status ===
-          401 ||
-
-          error?.response?.status ===
-          400
-        ) {
-
-          return;
-        }
-
-        toast.error(
-          "Failed to load groups"
-        );
-
-      } finally {
-
-        setLoading(false);
+      // 🔥 IGNORE AUTH ERRORS
+      if (error?.response?.status === 401 || error?.response?.status === 400) {
+        return;
       }
 
-    };
+      toast.error("Failed to load groups");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===============================
   // 🔥 FETCH SINGLE GROUP
   // ===============================
-  const fetchGroupById =
-    useCallback(async (
-      groupId
-    ) => {
-
+  const fetchGroupById = useCallback(
+    async (groupId) => {
       try {
-
         setLoading(true);
 
-        const res =
-          await API.get(
-            `/groups/${groupId}`
-          );
+        const res = await API.get(`/groups/${groupId}`);
 
-        const data =
-
-          res?.data?.data;
+        const data = res?.data?.data;
 
         if (!data) {
-
           return null;
         }
 
-        const mapped =
-          mapGroup(data);
+        const mapped = mapGroup(data);
 
-        console.log(
-          "GROUP DETAILS API",
-          data
-        );
+        console.log("GROUP DETAILS API", data);
 
-        console.log(
-          "MAPPED GROUP DETAILS",
-          mapped
-        );
+        console.log("MAPPED GROUP DETAILS", mapped);
 
-        setGroupDetails(
-          mapped
-        );
+        setGroupDetails(mapped);
 
         // 🔥 UPDATE ACTIVE GROUP
-        setSelectedGroup(
-          (prev) =>
-
-            prev?.id === groupId
-
-              ? {
+        setSelectedGroup((prev) =>
+          prev?.id === groupId
+            ? {
                 ...prev,
                 ...mapped,
               }
-
-              : prev
+            : prev,
         );
 
         // 🔥 UPDATE SIDEBAR
         setGroups((prev) =>
-
           prev.map((g) =>
-
             g.id === groupId
               ? {
-                ...g,
-                ...mapped,
-              }
-              : g
-          )
+                  ...g,
+                  ...mapped,
+                }
+              : g,
+          ),
         );
 
         return mapped;
-
       } catch (error) {
-
         console.log(error);
 
-        toast.error(
-          "Failed to fetch group"
-        );
+        if (
+          error?.response?.status !== 400 &&
+          error?.response?.status !== 404
+        ) {
+          toast.error("Failed to fetch group");
+        }
 
         return null;
-
       } finally {
-
         setLoading(false);
       }
-
-    }, [mapGroup]);
+    },
+    [mapGroup],
+  );
 
   // ===============================
   // 🔥 CREATE GROUP
   // ===============================
-  const createGroup =
-    useCallback(async (
-      payload
-    ) => {
-
+  const createGroup = useCallback(
+    async (payload) => {
       try {
-
-        const res =
-          await API.post(
-            "/groups/create",
-            payload
-          );
+        const res = await API.post("/groups/create", payload);
 
         await fetchGroups();
 
         return {
           success: true,
 
-          data:
-            res?.data?.data,
+          data: res?.data?.data,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to create group",
+          message: error?.response?.data?.message || "Failed to create group",
         };
       }
-
-    }, [fetchGroups]);
+    },
+    [fetchGroups],
+  );
 
   // ===============================
   // 🔥 UPDATE GROUP
   // ===============================
-  const updateGroup =
-    useCallback(async (
-
-      groupId,
-      payload
-
-    ) => {
-
+  const updateGroup = useCallback(
+    async (groupId, payload) => {
       try {
+        const res = await API.put(
+          `/groups/${groupId}`,
 
-        const res =
-          await API.put(
+          payload,
+        );
 
-            `/groups/${groupId}`,
-
-            payload
-          );
-
-        const updated =
-
-          mapGroup(
-            res?.data?.data
-          );
+        const updated = mapGroup(res?.data?.data);
 
         // 🔥 UPDATE GROUPS
         setGroups((prev) =>
-
           prev.map((g) =>
-
             g.id === groupId
               ? {
-                ...g,
-                ...updated,
-              }
-              : g
-          )
+                  ...g,
+                  ...updated,
+                }
+              : g,
+          ),
         );
 
         // 🔥 UPDATE DETAILS
-        setGroupDetails(
-          updated
-        );
+        setGroupDetails(updated);
 
         // 🔥 UPDATE SELECTED
-        setSelectedGroup(
-          (prev) =>
-
-            prev?.id ===
-              groupId
-
-              ? {
+        setSelectedGroup((prev) =>
+          prev?.id === groupId
+            ? {
                 ...prev,
                 ...updated,
               }
-
-              : prev
+            : prev,
         );
 
         return {
@@ -500,439 +307,270 @@ export const GroupProvider = ({
 
           data: updated,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to update group",
+          message: error?.response?.data?.message || "Failed to update group",
         };
       }
-
-    }, [mapGroup]);
+    },
+    [mapGroup],
+  );
 
   // ===============================
   // 🔥 ADD MEMBER
   // ===============================
-  const addMember =
-    useCallback(async (
-
-      groupId,
-      memberId
-
-    ) => {
-
+  const addMember = useCallback(
+    async (groupId, memberId) => {
       try {
+        await API.post(`/groups/${groupId}/add-member/${memberId}`);
 
-        await API.post(
-
-          `/groups/${groupId}/add-member/${memberId}`
-        );
-
-        const updated =
-          await fetchGroupById(
-            groupId
-          );
+        const updated = await fetchGroupById(groupId);
 
         return {
           success: true,
           data: updated,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to add member",
+          message: error?.response?.data?.message || "Failed to add member",
         };
       }
-
-    }, [fetchGroupById]);
+    },
+    [fetchGroupById],
+  );
 
   // ===============================
   // 🔥 REMOVE MEMBER
   // ===============================
-  const removeMember =
-    useCallback(async (
-
-      groupId,
-      memberId
-
-    ) => {
-
+  const removeMember = useCallback(
+    async (groupId, memberId) => {
       try {
+        await API.delete(`/groups/${groupId}/remove-member/${memberId}`);
 
-        await API.delete(
-
-          `/groups/${groupId}/remove-member/${memberId}`
-        );
-
-        const updated =
-          await fetchGroupById(
-            groupId
-          );
+        const updated = await fetchGroupById(groupId);
 
         return {
           success: true,
           data: updated,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to remove member",
+          message: error?.response?.data?.message || "Failed to remove member",
         };
       }
-
-    }, [fetchGroupById]);
+    },
+    [fetchGroupById],
+  );
 
   // ===============================
   // 🔥 MAKE ADMIN
   // ===============================
-  const makeAdmin =
-    useCallback(async (
-
-      groupId,
-      memberId
-
-    ) => {
-
+  const makeAdmin = useCallback(
+    async (groupId, memberId) => {
       try {
+        await API.put(`/groups/${groupId}/make-admin/${memberId}`);
 
-        await API.put(
-
-          `/groups/${groupId}/make-admin/${memberId}`
-        );
-
-        const updated =
-          await fetchGroupById(
-            groupId
-          );
+        const updated = await fetchGroupById(groupId);
 
         return {
           success: true,
           data: updated,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to make admin",
+          message: error?.response?.data?.message || "Failed to make admin",
         };
       }
-
-    }, [fetchGroupById]);
+    },
+    [fetchGroupById],
+  );
 
   // ===============================
   // 🔥 REMOVE ADMIN
   // ===============================
-  const removeAdmin =
-    useCallback(async (
-
-      groupId,
-      memberId
-
-    ) => {
-
+  const removeAdmin = useCallback(
+    async (groupId, memberId) => {
       try {
+        await API.put(`/groups/${groupId}/remove-admin/${memberId}`);
 
-        await API.put(
-
-          `/groups/${groupId}/remove-admin/${memberId}`
-        );
-
-        const updated =
-          await fetchGroupById(
-            groupId
-          );
+        const updated = await fetchGroupById(groupId);
 
         return {
           success: true,
           data: updated,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to remove admin",
+          message: error?.response?.data?.message || "Failed to remove admin",
         };
       }
-
-    }, [fetchGroupById]);
+    },
+    [fetchGroupById],
+  );
 
   // ===============================
   // 🔥 LEAVE GROUP
   // ===============================
-  const leaveGroup =
-    useCallback(async (
-      groupId
-    ) => {
-
+  const leaveGroup = useCallback(
+    async (groupId) => {
       try {
-
-        await API.delete(
-          `/groups/${groupId}/leave`
-        );
+        await API.delete(`/groups/${groupId}/leave`);
 
         // 🔥 REMOVE GROUP
-        setGroups((prev) =>
-
-          prev.filter(
-            (g) =>
-              g.id !== groupId
-          )
-        );
+        setGroups((prev) => prev.filter((g) => g.id !== groupId));
 
         // 🔥 RESET ACTIVE
-        if (
-          selectedGroup?.id ===
-          groupId
-        ) {
+        if (selectedGroup?.id === groupId) {
+          // 🔥 RESET GROUP
+          setSelectedGroup(null);
 
-          setSelectedGroup(
-            null
-          );
+          setGroupDetails(null);
 
-          setGroupDetails(
-            null
-          );
+          // 🔥 RESET CHAT
+          resetChatState();
 
-          localStorage.removeItem(
-            "activeChat"
-          );
+          // 🔥 REMOVE STORAGE
+          localStorage.removeItem("activeChat");
         }
 
-        toast.success(
-          "Left group"
-        );
+        toast.success("Left group");
 
         return {
           success: true,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to leave group",
+          message: error?.response?.data?.message || "Failed to leave group",
         };
       }
-
-    }, [selectedGroup]);
+    },
+    [selectedGroup],
+  );
 
   // ===============================
   // 🔥 DELETE GROUP
   // ===============================
-  const deleteGroup =
-    useCallback(async (
-      groupId
-    ) => {
-
+  const deleteGroup = useCallback(
+    async (groupId) => {
       try {
+        console.log("DELETE USER", JSON.parse(localStorage.getItem("user")));
 
-        await API.delete(
-          `/groups/${groupId}`
-        );
+        console.log("DELETE GROUP ID", groupId);
+
+        await API.delete(`/groups/${groupId}`);
 
         // 🔥 REMOVE GROUP
-        setGroups((prev) =>
-
-          prev.filter(
-            (g) =>
-              g.id !== groupId
-          )
-        );
+        setGroups((prev) => prev.filter((g) => g.id !== groupId));
 
         // 🔥 RESET ACTIVE
-        if (
-          selectedGroup?.id ===
-          groupId
-        ) {
+        if (selectedGroup?.id === groupId) {
+          setSelectedGroup(null);
 
-          setSelectedGroup(
-            null
-          );
+          setGroupDetails(null);
 
-          setGroupDetails(
-            null
-          );
-
-          localStorage.removeItem(
-            "activeChat"
-          );
+          localStorage.removeItem("activeChat");
         }
 
-        toast.success(
-          "Group deleted"
-        );
+        toast.success("Group deleted");
 
         return {
           success: true,
         };
-
       } catch (error) {
-
         console.log(error);
 
         return {
           success: false,
 
-          message:
-
-            error?.response
-              ?.data
-              ?.message ||
-
-            "Failed to delete group",
+          message: error?.response?.data?.message || "Failed to delete group",
         };
       }
+    },
+    [selectedGroup],
+  );
 
-    }, [selectedGroup]);
-
-
-// ===============================
-// 🔥 FETCH GROUP MEDIA
-// ===============================
-const fetchGroupMedia =
-  useCallback(async (
-    conversationId
-  ) => {
-
+  // ===============================
+  // 🔥 FETCH GROUP MEDIA
+  // ===============================
+  const fetchGroupMedia = useCallback(async (conversationId) => {
     try {
-
       if (!conversationId) {
-
         setGroupMedia([]);
 
         return [];
       }
 
-      const res =
-        await API.get(
-          `/messages/media/${conversationId}`
-        );
+      const res = await API.get(`/messages/media/${conversationId}`);
 
-      const media =
-
-        res?.data?.data ||
-
-        [];
+      const media = res?.data?.data || [];
 
       setGroupMedia(media);
 
       return media;
-
     } catch (error) {
-
       console.log(error);
 
       setGroupMedia([]);
 
       return [];
     }
-
   }, []);
 
   // ===============================
   // 🔥 REFRESH GROUP
   // ===============================
-  const refreshGroup =
-    useCallback(async (
-      groupId
-    ) => {
+  const refreshGroup = useCallback(
+    async (groupId) => {
+      if (!groupId) return null;
 
-      if (!groupId)
-        return null;
-
-      return await fetchGroupById(
-        groupId
-      );
-
-    }, [fetchGroupById]);
+      return await fetchGroupById(groupId);
+    },
+    [fetchGroupById],
+  );
 
   // ===============================
   // 🔥 AUTO FETCH
   // ===============================
   useEffect(() => {
-
     // 🔥 CHECK USER
-    const user =
-      localStorage.getItem(
-        "user"
-      );
+    const user = localStorage.getItem("user");
 
     // ❌ NO USER
     if (!user) {
-
       return;
     }
 
     fetchGroups();
-
   }, []);
 
   // ===============================
   // 🔥 VALUE
   // ===============================
   const value = {
-
     // 🔥 STATES
     groups,
     setGroups,
@@ -969,24 +607,13 @@ const fetchGroupMedia =
   };
 
   return (
-
-    <GroupContext.Provider
-      value={value}
-    >
-
-      {children}
-
-    </GroupContext.Provider>
+    <GroupContext.Provider value={value}>{children}</GroupContext.Provider>
   );
 };
 
 // ===============================
 // 🔥 HOOK
 // ===============================
-export const useGroup =
-  () => {
-
-    return useContext(
-      GroupContext
-    );
-  };
+export const useGroup = () => {
+  return useContext(GroupContext);
+};

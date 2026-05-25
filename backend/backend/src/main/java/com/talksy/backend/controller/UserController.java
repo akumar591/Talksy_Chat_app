@@ -7,6 +7,8 @@ import com.talksy.backend.payload.ApiResponse;
 import com.talksy.backend.repository.ContactRepository;
 import com.talksy.backend.repository.UserRepository;
 
+import com.talksy.backend.service.CloudinaryService;
+
 import com.talksy.backend.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,9 @@ public class UserController {
 
     private final ContactRepository
             contactRepository;
+
+    private final CloudinaryService
+            cloudinaryService;
 
     // ===============================
     // 🔐 GET CURRENT USER
@@ -180,12 +185,58 @@ public class UserController {
 
             ) {
 
-                user.setAvatar(
+                String newAvatar =
 
                         updatedData
                                 .getAvatar()
-                                .trim()
-                );
+                                .trim();
+
+                String oldAvatar =
+                        user.getAvatar();
+
+                // ===============================
+                // 🔥 DELETE OLD AVATAR
+                // ===============================
+                if (
+
+                        oldAvatar != null
+
+                                &&
+
+                                !oldAvatar.isBlank()
+
+                                &&
+
+                                !oldAvatar.equals(newAvatar)
+
+                ) {
+
+                    String publicId =
+
+                            cloudinaryService
+                                    .extractPublicId(
+                                            oldAvatar
+                                    );
+
+                    cloudinaryService.deleteFile(
+
+                            publicId,
+
+                            "image"
+                    );
+                }
+
+                // ===============================
+                // 🔥 REMOVE AVATAR
+                // ===============================
+                if (newAvatar.isBlank()) {
+
+                    user.setAvatar(null);
+
+                } else {
+
+                    user.setAvatar(newAvatar);
+                }
             }
 
             // ===============================

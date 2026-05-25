@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
+import com.talksy.backend.service.CloudinaryService;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -44,6 +45,8 @@ public class StatusService {
     private final MessageRepository
             messageRepository;
 
+    private final CloudinaryService
+            cloudinaryService;
     // ===============================
     // 🔥 CREATE STATUS
     // ===============================
@@ -294,9 +297,51 @@ public class StatusService {
             );
         }
 
+        // ===============================
+// 🔥 DELETE STATUS MEDIA
+// ===============================
+        if (
+                status.getMediaUrl() != null
+        ) {
+
+            String publicId =
+
+                    cloudinaryService
+                            .extractPublicId(
+                                    status.getMediaUrl()
+                            );
+
+            String resourceType =
+
+                    status.getType()
+                            .name()
+                            .equalsIgnoreCase("VIDEO")
+
+                            ?
+
+                            "video"
+
+                            :
+
+                            "image";
+
+            cloudinaryService.deleteFile(
+
+                    publicId,
+
+                    resourceType
+            );
+        }
+
+        // ===============================
+        // 🔥 DELETE STATUS VIEWS
+        // ===============================
         statusViewRepository
                 .deleteByStatus(status);
 
+        // ===============================
+        // 🔥 DELETE STATUS
+        // ===============================
         statusRepository
                 .delete(status);
     }

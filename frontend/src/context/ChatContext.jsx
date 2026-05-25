@@ -14,7 +14,6 @@ import toast from "react-hot-toast";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-
   // ===============================
   // 🔥 STATES
   // ===============================
@@ -44,67 +43,34 @@ export const ChatProvider = ({ children }) => {
   // ===============================
 
   const mediaMessages = useMemo(() => {
-
     return messages.filter(
-      (msg) =>
-        (
-          msg.type === "IMAGE" ||
-          msg.type === "VIDEO"
-        ) &&
-        msg.content
+      (msg) => (msg.type === "IMAGE" || msg.type === "VIDEO") && msg.content,
     );
-
   }, [messages]);
 
   const imageMessages = useMemo(() => {
-
-    return messages.filter(
-      (msg) =>
-        msg.type === "IMAGE" &&
-        msg.content
-    );
-
+    return messages.filter((msg) => msg.type === "IMAGE" && msg.content);
   }, [messages]);
 
   const videoMessages = useMemo(() => {
-
-    return messages.filter(
-      (msg) =>
-        msg.type === "VIDEO" &&
-        msg.content
-    );
-
+    return messages.filter((msg) => msg.type === "VIDEO" && msg.content);
   }, [messages]);
 
   const fileMessages = useMemo(() => {
-
-    return messages.filter(
-      (msg) =>
-        msg.type === "FILE" &&
-        msg.content
-    );
-
+    return messages.filter((msg) => msg.type === "FILE" && msg.content);
   }, [messages]);
 
   const pdfMessages = useMemo(() => {
-
     return messages.filter(
       (msg) =>
         msg.type === "FILE" &&
         msg.content &&
-        msg.content
-          .toLowerCase()
-          .includes(".pdf")
+        msg.content.toLowerCase().includes(".pdf"),
     );
-
   }, [messages]);
 
   const profileMedia = useMemo(() => {
-
-    return mediaMessages
-      .slice()
-      .reverse();
-
+    return mediaMessages.slice().reverse();
   }, [mediaMessages]);
 
   // ===============================
@@ -118,31 +84,20 @@ export const ChatProvider = ({ children }) => {
   // 🔥 AUTO FETCH AFTER REFRESH
   // ===============================
   useEffect(() => {
-
     if (conversation?.id) {
-
-      fetchMessages(
-        conversation.id
-      );
+      fetchMessages(conversation.id);
     }
-
   }, [conversation?.id]);
 
   // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
-
     try {
-
-      const user = JSON.parse(
-        localStorage.getItem("user")
-      );
+      const user = JSON.parse(localStorage.getItem("user"));
 
       return Number(user?.id);
-
     } catch {
-
       return null;
     }
   };
@@ -150,1176 +105,697 @@ export const ChatProvider = ({ children }) => {
   // ===============================
   // 🚫 BLOCK / UNBLOCK CONTACT
   // ===============================
-  const toggleBlockContact =
-    useCallback(async (contactRecordId) => {
-
+  const toggleBlockContact = useCallback(
+    async (contactRecordId) => {
       try {
+        const res = await API.put(`/contacts/${contactRecordId}/block`);
 
-        const res =
-          await API.put(
-            `/contacts/${contactRecordId}/block`
-          );
-
-        const updated =
-          res?.data?.data;
+        const updated = res?.data?.data;
 
         setContacts((prev) =>
           prev.map((c) =>
             c.contactRecordId === contactRecordId
               ? {
-                ...c,
-                blocked:
-                  updated.blocked,
-              }
-              : c
-          )
+                  ...c,
+                  blocked: updated.blocked,
+                }
+              : c,
+          ),
         );
 
         setSelectedChat((prev) =>
           prev?.contactRecordId === contactRecordId
             ? {
-              ...prev,
-              blocked:
-                updated.blocked,
-            }
-            : prev
+                ...prev,
+                blocked: updated.blocked,
+              }
+            : prev,
         );
 
         toast.success(
-          updated.blocked
-            ? "Contact blocked"
-            : "Contact unblocked"
+          updated.blocked ? "Contact blocked" : "Contact unblocked",
         );
-
       } catch (err) {
-
         console.log(err);
 
-        toast.error(
-          "Failed to update contact"
-        );
+        toast.error("Failed to update contact");
       }
-
-    }, [selectedChat]);
+    },
+    [selectedChat],
+  );
 
   // ===============================
   // ❌ DELETE CONTACT
   // ===============================
-  const deleteContact =
-    useCallback(async (contactRecordId) => {
-
+  const deleteContact = useCallback(
+    async (contactRecordId) => {
       try {
-
-        await API.delete(
-          `/contacts/${contactRecordId}`
-        );
+        await API.delete(`/contacts/${contactRecordId}`);
 
         setContacts((prev) =>
-          prev.filter(
-            (c) =>
-              c.contactRecordId !== contactRecordId
-          )
+          prev.filter((c) => c.contactRecordId !== contactRecordId),
         );
 
         // 🔥 CLOSE ACTIVE CHAT
-        if (
-          selectedChat?.contactRecordId ===
-          contactRecordId
-        ) {
-
+        if (selectedChat?.contactRecordId === contactRecordId) {
           setSelectedChat(null);
 
           setConversation(null);
 
           setMessages([]);
 
-          localStorage.removeItem(
-            "activeChat"
-          );
+          localStorage.removeItem("activeChat");
         }
 
-        toast.success(
-          "Contact deleted"
-        );
-
+        toast.success("Contact deleted");
       } catch (err) {
-
         console.log(err);
 
-        toast.error(
-          "Delete failed"
-        );
+        toast.error("Delete failed");
       }
-
-    }, [selectedChat]);
+    },
+    [selectedChat],
+  );
 
   // ===============================
   // 🔥 FETCH CONTACTS
   // ===============================
-  const fetchContacts =
-    useCallback(async () => {
+  const fetchContacts = useCallback(async () => {
+    try {
+      if (sidebarLoading) return;
 
-      try {
+      setSidebarLoading(true);
 
-        if (sidebarLoading)
-          return;
+      const res = await API.get("/contacts");
 
-        setSidebarLoading(true);
+      const data = res?.data?.data || [];
 
-        const res =
-          await API.get(
-            "/contacts"
-          );
+      const mapped = data.map((item, index) => ({
+        // 🔥 REAL USER ID
+        id: item.contactUser?.id ?? item.userId ?? item.contactId ?? null,
 
-        const data =
-          res?.data?.data || [];
+        // 🔥 CONTACT TABLE ID
+        contactRecordId: item.id,
 
-        const mapped =
-          data.map(
-            (
-              item,
-              index
-            ) => ({
-              // 🔥 REAL USER ID
-              id:
-                item.contactUser?.id ??
-                item.userId ??
-                item.contactId ??
-                null,
+        name: item.contactUser?.name || item.name || "Unknown",
 
-              // 🔥 CONTACT TABLE ID
-              contactRecordId:
-                item.id,
+        avatar: item.contactUser?.avatar || item.avatar || "",
 
-              name:
-                item.contactUser
-                  ?.name ||
-                item.name ||
-                "Unknown",
+        bio: item.contactUser?.bio || item.bio || "",
 
-              avatar:
-                item.contactUser
-                  ?.avatar ||
-                item.avatar ||
-                "",
+        phone: item.contactUser?.phone || item.phone || "",
 
-              bio:
-                item.contactUser
-                  ?.bio ||
-                item.bio ||
-                "",
+        blocked: item.blocked || false,
 
-              phone:
-                item.contactUser
-                  ?.phone ||
-                item.phone ||
-                "",
+        online: item.contactUser?.online || item.online || false,
 
-              blocked:
-                item.blocked ||
-                false,
+        lastSeen: item.contactUser?.lastSeen || item.lastSeen || null,
 
-              online:
-                item.contactUser
-                  ?.online ||
-                item.online ||
-                false,
+        conversationId: item.conversationId || null,
 
-              lastSeen:
-                item.contactUser
-                  ?.lastSeen ||
-                item.lastSeen ||
-                null,
+        unreadCount: item.unreadCount || 0,
 
-              conversationId:
-                item.conversationId ||
-                null,
+        lastMessage: item.lastMessage?.trim() || "",
 
-              unreadCount:
-                item.unreadCount ||
-                0,
+        lastMessageTime: item.lastMessageTime || null,
 
-              lastMessage:
-                item.lastMessage
-                  ?.trim() || "",
+        isGroup: false,
+      }));
 
-              lastMessageTime:
-                item.lastMessageTime ||
-                null,
+      mapped.sort((a, b) => {
+        if (!a.lastMessageTime) return 1;
 
-              isGroup: false,
-            })
-          );
+        if (!b.lastMessageTime) return -1;
 
-        mapped.sort(
-          (a, b) => {
+        return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
+      });
 
-            if (
-              !a.lastMessageTime
-            )
-              return 1;
+      setContacts(mapped);
 
-            if (
-              !b.lastMessageTime
-            )
-              return -1;
+      setHasFetchedContacts(true);
+    } catch (err) {
+      console.log(err);
 
-            return (
-              new Date(
-                b.lastMessageTime
-              ) -
-              new Date(
-                a.lastMessageTime
-              )
-            );
-          }
-        );
-
-        setContacts(mapped);
-
-        setHasFetchedContacts(
-          true
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        if (
-          err?.response
-            ?.status !== 401
-        ) {
-
-          toast.error(
-            "Failed to load contacts"
-          );
-        }
-
-      } finally {
-
-        setSidebarLoading(
-          false
-        );
+      if (err?.response?.status !== 401) {
+        toast.error("Failed to load contacts");
       }
-
-    }, [sidebarLoading]);
+    } finally {
+      setSidebarLoading(false);
+    }
+  }, [sidebarLoading]);
 
   // ===============================
   // 🔥 OPEN PRIVATE CONVERSATION
   // ===============================
-  const openConversation =
-    useCallback(async (contact) => {
+  const openConversation = useCallback(async (contact) => {
+    try {
+      setLoading(true);
 
-      try {
+      const res = await API.post(`/conversations/${contact.id}`);
 
-        setLoading(true);
+      const conversationData = res?.data?.data;
 
-        const res =
-          await API.post(
-            `/conversations/${contact.id}`
-          );
-
-        const conversationData =
-          res?.data?.data;
-
-        if (
-          !conversationData
-        ) {
-
-          throw new Error(
-            "Conversation failed"
-          );
-        }
-
-        const updatedChat = {
-          ...contact,
-          conversationId:
-            conversationData.id,
-        };
-
-        setSelectedChat(
-          updatedChat
-        );
-
-        setConversation(
-          conversationData
-        );
-
-        setMessages([]);
-
-        // 🔥 SAVE ACTIVE CHAT
-        localStorage.setItem(
-          "activeChat",
-          JSON.stringify(
-            updatedChat
-          )
-        );
-
-        await markAsRead(
-          conversationData.id
-        );
-
-        return conversationData;
-
-      } catch (err) {
-
-        console.log(err);
-
-        if (
-          err?.response
-            ?.status !== 401
-        ) {
-
-          toast.error(
-            "Failed to open chat"
-          );
-        }
-
-        return null;
-
-      } finally {
-
-        setLoading(false);
+      if (!conversationData) {
+        throw new Error("Conversation failed");
       }
 
-    }, []);
+      const updatedChat = {
+        ...contact,
+        conversationId: conversationData.id,
+      };
+
+      setSelectedChat(updatedChat);
+
+      setConversation(conversationData);
+
+      setMessages([]);
+
+      // 🔥 SAVE ACTIVE CHAT
+      localStorage.setItem("activeChat", JSON.stringify(updatedChat));
+
+      await markAsRead(conversationData.id);
+
+      return conversationData;
+    } catch (err) {
+      console.log(err);
+
+      if (err?.response?.status !== 401) {
+        toast.error("Failed to open chat");
+      }
+
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // ===============================
   // 🔥 FETCH MESSAGES
   // ===============================
-  const fetchMessages =
-    useCallback(async (conversationId) => {
-
-      try {
-
-        if (!conversationId) {
-
-          return;
-        }
-
-        const res =
-          await API.get(
-            `/messages/${conversationId}`
-          );
-
-        const data =
-          res?.data?.data || [];
-
-        const mapped =
-          data.map((msg) => ({
-            id: msg.id,
-
-            conversationId:
-              msg.conversationId ||
-              msg.conversation?.id ||
-              null,
-
-            content:
-              msg.content || "",
-
-            type:
-              msg.type ||
-              "TEXT",
-
-            senderId: Number(
-              msg.senderId
-            ),
-
-            senderName:
-              msg.senderName ||
-              "",
-
-            senderAvatar:
-              msg.senderAvatar ||
-              "",
-
-            senderRole:
-              msg.senderRole ||
-              null,
-
-            isGroup:
-              msg.conversation?.isGroup ||
-              msg.isGroup ||
-              false,
-
-            conversationType:
-              msg.conversation?.isGroup
-                ? "GROUP"
-                : "PRIVATE",
-
-            receiverId:
-              msg.receiverId ||
-              null,
-
-            createdAt:
-              msg.createdAt,
-
-            isRead:
-              msg.isRead ||
-              false,
-
-            deleted:
-              msg.deleted ||
-              false,
-
-            reactions:
-              msg.reactions ||
-              [],
-
-            statusId:
-              msg.statusId ||
-              null,
-
-            statusMedia:
-              msg.statusMedia ||
-              "",
-
-            statusType:
-              msg.statusType ||
-              "",
-
-            statusCaption:
-              msg.statusCaption ||
-              "",
-
-            replyTo:
-              msg.replyTo
-                ? {
-                  id:
-                    msg.replyTo.id,
-
-                  content:
-                    msg.replyTo.content,
-
-                  type:
-                    msg.replyTo.type,
-
-                  senderId:
-                    msg.replyTo.senderId,
-
-                  senderName:
-                    msg.replyTo.senderName,
-
-                  senderAvatar:
-                    msg.replyTo.senderAvatar,
-
-                  senderRole:
-                    msg.replyTo.senderRole,
-                }
-                : null,
-          }));
-
-        mapped.sort(
-          (a, b) =>
-            new Date(a.createdAt) -
-            new Date(b.createdAt)
-        );
-
-        console.log(
-          "MAPPED MESSAGE",
-          mapped[0]
-        );
-        setMessages(mapped);
-
-      } catch (err) {
-
-        console.log(err);
-
-        // 🔥 TOKEN INVALID
-        if (
-          err?.response
-            ?.status === 401
-        ) {
-
-          resetChatState();
-
-          return;
-        }
-
-        toast.error(
-          "Failed to load messages"
-        );
-
+  const fetchMessages = useCallback(async (conversationId) => {
+    try {
+      if (!conversationId) {
+        return;
       }
 
-    }, []);
+      const res = await API.get(`/messages/${conversationId}`);
+
+      const data = res?.data?.data || [];
+
+      const mapped = data.map((msg) => ({
+        id: msg.id,
+
+        conversationId: msg.conversationId || msg.conversation?.id || null,
+
+        content: msg.content || "",
+
+        type: msg.type || "TEXT",
+
+        senderId: Number(msg.senderId),
+
+        senderName: msg.senderName || "",
+
+        senderAvatar: msg.senderAvatar || "",
+
+        senderRole: msg.senderRole || null,
+
+        isGroup: msg.conversation?.isGroup || msg.isGroup || false,
+
+        conversationType: msg.conversation?.isGroup ? "GROUP" : "PRIVATE",
+
+        receiverId: msg.receiverId || null,
+
+        createdAt: msg.createdAt,
+
+        isRead: msg.isRead || false,
+
+        deleted: msg.deleted || false,
+
+        reactions: msg.reactions || [],
+
+        statusId: msg.statusId || null,
+
+        statusMedia: msg.statusMedia || "",
+
+        statusType: msg.statusType || "",
+
+        statusCaption: msg.statusCaption || "",
+
+        replyTo: msg.replyTo
+          ? {
+              id: msg.replyTo.id,
+
+              content: msg.replyTo.content,
+
+              type: msg.replyTo.type,
+
+              senderId: msg.replyTo.senderId,
+
+              senderName: msg.replyTo.senderName,
+
+              senderAvatar: msg.replyTo.senderAvatar,
+
+              senderRole: msg.replyTo.senderRole,
+            }
+          : null,
+      }));
+
+      mapped.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      console.log("MAPPED MESSAGE", mapped[0]);
+      setMessages(mapped);
+    } catch (err) {
+      console.log(err);
+
+      // 🔥 TOKEN INVALID
+      if (err?.response?.status === 401) {
+        resetChatState();
+
+        return;
+      }
+
+      if (
+        err?.response?.status !== 400 &&
+        err?.response?.status !== 404 &&
+        err?.response?.status !== 500
+      ) {
+        toast.error("Failed to load messages");
+      }
+    }
+  }, []);
 
   // ===============================
   // 🔥 UPLOAD CHAT MEDIA
   // ===============================
-  const uploadChatMedia =
-    useCallback(async (file) => {
+  const uploadChatMedia = useCallback(async (file) => {
+    try {
+      if (!file) return null;
 
-      try {
+      const formData = new FormData();
 
-        if (!file)
-          return null;
+      formData.append("file", file);
 
-        const formData =
-          new FormData();
+      formData.append("type", "chat");
 
-        formData.append(
-          "file",
-          file
-        );
+      const res = await API.post("/file/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-        formData.append(
-          "type",
-          "chat"
-        );
+      return res?.data?.data || null;
+    } catch (err) {
+      console.log(err);
 
-        const res =
-          await API.post(
-            "/file/upload",
-            formData,
-            {
-              headers: {
-                "Content-Type":
-                  "multipart/form-data",
-              },
-            }
-          );
+      toast.error("Upload failed");
 
-        return (
-          res?.data?.data ||
-          null
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-        toast.error(
-          "Upload failed"
-        );
-
-        return null;
-      }
-
-    }, []);
+      return null;
+    }
+  }, []);
 
   // ===============================
   // 🔥 SEND MESSAGE
   // ===============================
-  const sendMessage =
-    useCallback(
-      async ({
-        conversationId,
-        content,
-        type = "TEXT",
+  const sendMessage = useCallback(
+    async ({
+      conversationId,
+      content,
+      type = "TEXT",
 
-        statusId = null,
-        statusMedia = "",
-        statusType = "",
-        statusCaption = "",
-      }) => {
+      statusId = null,
+      statusMedia = "",
+      statusType = "",
+      statusCaption = "",
+    }) => {
+      try {
+        if ((type === "TEXT" && !content?.trim()) || sendLock.current) {
+          return;
+        }
 
-        try {
+        sendLock.current = true;
 
-          if (
-            (
-              type === "TEXT" &&
-              !content?.trim()
-            ) ||
+        setSending(true);
 
-            sendLock.current
-          ) {
+        const currentUserId = getCurrentUserId();
 
-            return;
-          }
+        const currentUser = JSON.parse(localStorage.getItem("user"));
 
-          sendLock.current =
-            true;
+        const tempId = `temp-${Date.now()}`;
 
-          setSending(true);
+        const optimisticMessage = {
+          id: tempId,
 
-          const currentUserId =
-            getCurrentUserId();
+          conversationId,
 
-          const currentUser =
-            JSON.parse(
-              localStorage.getItem("user")
-            );
+          content,
 
-          const tempId =
-            `temp-${Date.now()}`;
+          type,
 
-          const optimisticMessage =
-          {
-            id: tempId,
+          senderId: currentUserId,
 
-            conversationId,
+          senderName: currentUser?.name || "",
 
-            content,
+          senderAvatar: currentUser?.avatar || "",
 
-            type,
+          isGroup: selectedChat?.isGroup || false,
 
-            senderId:
-              currentUserId,
+          conversationType: selectedChat?.isGroup ? "GROUP" : "PRIVATE",
 
-            senderName:
-              currentUser?.name || "",
+          senderRole: selectedChat?.isGroup ? "MEMBER" : null,
 
-            senderAvatar:
-              currentUser?.avatar || "",
+          createdAt: new Date().toISOString(),
 
-            isGroup:
-              selectedChat?.isGroup || false,
+          isRead: false,
 
-            conversationType:
-              selectedChat?.isGroup
-                ? "GROUP"
-                : "PRIVATE",
+          deleted: false,
 
-            senderRole:
-              selectedChat?.isGroup
-                ? "MEMBER"
-                : null,
+          reactions: [],
 
-            createdAt:
-              new Date().toISOString(),
+          statusId,
+          statusMedia,
+          statusType,
+          statusCaption,
 
-            isRead: false,
+          replyTo: replyTo
+            ? {
+                id: replyTo.id,
 
-            deleted: false,
+                content: replyTo.content,
 
-            reactions: [],
+                type: replyTo.type,
 
-            statusId,
-            statusMedia,
-            statusType,
-            statusCaption,
+                senderId: replyTo.senderId,
 
-            replyTo:
-              replyTo
-                ? {
-                  id:
-                    replyTo.id,
+                senderName: replyTo.senderName,
 
-                  content:
-                    replyTo.content,
+                senderAvatar: replyTo.senderAvatar,
 
-                  type:
-                    replyTo.type,
+                senderRole: replyTo.senderRole,
+              }
+            : null,
+        };
 
-                  senderId:
-                    replyTo.senderId,
+        setMessages((prev) => [...prev, optimisticMessage]);
 
-                  senderName:
-                    replyTo.senderName,
+        const payload = {
+          conversationId,
+          content,
+          type,
 
-                  senderAvatar:
-                    replyTo.senderAvatar,
+          statusId,
+          statusMedia,
+          statusType,
+          statusCaption,
+        };
 
-                  senderRole:
-                    replyTo.senderRole,
-                }
-                : null,
-          };
+        if (replyTo?.id) {
+          payload.replyToId = replyTo.id;
+        }
 
-          setMessages((prev) => [
-            ...prev,
-            optimisticMessage,
-          ]);
+        const res = await API.post("/messages", payload);
 
-          const payload = {
-            conversationId,
-            content,
-            type,
+        const realMessage = res?.data?.data;
 
-            statusId,
-            statusMedia,
-            statusType,
-            statusCaption,
-          };
-
-          if (replyTo?.id) {
-
-            payload.replyToId =
-              replyTo.id;
-          }
-
-          const res =
-            await API.post(
-              "/messages",
-              payload
-            );
-
-          const realMessage =
-            res?.data?.data;
-
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === tempId
-                ? {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempId
+              ? {
                   ...realMessage,
 
                   conversationId:
                     realMessage.conversationId ||
-
                     realMessage.conversation?.id ||
-
                     conversationId,
 
-                  senderId:
-                    Number(
-                      realMessage.senderId
-                    ),
+                  senderId: Number(realMessage.senderId),
 
-                  senderName:
-                    realMessage.senderName ||
-                    "",
+                  senderName: realMessage.senderName || "",
 
-                  senderAvatar:
-                    realMessage.senderAvatar ||
-                    "",
+                  senderAvatar: realMessage.senderAvatar || "",
 
-                  senderRole:
-                    realMessage.senderRole ||
-                    null,
+                  senderRole: realMessage.senderRole || null,
 
-                  reactions:
-                    realMessage.reactions ||
-                    [],
+                  reactions: realMessage.reactions || [],
 
-                  statusId:
-                    realMessage.statusId ||
-                    null,
+                  statusId: realMessage.statusId || null,
 
-                  statusMedia:
-                    realMessage.statusMedia ||
-                    "",
+                  statusMedia: realMessage.statusMedia || "",
 
-                  statusType:
-                    realMessage.statusType ||
-                    "",
+                  statusType: realMessage.statusType || "",
 
-                  statusCaption:
-                    realMessage.statusCaption ||
-                    "",
+                  statusCaption: realMessage.statusCaption || "",
 
-                  replyTo:
-                    realMessage.replyTo
-                      ? {
-                        id:
-                          realMessage.replyTo.id,
+                  replyTo: realMessage.replyTo
+                    ? {
+                        id: realMessage.replyTo.id,
 
-                        content:
-                          realMessage.replyTo.content,
+                        content: realMessage.replyTo.content,
 
-                        type:
-                          realMessage.replyTo.type,
+                        type: realMessage.replyTo.type,
 
-                        senderId:
-                          realMessage.replyTo.senderId,
+                        senderId: realMessage.replyTo.senderId,
 
-                        senderName:
-                          realMessage.replyTo.senderName,
+                        senderName: realMessage.replyTo.senderName,
 
-                        senderAvatar:
-                          realMessage.replyTo.senderAvatar,
+                        senderAvatar: realMessage.replyTo.senderAvatar,
 
-                        senderRole:
-                          realMessage.replyTo.senderRole,
+                        senderRole: realMessage.replyTo.senderRole,
                       }
-                      : null,
+                    : null,
                 }
-                : m
-            )
-          );
+              : m,
+          ),
+        );
 
-          setContacts((prev) =>
-            prev.map((c) =>
-              c.conversationId ===
-                conversationId
-                ? {
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.conversationId === conversationId
+              ? {
                   ...c,
 
                   lastMessage:
-                    type ===
-                      "IMAGE"
+                    type === "IMAGE"
                       ? "📷 Photo"
-                      : type ===
-                        "VIDEO"
+                      : type === "VIDEO"
                         ? "🎥 Video"
-                        : type ===
-                          "FILE"
+                        : type === "FILE"
                           ? "📄 File"
                           : content,
 
-                  lastMessageTime:
-                    new Date().toISOString(),
+                  lastMessageTime: new Date().toISOString(),
                 }
-                : c
-            )
-          );
+              : c,
+          ),
+        );
 
-          setReplyTo(null);
+        setReplyTo(null);
+      } catch (err) {
+        console.log(err);
 
-        } catch (err) {
+        toast.error("Failed to send message");
 
-          console.log(err);
+        setMessages((prev) =>
+          prev.filter((m) => !String(m.id).startsWith("temp-")),
+        );
+      } finally {
+        sendLock.current = false;
 
-          toast.error(
-            "Failed to send message"
-          );
-
-          setMessages((prev) =>
-            prev.filter(
-              (m) =>
-                !String(
-                  m.id
-                ).startsWith(
-                  "temp-"
-                )
-            )
-          );
-
-        } finally {
-
-          sendLock.current =
-            false;
-
-          setSending(false);
-        }
-
-      },
-      [replyTo]
-    );
+        setSending(false);
+      }
+    },
+    [replyTo],
+  );
 
   // ===============================
   // 🔥 REACT TO MESSAGE
   // ===============================
-  const reactToMessage =
-    useCallback(
-      async (
+  const reactToMessage = useCallback(async (messageId, emoji) => {
+    try {
+      // ✅ BACKEND API
+      await API.post("/messages/react", {
         messageId,
-        emoji
-      ) => {
 
-        try {
+        emoji: emoji,
+      });
 
-          // ✅ BACKEND API
-          await API.post(
-            "/messages/react",
-            {
-              messageId,
+      // ✅ UPDATE LOCAL STATE
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) {
+            return m;
+          }
 
-              emoji: emoji,
-            }
-          );
+          const existing = m.reactions?.find((r) => r.isMe);
 
-          // ✅ UPDATE LOCAL STATE
-          setMessages((prev) =>
-            prev.map((m) => {
+          let updated = [...(m.reactions || [])];
 
-              if (
-                m.id !== messageId
-              ) {
+          // ✅ REMOVE SAME REACTION
+          if (existing && existing.emoji === emoji) {
+            updated = updated.filter((r) => !r.isMe);
+          }
 
-                return m;
-              }
+          // ✅ UPDATE REACTION
+          else if (existing) {
+            updated = updated.map((r) =>
+              r.isMe
+                ? {
+                    ...r,
+                    emoji,
+                  }
+                : r,
+            );
+          }
 
-              const existing =
-                m.reactions?.find(
-                  (r) =>
-                    r.isMe
-                );
+          // ✅ ADD NEW REACTION
+          else {
+            updated.push({
+              id: Date.now(),
+              emoji,
+              isMe: true,
+            });
+          }
 
-              let updated = [
-                ...(m.reactions ||
-                  []),
-              ];
+          return {
+            ...m,
+            reactions: updated,
+          };
+        }),
+      );
+    } catch (err) {
+      console.log(err);
 
-              // ✅ REMOVE SAME REACTION
-              if (
-                existing &&
-                existing.emoji ===
-                emoji
-              ) {
-
-                updated =
-                  updated.filter(
-                    (r) =>
-                      !r.isMe
-                  );
-
-              }
-
-              // ✅ UPDATE REACTION
-              else if (
-                existing
-              ) {
-
-                updated =
-                  updated.map(
-                    (r) =>
-                      r.isMe
-                        ? {
-                          ...r,
-                          emoji,
-                        }
-                        : r
-                  );
-
-              }
-
-              // ✅ ADD NEW REACTION
-              else {
-
-                updated.push({
-                  id: Date.now(),
-                  emoji,
-                  isMe: true,
-                });
-              }
-
-              return {
-                ...m,
-                reactions:
-                  updated,
-              };
-            })
-          );
-
-        } catch (err) {
-
-          console.log(err);
-
-          toast.error(
-            "Reaction failed"
-          );
-        }
-
-      },
-      []
-    );
+      toast.error("Reaction failed");
+    }
+  }, []);
 
   // ===============================
   // 🔥 DELETE FOR ME
   // ===============================
-  const deleteForMe =
-    useCallback(
-      async (messageId) => {
+  const deleteForMe = useCallback(async (messageId) => {
+    try {
+      await API.delete(`/messages/me/${messageId}`);
 
-        try {
+      // ✅ REMOVE ONLY CURRENT USER UI
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    } catch (err) {
+      console.log(err);
 
-          await API.delete(
-            `/messages/me/${messageId}`
-          );
-
-          // ✅ REMOVE ONLY CURRENT USER UI
-          setMessages((prev) =>
-            prev.filter(
-              (m) =>
-                m.id !== messageId
-            )
-          );
-
-        } catch (err) {
-
-          console.log(err);
-
-          toast.error(
-
-            err?.response?.data?.message ||
-
-            "Delete failed"
-          );
-        }
-
-      },
-      []
-    );
+      toast.error(err?.response?.data?.message || "Delete failed");
+    }
+  }, []);
 
   // ===============================
   // 🔥 DELETE FOR EVERYONE
   // ===============================
-  const deleteForEveryone =
-    useCallback(
-      async (messageId) => {
+  const deleteForEveryone = useCallback(async (messageId) => {
+    try {
+      await API.delete(`/messages/everyone/${messageId}`);
 
-        try {
+      // ✅ UPDATE MESSAGE STATE
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
 
-          await API.delete(
-            `/messages/everyone/${messageId}`
-          );
+                deletedForEveryone: true,
+              }
+            : m,
+        ),
+      );
+    } catch (err) {
+      console.log(err);
 
-          // ✅ UPDATE MESSAGE STATE
-          setMessages((prev) =>
-            prev.map((m) =>
-
-              m.id === messageId
-
-                ? {
-                  ...m,
-
-                  deletedForEveryone: true,
-                }
-
-                : m
-            )
-          );
-
-        } catch (err) {
-
-          console.log(err);
-
-          toast.error(
-
-            err?.response?.data?.message ||
-
-            "Only sender can delete this message"
-          );
-        }
-
-      },
-      []
-    );
+      toast.error(
+        err?.response?.data?.message || "Only sender can delete this message",
+      );
+    }
+  }, []);
 
   // ===============================
   // 🔥 CLEAR CHAT
   // ===============================
-  const clearChat =
-    useCallback(
-      async (
-        conversationId
-      ) => {
+  const clearChat = useCallback(async (conversationId) => {
+    try {
+      await API.delete(`/messages/clear/${conversationId}`);
 
-        try {
+      setMessages([]);
 
-          await API.delete(
-            `/messages/clear/${conversationId}`
-          );
+      // 🔥 RESET LAST MESSAGE
+      setContacts((prev) =>
+        prev.map((c) =>
+          c.conversationId === conversationId
+            ? {
+                ...c,
+                lastMessage: "",
+                unreadCount: 0,
+              }
+            : c,
+        ),
+      );
 
-          setMessages([]);
+      toast.success("Chat cleared");
+    } catch (err) {
+      console.log(err);
 
-          // 🔥 RESET LAST MESSAGE
-          setContacts((prev) =>
-
-            prev.map((c) =>
-
-              c.conversationId ===
-                conversationId
-
-                ? {
-                  ...c,
-                  lastMessage: "",
-                  unreadCount: 0,
-                }
-
-                : c
-            )
-          );
-
-          toast.success(
-            "Chat cleared"
-          );
-
-        } catch (err) {
-
-          console.log(err);
-
-          toast.error(
-            "Failed to clear chat"
-          );
-        }
-
-      },
-      []
-    );
+      toast.error("Failed to clear chat");
+    }
+  }, []);
 
   // ===============================
   // 🔥 MARK AS READ
   // ===============================
-  const markAsRead =
-    useCallback(
-      async (
-        conversationId
-      ) => {
+  const markAsRead = useCallback(async (conversationId) => {
+    try {
+      await API.put(`/messages/read/${conversationId}`);
 
-        try {
+      setMessages((prev) =>
+        prev.map((m) => ({
+          ...m,
+          isRead: true,
+        })),
+      );
 
-          await API.put(
-            `/messages/read/${conversationId}`
-          );
-
-          setMessages((prev) =>
-            prev.map((m) => ({
-              ...m,
-              isRead: true,
-            }))
-          );
-
-          setContacts((prev) =>
-            prev.map((c) =>
-              c.conversationId ===
-                conversationId
-                ? {
-                  ...c,
-                  unreadCount: 0,
-                }
-                : c
-            )
-          );
-
-        } catch (err) {
-
-          console.log(err);
-        }
-
-      },
-      []
-    );
+      setContacts((prev) =>
+        prev.map((c) =>
+          c.conversationId === conversationId
+            ? {
+                ...c,
+                unreadCount: 0,
+              }
+            : c,
+        ),
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
 
   // ===============================
   // 🔥 REFRESH CURRENT CHAT
   // ===============================
-  const refreshCurrentChat =
-    useCallback(
-      async () => {
-
-        if (
-          conversation?.id
-        ) {
-
-          await fetchMessages(
-            conversation.id
-          );
-        }
-
-      },
-      [
-        conversation,
-        fetchMessages,
-      ]
-    );
+  const refreshCurrentChat = useCallback(async () => {
+    if (conversation?.id) {
+      await fetchMessages(conversation.id);
+    }
+  }, [conversation, fetchMessages]);
 
   // ===============================
   // 🔥 RESET CHAT
   // ===============================
-  const resetChatState =
-    () => {
+  const resetChatState = () => {
+    localStorage.removeItem("activeChat");
 
-      localStorage.removeItem(
-        "activeChat"
-      );
+    sendLock.current = false;
 
-      sendLock.current =
-        false;
+    setSelectedChat(null);
 
-      setSelectedChat(
-        null
-      );
+    setConversation(null);
 
-      setConversation(
-        null
-      );
+    setMessages([]);
 
-      setMessages([]);
-
-      setReplyTo(null);
-    };
+    setReplyTo(null);
+  };
 
   return (
     <ChatContext.Provider
@@ -1376,5 +852,4 @@ export const ChatProvider = ({ children }) => {
   );
 };
 
-export const useChat =
-  () => useContext(ChatContext);
+export const useChat = () => useContext(ChatContext);

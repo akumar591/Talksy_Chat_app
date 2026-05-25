@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.transaction.annotation.Transactional;
+
 public interface MessageReactionRepository extends JpaRepository<MessageReaction, Long> {
 
     // 🔥 check if user already reacted
@@ -16,4 +18,8 @@ public interface MessageReactionRepository extends JpaRepository<MessageReaction
 
     // 🔥 get all reactions of a message
     List<MessageReaction> findByMessage(Message message);
+
+    // 🔥 DELETE ALL REACTIONS OF MESSAGE
+    @Transactional
+    void deleteByMessage(Message message);
 }

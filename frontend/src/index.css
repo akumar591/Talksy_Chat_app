@@ -186,6 +186,7 @@ body {
     color 0.3s ease;
 
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 /* ================= GLASS ================= */
