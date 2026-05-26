@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import { useGroup } from "../../context/GroupContext";
+import { useChatAppearance } from "../../context/ChatAppearanceContext";
 
 import CameraModal from "./CameraModal";
 import ChatHeader from "./ChatHeader";
@@ -15,6 +16,7 @@ import ChatInput from "./ChatInput";
 
 import MediaPreviewModal from "./MediaPreviewModal";
 import MediaViewerModal from "./MediaViewerModal";
+import WallpaperModal from "./WallpaperModal";
 
 import AddMembersModal from "./AddMembersModal";
 import ConfirmModal from "../Common/ConfirmModal";
@@ -41,9 +43,10 @@ const ChatWindow = ({ chat, onBack }) => {
     uploadChatMedia,
   } = useChat();
 
-  const { leaveGroup, deleteGroup, fetchGroupById, groupDetails,  } = useGroup();
+  const { leaveGroup, deleteGroup, fetchGroupById, groupDetails } = useGroup();
 
   const { user } = useAuth();
+  const { createChatKey, getWallpaper } = useChatAppearance();
 
   // ===============================
   // 🔥 INPUT
@@ -62,6 +65,10 @@ const ChatWindow = ({ chat, onBack }) => {
   // 🔥 HEADER MENU
   // ===============================
   const [showMenu, setShowMenu] = useState(false);
+  // ===============================
+  // 🔥 WALLPAPER MODAL
+  // ===============================
+  const [showWallpaperModal, setShowWallpaperModal] = useState(false);
 
   const [showAddMembersModal, setShowAddMembersModal] = useState(false);
 
@@ -112,7 +119,14 @@ const ChatWindow = ({ chat, onBack }) => {
 
   const inputRef = useRef(null);
 
-  const timerRef = useRef(null);
+  // ===============================
+  // 🔥 VOICE RECORDING
+  // ===============================
+  const mediaRecorderRef = useRef(null);
+
+  const audioChunksRef = useRef([]);
+
+  const streamRef = useRef(null);
 
   const galleryInputRef = useRef(null);
 
@@ -153,17 +167,6 @@ const ChatWindow = ({ chat, onBack }) => {
   useEffect(() => {
     inputRef.current?.focus();
   }, [replyTo]);
-
-  // ===============================
-  // 🔥 CLEANUP TIMER
-  // ===============================
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
 
   // ===============================
   // 🔥 PREVIEW URLS
@@ -230,14 +233,24 @@ const ChatWindow = ({ chat, onBack }) => {
   }, [groupDetails, user]);
 
   const isCreator = useMemo(() => {
-    return (
-      String(groupDetails?.createdById) === String(user?.id || "")
-    );
+    return String(groupDetails?.createdById) === String(user?.id || "");
   }, [groupDetails, user]);
 
   const isAdmin = useMemo(() => {
     return currentMember?.role === "ADMIN";
   }, [currentMember]);
+
+  // ===============================
+  // 🔥 CHAT KEY
+  // ===============================
+  const chatKey = chat?.isGroup
+    ? `group_${conversation?.id}`
+    : `private_${conversation?.id}`;
+
+  // ===============================
+  // 🔥 CURRENT WALLPAPER
+  // ===============================
+  const currentWallpaper = getWallpaper(chatKey);
 
   // ===============================
   // 🔥 GROUP MEDIA
@@ -347,14 +360,82 @@ const ChatWindow = ({ chat, onBack }) => {
   }, [input, conversation, sendMessage, replyTo, setReplyTo]);
 
   // ===============================
-  // 🔥 MIC
+  // 🔥 VOICE RECORDING
   // ===============================
-  const handleMicClick = () => {
-    setIsRecording(true);
+  const handleMicClick = async () => {
+    try {
+      // 🔥 STOP RECORDING
+      if (isRecording && mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
 
-    timerRef.current = setTimeout(() => {
+        streamRef.current?.getTracks()?.forEach((track) => track.stop());
+
+        setIsRecording(false);
+
+        return;
+      }
+
+      // 🔥 START RECORDING
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream);
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      audioChunksRef.current = [];
+
+      // 🔥 AUDIO CHUNKS
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      // 🔥 STOP RECORDING
+      mediaRecorder.onstop = async () => {
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm",
+          });
+
+          const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+            type: "audio/webm",
+          });
+
+          // 🔥 UPLOAD
+          const uploaded = await uploadChatMedia(audioFile);
+
+          if (!uploaded?.url) {
+            return;
+          }
+
+          // 🔥 SEND MESSAGE
+          await sendMessage({
+            conversationId: conversation.id,
+
+            content: uploaded.url,
+
+            type: "VOICE",
+
+            replyToId: replyTo?.id || null,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      mediaRecorder.start();
+
+      setIsRecording(true);
+    } catch (error) {
+      console.log(error);
+
       setIsRecording(false);
-    }, 2000);
+    }
   };
 
   // ===============================
@@ -388,8 +469,42 @@ const ChatWindow = ({ chat, onBack }) => {
   }
 
   return (
-    <div className="flex flex-col w-full h-full overflow-visible bg-[var(--bg)] text-[var(--text)]">
+    <div
+      className="relative flex flex-col w-full h-full overflow-hidden text-[var(--text)]"
+      style={{
+        // ======================================
+        // 🔥 GRADIENT
+        // ======================================
+        background:
+          currentWallpaper?.type === "gradient"
+            ? currentWallpaper.background
+            : undefined,
+
+        // ======================================
+        // 🔥 IMAGE
+        // ======================================
+        backgroundImage:
+          currentWallpaper?.type === "image"
+            ? `
+        linear-gradient(
+          ${currentWallpaper.overlay || "rgba(0,0,0,0.45)"},
+          ${currentWallpaper.overlay || "rgba(0,0,0,0.45)"}
+        ),
+        url(${currentWallpaper.image})
+      `
+            : undefined,
+
+        backgroundSize: "cover",
+
+        backgroundPosition: "center",
+
+        backgroundRepeat: "no-repeat",
+
+        transition: "all 0.35s ease",
+      }}
+    >
       {/* 🔥 HEADER */}
+
       <ChatHeader
         chat={chat}
         onBack={onBack}
@@ -407,6 +522,7 @@ const ChatWindow = ({ chat, onBack }) => {
         leaveGroup={leaveGroup}
         setShowAddMembersModal={setShowAddMembersModal}
         handleClearChat={handleClearChat}
+        setShowWallpaperModal={setShowWallpaperModal}
       />
 
       {/* 🔥 MESSAGES */}
@@ -548,6 +664,11 @@ const ChatWindow = ({ chat, onBack }) => {
                 >
                   📄 File
                 </p>
+              )}
+
+              {/* 🔥 VOICE */}
+              {replyTo.type === "VOICE" && (
+                <p className="text-[13px] opacity-80">🎤 Voice Message</p>
               )}
 
               {/* 🔥 TEXT */}
@@ -696,6 +817,13 @@ const ChatWindow = ({ chat, onBack }) => {
 
           setDeleteGroupOpen(false);
         }}
+      />
+
+      {/* 🔥 WALLPAPER MODAL */}
+      <WallpaperModal
+        open={showWallpaperModal}
+        onClose={() => setShowWallpaperModal(false)}
+        chatKey={chatKey}
       />
     </div>
   );

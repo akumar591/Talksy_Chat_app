@@ -71,8 +71,7 @@ const MessageBubble = ({
   // ===============================
   // 🔥 TYPES
   // ===============================
-  const isTextMessage =
-    msg.type === "TEXT";
+  const isTextMessage = msg.type === "TEXT";
   // ===============================
   // 🔥 REACTIONS
   // ===============================
@@ -97,8 +96,8 @@ const MessageBubble = ({
     : "";
 
   return (
-      <div
-    className={`
+    <div
+      className={`
       flex w-fit max-w-full
       ${isMe ? "ml-auto justify-end" : "mr-auto justify-start"}
       ${showActions ? "mb-[70px]" : "mb-[6px]"}
@@ -132,13 +131,13 @@ const MessageBubble = ({
       {/* 🔥 MESSAGE BODY */}
       {/* =============================== */}
       <div
-          className={
-            onlyEmoji ||
-            msg.type === "STATUS_REPLY" ||
-            msg.type === "STATUS_REACTION"
-              ? "relative w-fit"
-              : "relative w-fit min-w-[220px] sm:min-w-[260px] max-w-[85%] md:max-w-[70%] lg:max-w-[58%]"
-          }
+        className={
+          onlyEmoji ||
+          msg.type === "STATUS_REPLY" ||
+          msg.type === "STATUS_REACTION"
+            ? "relative w-fit"
+            : "relative w-fit min-w-[220px] sm:min-w-[260px] max-w-[85%] md:max-w-[70%] lg:max-w-[58%]"
+        }
       >
         {/* =============================== */}
         {/* 🔥 GROUP HEADER */}
@@ -193,7 +192,7 @@ const MessageBubble = ({
         <div
           className={`relative z-[1] ${onlyEmoji ? "w-fit max-w-fit" : "w-full max-w-full"} whitespace-pre-wrap break-words transition-all duration-300
 
-          ${ onlyEmoji ? ` bg-transparent p-0 shadow-none ` : "" }
+          ${onlyEmoji ? ` bg-transparent p-0 shadow-none ` : ""}
               
           ${
             !onlyEmoji && isTextMessage
@@ -221,8 +220,9 @@ const MessageBubble = ({
             msg.type === "MEDIA_GROUP" ||
             msg.type === "IMAGE" ||
             msg.type === "VIDEO"
-              ? ` rounded-[22px] overflow-visible ` : ""    
-           }
+              ? ` rounded-[22px] overflow-visible `
+              : ""
+          }
 
           ${
             onlyEmoji
@@ -233,7 +233,7 @@ const MessageBubble = ({
               : `
                 text-[14px] leading-[1.3]
               `
-           }
+          }
        `}
           style={{
             overflowWrap: "anywhere",
@@ -255,7 +255,8 @@ const MessageBubble = ({
               {/* 🔥 REPLY PREVIEW */}
               {/* =============================== */}
               {replyMessage && (
-                <div className={`  mb-2 overflow-hidden rounded-2xl border-l-[4px] backdrop-blur-xl
+                <div
+                  className={`  mb-2 overflow-hidden rounded-2xl border-l-[4px] backdrop-blur-xl
                     ${
                       isMe
                         ? `
@@ -277,22 +278,21 @@ const MessageBubble = ({
                         src={
                           replyMessage?.senderAvatar || "/default-avatar.png"
                         }
-                        alt="" className=" w-5 h-5 rounded-full object-cover shrink-0" />
- 
+                        alt=""
+                        className=" w-5 h-5 rounded-full object-cover shrink-0"
+                      />
+
                       {/* 🔥 NAME */}
                       <span
                         className={`text-[11px]   font-semibold   truncate
-                      ${isMe ? "text-black/70" : "text-[var(--primary)]"}`}   >
-          
-                   
+                      ${isMe ? "text-black/70" : "text-[var(--primary)]"}`}
+                      >
                         {replyMessage?.senderName || "User"}
                       </span>
                     </div>
 
                     {/* 🔥 CONTENT */}
-                    <div
-                      className=" text-[12px] opacity-75 leading-[1.4] break-words line-clamp-2 ">
-                                                                                                                                                    
+                    <div className=" text-[12px] opacity-75 leading-[1.4] break-words line-clamp-2 ">
                       {/* 🔥 IMAGE */}
                       {replyMessage?.type === "IMAGE" ? (
                         <div className="flex items-center gap-2">
@@ -304,7 +304,6 @@ const MessageBubble = ({
                               object-cover
                             "
                           />
-                
 
                           <span>📷 Photo</span>
                         </div>
@@ -312,12 +311,14 @@ const MessageBubble = ({
                         <div className="flex items-center gap-2">
                           <video
                             src={replyMessage.content}
-                            className="w-10 h-10 rounded-lg object-cover"              
+                            className="w-10 h-10 rounded-lg object-cover"
                           />
                           <span>🎥 Video</span>
                         </div>
                       ) : replyMessage?.type === "FILE" ? (
                         <span>📄 File</span>
+                      ) : replyMessage?.type === "VOICE" ? (
+                        <span>🎤 Voice Message</span>
                       ) : (
                         replyMessage?.content
                       )}
@@ -343,7 +344,6 @@ const MessageBubble = ({
               {/* =============================== */}
               {msg.type === "IMAGE" && (
                 <div className="relative group w-fit">
-
                   {/* 🔥 MEDIA OPTIONS */}
                   <button
                     onClick={(e) => {
@@ -355,7 +355,6 @@ const MessageBubble = ({
 
                       setShowDeleteMenu(false);
                     }}
-
                     className="absolute top-2 right-2 z-30 w-8 h-8 rounded-full bg-black/45 backdrop-blur-xl text-white flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 hover:bg-black/60"
                   >
                     ⋮
@@ -366,7 +365,6 @@ const MessageBubble = ({
                     src={msg.content}
                     alt="chat-media"
                     loading="lazy"
-
                     onClick={(e) => {
                       e.stopPropagation();
 
@@ -376,13 +374,11 @@ const MessageBubble = ({
 
                       setViewerOpen(true);
                     }}
-
                     className="w-full max-w-[220px] sm:max-w-[260px] md:max-w-[360px] max-h-[420px] object-cover rounded-[22px] cursor-pointer select-none block"
                   />
 
                   {/* 🔥 MEDIA OVERLAY */}
                   <div className="absolute inset-0 rounded-[22px] bg-black/0 group-hover:bg-black/10 transition-all duration-200 pointer-events-none" />
-
                 </div>
               )}
 
@@ -391,7 +387,6 @@ const MessageBubble = ({
               {/* =============================== */}
               {msg.type === "VIDEO" && (
                 <div className="relative group w-fit">
-
                   {/* 🔥 MEDIA OPTIONS */}
                   <button
                     onClick={(e) => {
@@ -410,17 +405,14 @@ const MessageBubble = ({
                     src={msg.content}
                     controls
                     playsInline
-
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
-
                     className="w-full max-w-[220px] sm:max-w-[260px] md:max-w-[360px] max-h-[420px] rounded-[22px] bg-black object-cover"
                   />
 
                   {/* 🔥 OVERLAY */}
                   <div className="absolute inset-0 rounded-[22px] bg-black/0 group-hover:bg-black/10 transition-all duration-200 pointer-events-none" />
-
                 </div>
               )}
 
@@ -459,6 +451,90 @@ const MessageBubble = ({
               )}
 
               {/* =============================== */}
+              {/* 🔥 VOICE */}
+              {/* =============================== */}
+              {msg.type === "VOICE" && (
+                <div
+                  className={`
+                    relative
+
+                    flex
+                    items-center
+                    gap-2
+
+                    px-3
+                    pt-2
+                    pb-4
+
+                    rounded-[18px]
+
+                    ${
+                      isMe
+                        ? "bg-black/10"
+                        : `
+                          bg-[rgba(255,255,255,0.03)]
+                          border
+                          border-[rgba(255,255,255,0.05)]
+                        `
+                    }
+                  `}
+                >
+                  {/* 🔥 ICON */}
+                  <div
+                    className="
+                      w-9
+                      h-9
+
+                      shrink-0
+
+                      rounded-full
+
+                      bg-[var(--primary)]/20
+
+                      flex
+                      items-center
+                      justify-center
+
+                      text-[15px]
+                    "
+                  >
+                    🎤
+                  </div>
+
+                  {/* 🔥 AUDIO */}
+                  <audio
+                    controls
+                    src={msg.content}
+                    className="
+                      h-[34px]
+                      w-[160px]
+                      opacity-90
+                    "
+                  />
+
+                  {/* 🔥 TIME */}
+                  <span
+                    className="
+                        absolute
+                        bottom-[4px]
+                        right-2
+
+                        text-[10px]
+                        font-medium
+                        opacity-70
+                      "
+                    style={{
+                      color: isMe
+                        ? "rgba(255,255,255,0.72)"
+                        : "var(--message-time)",
+                    }}
+                  >
+                    {formattedTime}
+                  </span>
+                </div>
+              )}
+
+              {/* =============================== */}
               {/* 🔥 TEXT */}
               {/* =============================== */}
               {msg.type === "TEXT" && (
@@ -492,8 +568,8 @@ const MessageBubble = ({
                         onlyEmoji
                           ? `dark:text-white/70 text-black/70`
                           : isMe
-                                ? "text-[var(--message-time-me)]"
-                                : "text-[var(--message-time)]"
+                            ? "text-[var(--message-time-me)]"
+                            : "text-[var(--message-time)]"
                       }`}
                     >
                       {formattedTime}
@@ -506,7 +582,6 @@ const MessageBubble = ({
               {/* 🔥 STATUS REACTION */}
               {/* =============================== */}
               {msg.type === "STATUS_REACTION" && (
-
                 <div
                   className={`
                     relative overflow-hidden w-fit
@@ -530,50 +605,37 @@ const MessageBubble = ({
                     }
                   `}
                 >
-
                   {/* 🔥 MEDIA */}
                   {msg.statusMedia && (
-
                     <div className="relative">
-
                       {msg.statusType === "IMAGE" ? (
-
                         <img
                           src={msg.statusMedia}
                           alt="status"
                           className="block w-[190px] h-[250px] object-cover"
                         />
-
                       ) : (
-
                         <video
                           src={msg.statusMedia}
                           className="block w-[190px] h-[250px] object-cover"
                         />
-
                       )}
 
                       {/* 🔥 FLOATING REACTION */}
                       <div className="absolute bottom-3 right-3">
-
                         <div className="w-11 h-11 rounded-full bg-black/55 backdrop-blur-xl border border-white/10 flex items-center justify-center text-[22px] shadow-xl">
                           {msg.content?.split(" ")[0]}
                         </div>
-
                       </div>
-
                     </div>
                   )}
 
                   {/* 🔥 BOTTOM */}
                   <div className="px-3 py-2">
-
                     <p className="text-[12px] font-medium opacity-70">
                       reacted to your status
                     </p>
-
                   </div>
-
                 </div>
               )}
 
@@ -581,7 +643,6 @@ const MessageBubble = ({
               {/* 🔥 STATUS REPLY */}
               {/* =============================== */}
               {msg.type === "STATUS_REPLY" && (
-
                 <div
                   className={`
                     relative overflow-hidden w-fit
@@ -605,61 +666,45 @@ const MessageBubble = ({
                     }
                   `}
                 >
-
                   {/* 🔥 MEDIA */}
                   {msg.statusMedia && (
-
                     <div className="relative">
-
                       {msg.statusType === "IMAGE" ? (
-
                         <img
                           src={msg.statusMedia}
                           alt="status"
                           className="block w-[210px] sm:w-[230px] h-[270px] object-cover"
                         />
-
                       ) : (
-
                         <video
                           src={msg.statusMedia}
                           className="block w-[210px] sm:w-[230px] h-[270px] object-cover"
                         />
-
                       )}
-
                     </div>
                   )}
 
                   {/* 🔥 REPLY CONTENT */}
                   <div className="px-3 py-3">
-
                     {/* 🔥 TOP LABEL */}
                     <div className="flex items-center gap-2 mb-2">
-
                       <div className="w-2 h-2 rounded-full bg-sky-400" />
 
                       <span className="text-[11px] uppercase tracking-[1.2px] font-semibold opacity-70">
                         Replying to status
                       </span>
-
                     </div>
 
                     {/* 🔥 MESSAGE */}
                     <p className="text-[14px] leading-[1.45] break-words whitespace-pre-wrap">
-
                       {(msg.content || "").replace(
                         "Reply to your status: ",
-                        ""
+                        "",
                       )}
-
                     </p>
-
                   </div>
-
                 </div>
               )}
-
 
               {/* =============================== */}
               {/* 🔥 MEDIA TIME */}
@@ -669,17 +714,24 @@ const MessageBubble = ({
                 msg.type === "MEDIA_GROUP") && (
                 <div
                   className={`
-              absolute bottom-2
-              ${isMe ? "left-2" : "right-2"}
-              px-2 py-[2px] rounded-full bg-black/45 backdrop-blur-xl
-            `}
+                      absolute bottom-[14px]
+                      ${isMe ? "left-2" : "right-2"}
+
+                      px-2
+                      py-[2px]
+
+                      rounded-full
+
+                      bg-black/45
+                      backdrop-blur-xl
+                    `}
                 >
                   <span className="text-[10px] text-white">
                     {formattedTime}
                   </span>
                 </div>
               )}
-              </>
+            </>
           )}
 
           {/* =============================== */}
@@ -728,8 +780,9 @@ const MessageBubble = ({
         {/* 🔥 REACTION PICKER */}
         {/* =============================== */}
         {showReactionPicker && (
-          <div className={`absolute z-[9999] top-[145%]  ${isMe ? `right-0 ` : `left-0` } sm:left-auto sm:top-12 sm:right-2 `}>
-
+          <div
+            className={`absolute z-[9999] top-[145%]  ${isMe ? `right-0 ` : `left-0`} sm:left-auto sm:top-12 sm:right-2 `}
+          >
             <ReactionPicker
               isMe={isMe}
               msg={msg}

@@ -92,19 +92,19 @@ public class FileUploadController {
                             "video/"
                     );
 
+            boolean isAudio =
+                    contentType.startsWith(
+                            "audio/"
+                    );
+
             // ===============================
             // ❌ ONLY IMAGE / VIDEO
             // ===============================
-            if (
-
-                    !isImage &&
-
-                            !isVideo
-
+            if ( !isImage &&  !isVideo && !isAudio
             ) {
 
                 return bad(
-                        "Only image/video allowed ❌"
+                        "Only image/video/audio allowed"
                 );
             }
 
@@ -194,8 +194,11 @@ public class FileUploadController {
 
                                             // 🔥 VIDEO SUPPORT
                                             "resource_type",
-                                            isVideo
+
+                                            (isVideo || isAudio)
+
                                                     ? "video"
+
                                                     : "image"
                                     )
                             );
@@ -224,8 +227,14 @@ public class FileUploadController {
             data.put(
                     "type",
 
-                    isVideo
+                    isAudio
+
+                            ? "VOICE"
+
+                            : isVideo
+
                             ? "VIDEO"
+
                             : "IMAGE"
             );
 

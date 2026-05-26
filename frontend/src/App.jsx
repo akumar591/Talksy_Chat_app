@@ -37,6 +37,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import { SettingsProvider } from "./context/SettingsContext";
+import {ChatAppearanceProvider} from "./context/ChatAppearanceContext";
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -88,7 +89,7 @@ function AppRoutes() {
   // 🔥 STEP STATE
   // =====================================
   const [step, setStep] = useState(getInitialStep);
-  
+
   // 🔥 MOBILE NAVBAR SEARCH
   const [mobileSearch, setMobileSearch] = useState("");
 
@@ -385,9 +386,11 @@ function App() {
           <StatusProvider>
             <ThemeProvider>
               <SettingsProvider>
+                <ChatAppearanceProvider>
                 <BrowserRouter>
                   <AppRoutes />
                 </BrowserRouter>
+                </ChatAppearanceProvider>
               </SettingsProvider>
             </ThemeProvider>
           </StatusProvider>

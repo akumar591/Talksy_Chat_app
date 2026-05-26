@@ -44,7 +44,11 @@ export const ChatProvider = ({ children }) => {
 
   const mediaMessages = useMemo(() => {
     return messages.filter(
-      (msg) => (msg.type === "IMAGE" || msg.type === "VIDEO") && msg.content,
+      (msg) =>
+        (msg.type === "IMAGE" ||
+          msg.type === "VIDEO" ||
+          msg.type === "VOICE") &&
+        msg.content,
     );
   }, [messages]);
 
@@ -426,6 +430,8 @@ export const ChatProvider = ({ children }) => {
       statusMedia = "",
       statusType = "",
       statusCaption = "",
+
+      replyToId = null,
     }) => {
       try {
         if ((type === "TEXT" && !content?.trim()) || sendLock.current) {
@@ -508,8 +514,8 @@ export const ChatProvider = ({ children }) => {
           statusCaption,
         };
 
-        if (replyTo?.id) {
-          payload.replyToId = replyTo.id;
+        if (replyToId) {
+          payload.replyToId = replyToId;
         }
 
         const res = await API.post("/messages", payload);
@@ -578,9 +584,11 @@ export const ChatProvider = ({ children }) => {
                       ? "📷 Photo"
                       : type === "VIDEO"
                         ? "🎥 Video"
-                        : type === "FILE"
-                          ? "📄 File"
-                          : content,
+                        : type === "VOICE"
+                          ? "🎤 Voice Message"
+                          : type === "FILE"
+                            ? "📄 File"
+                            : content,
 
                   lastMessageTime: new Date().toISOString(),
                 }

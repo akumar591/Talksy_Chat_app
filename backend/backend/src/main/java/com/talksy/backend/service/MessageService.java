@@ -623,6 +623,8 @@ public class MessageService {
 
                                         "FILE",
 
+                                        "VOICE",
+
                                         "MEDIA_GROUP"
                                 )
                         );
@@ -851,6 +853,7 @@ public class MessageService {
                         &&
 
                         (
+
                                 message.getType()
                                         .equalsIgnoreCase("IMAGE")
 
@@ -858,13 +861,18 @@ public class MessageService {
 
                                         message.getType()
                                                 .equalsIgnoreCase("VIDEO")
+
+                                        ||
+
+                                        message.getType()
+                                                .equalsIgnoreCase("VOICE")
                         )
 
                         &&
 
                         message.getContent() != null
 
-        ) {
+        ){
 
             try {
 
@@ -881,16 +889,15 @@ public class MessageService {
                 String resourceType =
 
                         message.getType()
-                                .equalsIgnoreCase("VIDEO")
+                                .equalsIgnoreCase("IMAGE")
 
                                 ?
 
-                                "video"
+                                "image"
 
                                 :
 
-                                "image";
-
+                                "video";
                 cloudinaryService.deleteFile(
 
                         publicId,
