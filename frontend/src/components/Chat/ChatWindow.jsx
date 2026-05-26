@@ -1,15 +1,10 @@
-import {
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-  useCallback,
-} from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
 import { FiX } from "react-icons/fi";
 
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import { useGroup } from "../../context/GroupContext";
 
@@ -22,14 +17,10 @@ import MediaPreviewModal from "./MediaPreviewModal";
 import MediaViewerModal from "./MediaViewerModal";
 
 import AddMembersModal from "./AddMembersModal";
+import ConfirmModal from "../Common/ConfirmModal";
 
-const ChatWindow = ({
-  chat,
-  onBack,
-}) => {
-
-  const navigate =
-    useNavigate();
+const ChatWindow = ({ chat, onBack }) => {
+  const navigate = useNavigate();
 
   const {
     toggleBlockContact,
@@ -50,593 +41,347 @@ const ChatWindow = ({
     uploadChatMedia,
   } = useChat();
 
-  const {
-    leaveGroup,
-    fetchGroupById,
-    groupDetails,
-  } = useGroup();
+  const { leaveGroup, deleteGroup, fetchGroupById, groupDetails,  } = useGroup();
+
+  const { user } = useAuth();
 
   // ===============================
   // 🔥 INPUT
   // ===============================
-  const [input, setInput] =
-    useState("");
+  const [input, setInput] = useState("");
 
-  const [
-    isRecording,
-    setIsRecording,
-  ] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
-  const [
-    showCamera,
-    setShowCamera,
-  ] = useState(false);
+  const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
+
+  const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
+
+  const [showCamera, setShowCamera] = useState(false);
 
   // ===============================
   // 🔥 HEADER MENU
   // ===============================
-  const [
-    showMenu,
-    setShowMenu,
-  ] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
-  const [
-    showAddMembersModal,
-    setShowAddMembersModal,
-  ] = useState(false);
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false);
 
   // ===============================
   // 🔥 ATTACH
   // ===============================
-  const [
-    showAttach,
-    setShowAttach,
-  ] = useState(false);
+  const [showAttach, setShowAttach] = useState(false);
 
   // ===============================
   // 🔥 EMOJI
   // ===============================
-  const [
-    showEmoji,
-    setShowEmoji,
-  ] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   // ===============================
   // 🔥 PREVIEW
   // ===============================
-  const [
-    previewMedia,
-    setPreviewMedia,
-  ] = useState([]);
+  const [previewMedia, setPreviewMedia] = useState([]);
 
-  const [
-    previewType,
-    setPreviewType,
-  ] = useState("");
+  const [previewType, setPreviewType] = useState("");
 
-  const [
-    mediaCaption,
-    setMediaCaption,
-  ] = useState("");
+  const [mediaCaption, setMediaCaption] = useState("");
 
-  const [
-    showMediaPreview,
-    setShowMediaPreview,
-  ] = useState(false);
+  const [showMediaPreview, setShowMediaPreview] = useState(false);
 
-  const [
-    sendingMedia,
-    setSendingMedia,
-  ] = useState(false);
+  const [sendingMedia, setSendingMedia] = useState(false);
 
-  const [
-    previewUrls,
-    setPreviewUrls,
-  ] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
 
   // ===============================
   // 🔥 VIEWER
   // ===============================
-  const [
-    viewerOpen,
-    setViewerOpen,
-  ] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
-  const [
-    viewerMedia,
-    setViewerMedia,
-  ] = useState([]);
+  const [viewerMedia, setViewerMedia] = useState([]);
 
-  const [
-    viewerIndex,
-    setViewerIndex,
-  ] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   // ===============================
   // 🔥 REFS
   // ===============================
-  const menuRef =
-    useRef(null);
+  const menuRef = useRef(null);
 
-  const emojiRef =
-    useRef(null);
+  const emojiRef = useRef(null);
 
-  const attachRef =
-    useRef(null);
+  const attachRef = useRef(null);
 
-  const messagesEndRef =
-    useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const inputRef =
-    useRef(null);
+  const inputRef = useRef(null);
 
-  const timerRef =
-    useRef(null);
+  const timerRef = useRef(null);
 
-  const galleryInputRef =
-    useRef(null);
+  const galleryInputRef = useRef(null);
 
-  const cameraInputRef =
-    useRef(null);
+  const cameraInputRef = useRef(null);
 
-  const fileInputRef =
-    useRef(null);
+  const fileInputRef = useRef(null);
 
   // ===============================
   // 🔥 FETCH GROUP
   // ===============================
   useEffect(() => {
-
-    if (
-      chat?.isGroup &&
-      chat?.id
-    ) {
-
-      fetchGroupById(
-        chat.id
-      );
+    if (chat?.isGroup && chat?.id) {
+      fetchGroupById(chat.id);
     }
-
-  }, [
-    chat?.id
-  ]);
+  }, [chat?.id]);
 
   // ===============================
   // 🔥 FETCH MESSAGES
   // ===============================
   useEffect(() => {
-
-    if (
-      conversation?.id
-    ) {
-
-      fetchMessages(
-        conversation.id
-      );
+    if (conversation?.id) {
+      fetchMessages(conversation.id);
     }
-
-  }, [
-    conversation?.id,
-    fetchMessages,
-  ]);
+  }, [conversation?.id, fetchMessages]);
 
   // ===============================
   // 🔥 AUTO SCROLL
   // ===============================
   useEffect(() => {
-
-    messagesEndRef.current
-      ?.scrollIntoView({
-
-        behavior:
-          "smooth",
-      });
-
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages]);
 
   // ===============================
   // 🔥 AUTO FOCUS
   // ===============================
   useEffect(() => {
-
-    inputRef.current
-      ?.focus();
-
+    inputRef.current?.focus();
   }, [replyTo]);
 
   // ===============================
   // 🔥 CLEANUP TIMER
   // ===============================
   useEffect(() => {
-
     return () => {
-
-      if (
-        timerRef.current
-      ) {
-
-        clearTimeout(
-          timerRef.current
-        );
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
     };
-
   }, []);
 
   // ===============================
   // 🔥 PREVIEW URLS
   // ===============================
   useEffect(() => {
-
-    if (
-      !previewMedia.length
-    ) {
-
+    if (!previewMedia.length) {
       setPreviewUrls([]);
 
       return;
     }
 
-    const urls =
-      previewMedia.map(
-        file =>
-          URL.createObjectURL(
-            file
-          )
-      );
+    const urls = previewMedia.map((file) => URL.createObjectURL(file));
 
     setPreviewUrls(urls);
 
     return () => {
-
-      urls.forEach(
-        url =>
-          URL.revokeObjectURL(
-            url
-          )
-      );
+      urls.forEach((url) => URL.revokeObjectURL(url));
     };
-
   }, [previewMedia]);
 
   // ===============================
   // 🔥 OUTSIDE CLICK
   // ===============================
   useEffect(() => {
+    const handleOutside = (e) => {
+      // 🔥 HEADER MENU
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
 
-    const handleOutside =
-      (e) => {
+      // 🔥 ATTACH
+      if (
+        attachRef.current &&
+        !attachRef.current.contains(e.target) &&
+        !e.target.closest(".attach-menu")
+      ) {
+        setShowAttach(false);
+      }
 
-        // 🔥 HEADER MENU
-        if (
-          menuRef.current &&
-          !menuRef.current.contains(
-            e.target
-          )
-        ) {
-
-          setShowMenu(
-            false
-          );
-        }
-
-        // 🔥 ATTACH
-        if (
-          attachRef.current &&
-          !attachRef.current.contains(
-            e.target
-          ) &&
-          !e.target.closest(
-            ".attach-menu"
-          )
-        ) {
-
-          setShowAttach(
-            false
-          );
-        }
-
-        // 🔥 EMOJI
-        if (
-          emojiRef.current &&
-          !emojiRef.current.contains(
-            e.target
-          ) &&
-          !e.target.closest(
-            ".emoji-trigger"
-          )
-        ) {
-
-          setShowEmoji(
-            false
-          );
-        }
-      };
-
-    document.addEventListener(
-      "mousedown",
-      handleOutside
-    );
-
-    return () => {
-
-      document.removeEventListener(
-        "mousedown",
-        handleOutside
-      );
+      // 🔥 EMOJI
+      if (
+        emojiRef.current &&
+        !emojiRef.current.contains(e.target) &&
+        !e.target.closest(".emoji-trigger")
+      ) {
+        setShowEmoji(false);
+      }
     };
 
+    document.addEventListener("mousedown", handleOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
   }, []);
+
+  // ===============================
+  // 🔥 GROUP ROLES
+  // ===============================
+  const currentMember = useMemo(() => {
+    return groupDetails?.members?.find(
+      (m) => String(m.userId || m.id) === String(user?.id || ""),
+    );
+  }, [groupDetails, user]);
+
+  const isCreator = useMemo(() => {
+    return (
+      String(groupDetails?.createdById) === String(user?.id || "")
+    );
+  }, [groupDetails, user]);
+
+  const isAdmin = useMemo(() => {
+    return currentMember?.role === "ADMIN";
+  }, [currentMember]);
 
   // ===============================
   // 🔥 GROUP MEDIA
   // ===============================
-  const groupedMessages =
-    useMemo(() => {
+  const groupedMessages = useMemo(() => {
+    const sorted = [...messages].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
 
-      const sorted =
-        [...messages].sort(
-          (a, b) =>
-            new Date(
-              a.createdAt
-            ) -
-            new Date(
-              b.createdAt
-            )
-        );
+    const finalMessages = [];
 
-      const finalMessages =
-        [];
+    let currentGroup = [];
 
-      let currentGroup =
-        [];
+    const flushGroup = () => {
+      if (!currentGroup.length) {
+        return;
+      }
 
-      const flushGroup =
-        () => {
+      // 🔥 SINGLE
+      if (currentGroup.length === 1) {
+        finalMessages.push(currentGroup[0]);
+      } else {
+        // 🔥 GROUP
+        finalMessages.push({
+          id: `media-group-${currentGroup[0].id}`,
 
-          if (
-            !currentGroup.length
-          ) {
-            return;
-          }
+          type: "MEDIA_GROUP",
 
-          // 🔥 SINGLE
-          if (
-            currentGroup.length ===
-            1
-          ) {
+          senderId: currentGroup[0].senderId,
 
-            finalMessages.push(
-              currentGroup[0]
-            );
+          createdAt: currentGroup[0].createdAt,
 
-          } else {
+          medias: [...currentGroup],
+        });
+      }
 
-            // 🔥 GROUP
-            finalMessages.push({
+      currentGroup = [];
+    };
 
-              id:
-                `media-group-${currentGroup[0].id}`,
+    sorted.forEach((msg) => {
+      const isMedia = msg.type === "IMAGE";
 
-              type:
-                "MEDIA_GROUP",
+      if (!isMedia) {
+        flushGroup();
 
-              senderId:
-                currentGroup[0]
-                  .senderId,
+        finalMessages.push(msg);
 
-              createdAt:
-                currentGroup[0]
-                  .createdAt,
+        return;
+      }
 
-              medias: [
-                ...currentGroup,
-              ],
-            });
-          }
+      if (!currentGroup.length) {
+        currentGroup.push(msg);
 
-          currentGroup =
-            [];
-        };
+        return;
+      }
 
-      sorted.forEach(
-        (msg) => {
+      const last = currentGroup[currentGroup.length - 1];
 
-          const isMedia =
-            msg.type ===
-            "IMAGE";
+      const sameSender = last.senderId === msg.senderId;
 
-          if (
-            !isMedia
-          ) {
+      const closeTime =
+        new Date(msg.createdAt) - new Date(last.createdAt) < 45000;
 
-            flushGroup();
+      if (sameSender && closeTime) {
+        currentGroup.push(msg);
+      } else {
+        flushGroup();
 
-            finalMessages.push(
-              msg
-            );
+        currentGroup.push(msg);
+      }
+    });
 
-            return;
-          }
+    flushGroup();
 
-          if (
-            !currentGroup.length
-          ) {
-
-            currentGroup.push(
-              msg
-            );
-
-            return;
-          }
-
-          const last =
-            currentGroup[
-            currentGroup.length -
-            1
-            ];
-
-          const sameSender =
-            last.senderId ===
-            msg.senderId;
-
-          const closeTime =
-            (
-              new Date(
-                msg.createdAt
-              ) -
-              new Date(
-                last.createdAt
-              )
-            ) < 45000;
-
-          if (
-            sameSender &&
-            closeTime
-          ) {
-
-            currentGroup.push(
-              msg
-            );
-
-          } else {
-
-            flushGroup();
-
-            currentGroup.push(
-              msg
-            );
-          }
-        }
-      );
-
-      flushGroup();
-
-      return finalMessages;
-
-    }, [messages]);
+    return finalMessages;
+  }, [messages]);
 
   // ===============================
   // 🔥 SEND MESSAGE
   // ===============================
-  const handleSendMessage =
-    useCallback(async () => {
+  const handleSendMessage = useCallback(async () => {
+    if (!input.trim()) {
+      return;
+    }
 
-      if (
-        !input.trim()
-      ) {
-        return;
-      }
+    if (!conversation?.id) {
+      return;
+    }
 
-      if (
-        !conversation?.id
-      ) {
-        return;
-      }
+    try {
+      await sendMessage({
+        conversationId: conversation.id,
 
-      try {
+        content: input.trim(),
 
-        await sendMessage({
+        type: "TEXT",
 
-          conversationId:
-            conversation.id,
+        replyToId: replyTo?.id || null,
+      });
 
-          content:
-            input.trim(),
+      setInput("");
 
-          type:
-            "TEXT",
-
-          replyToId:
-            replyTo?.id ||
-            null,
-        });
-
-        setInput("");
-
-        setReplyTo(
-          null
-        );
-
-      } catch (error) {
-
-        console.log(
-          error
-        );
-      }
-
-    }, [
-
-      input,
-      conversation,
-      sendMessage,
-      replyTo,
-      setReplyTo,
-    ]);
+      setReplyTo(null);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [input, conversation, sendMessage, replyTo, setReplyTo]);
 
   // ===============================
   // 🔥 MIC
   // ===============================
-  const handleMicClick =
-    () => {
+  const handleMicClick = () => {
+    setIsRecording(true);
 
-      setIsRecording(
-        true
-      );
-
-      timerRef.current =
-        setTimeout(() => {
-
-          setIsRecording(
-            false
-          );
-
-        }, 2000);
-    };
+    timerRef.current = setTimeout(() => {
+      setIsRecording(false);
+    }, 2000);
+  };
 
   // ===============================
   // 🔥 CLEAR CHAT
   // ===============================
-  const handleClearChat =
-    () => {
+  const handleClearChat = () => {
+    if (!conversation?.id) {
+      return;
+    }
 
-      if (
-        !conversation?.id
-      ) {
-        return;
-      }
+    clearChat(conversation.id);
 
-      clearChat(
-        conversation.id
-      );
-
-      setShowMenu(
-        false
-      );
-    };
+    setShowMenu(false);
+  };
 
   // ===============================
   // 🔥 EMPTY CHAT
   // ===============================
   if (!chat) {
-
     return (
       <div className="hidden md:flex items-center justify-center h-full w-full">
-
         <div className="glass p-8 rounded-2xl text-center max-w-sm">
+          <div className="text-4xl mb-3">💬</div>
 
-          <div className="text-4xl mb-3">
-            💬
-          </div>
+          <h2 className="text-xl font-semibold mb-2">Welcome to Talksy</h2>
 
-          <h2 className="text-xl font-semibold mb-2">
-            Welcome to Talksy
-          </h2>
-
-          <p className="opacity-60 text-sm">
-            Select a conversation
-          </p>
-
+          <p className="opacity-60 text-sm">Select a conversation</p>
         </div>
       </div>
     );
@@ -644,75 +389,41 @@ const ChatWindow = ({
 
   return (
     <div className="flex flex-col w-full h-full overflow-visible bg-[var(--bg)] text-[var(--text)]">
-
       {/* 🔥 HEADER */}
       <ChatHeader
         chat={chat}
         onBack={onBack}
-
         navigate={navigate}
-
         showMenu={showMenu}
-        setShowMenu={
-          setShowMenu
-        }
-
+        setShowMenu={setShowMenu}
+        isCreator={isCreator}
+        isAdmin={isAdmin}
+        setLeaveGroupOpen={setLeaveGroupOpen}
+        setDeleteGroupOpen={setDeleteGroupOpen}
         menuRef={menuRef}
-
-        isRecording={
-          isRecording
-        }
-
-        toggleBlockContact={
-          toggleBlockContact
-        }
-
-        deleteContact={
-          deleteContact
-        }
-
-        leaveGroup={
-          leaveGroup
-        }
-
-        setShowAddMembersModal={
-          setShowAddMembersModal
-        }
-
-        handleClearChat={
-          handleClearChat
-        }
+        isRecording={isRecording}
+        toggleBlockContact={toggleBlockContact}
+        deleteContact={deleteContact}
+        leaveGroup={leaveGroup}
+        setShowAddMembersModal={setShowAddMembersModal}
+        handleClearChat={handleClearChat}
       />
 
       {/* 🔥 MESSAGES */}
       <MessageList
-        groupedMessages={
-          groupedMessages
-        }
-
+        groupedMessages={groupedMessages}
         chat={chat}
-
-        messagesEndRef={
-          messagesEndRef
-        }
-
+        messagesEndRef={messagesEndRef}
         // 🔥 VIEWER
-        setViewerOpen={
-          setViewerOpen
-        }
-
-        setViewerMedia={
-          setViewerMedia
-        }
-
-        setViewerIndex={
-          setViewerIndex
-        }
+        setViewerOpen={setViewerOpen}
+        setViewerMedia={setViewerMedia}
+        setViewerIndex={setViewerIndex}
       />
 
       {/* 🔥 REPLY */}
       {replyTo && (
-        <div className="
+        <div
+          className="
     px-3
     py-2
 
@@ -720,9 +431,10 @@ const ChatWindow = ({
 
     border-t
     border-[var(--border)]
-  ">
-
-          <div className="
+  "
+        >
+          <div
+            className="
       px-3
       py-2
 
@@ -737,33 +449,34 @@ const ChatWindow = ({
       gap-3
 
       text-sm
-    ">
-
+    "
+          >
             {/* 🔥 LEFT */}
-            <div className="
+            <div
+              className="
         flex-1
         min-w-0
-      ">
-
-              <p className="
+      "
+            >
+              <p
+                className="
           text-[12px]
           font-semibold
           mb-1
-        ">
-
+        "
+              >
                 Replying
-
               </p>
 
               {/* 🔥 IMAGE */}
               {replyTo.type === "IMAGE" && (
-
-                <div className="
+                <div
+                  className="
             flex
             items-center
             gap-3
-          ">
-
+          "
+                >
                   <img
                     src={replyTo.content}
                     alt="reply-media"
@@ -779,28 +492,27 @@ const ChatWindow = ({
               "
                   />
 
-                  <p className="
+                  <p
+                    className="
               text-[13px]
               opacity-80
               truncate
-            ">
-
+            "
+                  >
                     📷 Photo
-
                   </p>
-
                 </div>
               )}
 
               {/* 🔥 VIDEO */}
               {replyTo.type === "VIDEO" && (
-
-                <div className="
+                <div
+                  className="
             flex
             items-center
             gap-3
-          ">
-
+          "
+                >
                   <video
                     src={replyTo.content}
                     className="
@@ -815,55 +527,48 @@ const ChatWindow = ({
               "
                   />
 
-                  <p className="
+                  <p
+                    className="
               text-[13px]
               opacity-80
-            ">
-
+            "
+                  >
                     🎥 Video
-
                   </p>
-
                 </div>
               )}
 
               {/* 🔥 FILE */}
               {replyTo.type === "FILE" && (
-
-                <p className="
+                <p
+                  className="
             text-[13px]
             opacity-80
-          ">
-
+          "
+                >
                   📄 File
-
                 </p>
               )}
 
               {/* 🔥 TEXT */}
               {replyTo.type === "TEXT" && (
-
-                <p className="
+                <p
+                  className="
             text-[13px]
             opacity-80
 
             truncate
-          ">
-
+          "
+                >
                   {replyTo.content}
-
                 </p>
               )}
-
             </div>
 
             {/* 🔥 CLOSE */}
             <button
               aria-label="Cancel reply"
-
-              onClick={() =>
-                setReplyTo(null)
-              }
+              onClick={() => setReplyTo(null)}
               className="
           shrink-0
 
@@ -871,186 +576,68 @@ const ChatWindow = ({
           hover:opacity-100
         "
             >
-
               <FiX />
-
             </button>
-
           </div>
-
         </div>
       )}
 
       {/* 🔥 INPUT */}
       <ChatInput
         input={input}
-        setInput={
-          setInput
-        }
-
-        inputRef={
-          inputRef
-        }
-
-        handleSendMessage={
-          handleSendMessage
-        }
-
-        handleMicClick={
-          handleMicClick
-        }
-
-        isRecording={
-          isRecording
-        }
-
+        setInput={setInput}
+        inputRef={inputRef}
+        handleSendMessage={handleSendMessage}
+        handleMicClick={handleMicClick}
+        isRecording={isRecording}
         // 🔥 ATTACH
-        showAttach={
-          showAttach
-        }
-
-        setShowAttach={
-          setShowAttach
-        }
-
-        attachRef={
-          attachRef
-        }
-
-        galleryInputRef={
-          galleryInputRef
-        }
-
-        cameraInputRef={
-          cameraInputRef
-        }
-
-        fileInputRef={
-          fileInputRef
-        }
-
-        setPreviewMedia={
-          setPreviewMedia
-        }
-
-        setPreviewType={
-          setPreviewType
-        }
-
-        setShowMediaPreview={
-          setShowMediaPreview
-        }
-
-        setShowCamera={
-          setShowCamera
-        }
-
+        showAttach={showAttach}
+        setShowAttach={setShowAttach}
+        attachRef={attachRef}
+        galleryInputRef={galleryInputRef}
+        cameraInputRef={cameraInputRef}
+        fileInputRef={fileInputRef}
+        setPreviewMedia={setPreviewMedia}
+        setPreviewType={setPreviewType}
+        setShowMediaPreview={setShowMediaPreview}
+        setShowCamera={setShowCamera}
         // 🔥 EMOJI
-        showEmoji={
-          showEmoji
-        }
-
-        setShowEmoji={
-          setShowEmoji
-        }
-
-        emojiRef={
-          emojiRef
-        }
+        showEmoji={showEmoji}
+        setShowEmoji={setShowEmoji}
+        emojiRef={emojiRef}
       />
 
       {/* 🔥 MEDIA PREVIEW */}
       <MediaPreviewModal
-
-        setPreviewUrls={
-          setPreviewUrls
-        }
-
-        showMediaPreview={
-          showMediaPreview
-        }
-
-        setShowMediaPreview={
-          setShowMediaPreview
-        }
-
-        previewMedia={
-          previewMedia
-        }
-
-        setPreviewMedia={
-          setPreviewMedia
-        }
-
-        previewUrls={
-          previewUrls
-        }
-
-        previewType={
-          previewType
-        }
-
-        mediaCaption={
-          mediaCaption
-        }
-
-        setMediaCaption={
-          setMediaCaption
-        }
-
-        sendingMedia={
-          sendingMedia
-        }
-
-        setSendingMedia={
-          setSendingMedia
-        }
-
-        uploadChatMedia={
-          uploadChatMedia
-        }
-
-        sendMessage={
-          sendMessage
-        }
-
-        conversation={
-          conversation
-        }
+        setPreviewUrls={setPreviewUrls}
+        showMediaPreview={showMediaPreview}
+        setShowMediaPreview={setShowMediaPreview}
+        previewMedia={previewMedia}
+        setPreviewMedia={setPreviewMedia}
+        previewUrls={previewUrls}
+        previewType={previewType}
+        mediaCaption={mediaCaption}
+        setMediaCaption={setMediaCaption}
+        sendingMedia={sendingMedia}
+        setSendingMedia={setSendingMedia}
+        uploadChatMedia={uploadChatMedia}
+        sendMessage={sendMessage}
+        conversation={conversation}
       />
 
       {/* 🔥 VIEWER */}
       <MediaViewerModal
         open={viewerOpen}
-
-        onClose={() =>
-          setViewerOpen(
-            false
-          )
-        }
-
-        medias={
-          viewerMedia
-        }
-
-        selectedIndex={
-          viewerIndex
-        }
-
-        setSelectedIndex={
-          setViewerIndex
-        }
+        onClose={() => setViewerOpen(false)}
+        medias={viewerMedia}
+        selectedIndex={viewerIndex}
+        setSelectedIndex={setViewerIndex}
       />
 
       <CameraModal
         open={showCamera}
-
-        onClose={() =>
-          setShowCamera(false)
-        }
-
+        onClose={() => setShowCamera(false)}
         onCapture={(file) => {
-
           setPreviewMedia([file]);
 
           setPreviewType("IMAGE");
@@ -1062,19 +649,54 @@ const ChatWindow = ({
       {/* 🔥 ADD MEMBERS */}
       {showAddMembersModal && (
         <AddMembersModal
-          group={
-            groupDetails ||
-            chat
-          }
-
-          onClose={() =>
-            setShowAddMembersModal(
-              false
-            )
-          }
+          group={groupDetails || chat}
+          onClose={() => setShowAddMembersModal(false)}
         />
       )}
 
+      {/* 🔥 LEAVE GROUP */}
+      <ConfirmModal
+        open={leaveGroupOpen}
+        title="Leave Group"
+        message="Are you sure you want to leave this group?"
+        confirmText="Leave"
+        cancelText="Cancel"
+        danger={true}
+        onClose={() => {
+          setLeaveGroupOpen(false);
+        }}
+        onConfirm={async () => {
+          const res = await leaveGroup(chat.id);
+
+          if (res.success) {
+            navigate("/");
+          }
+
+          setLeaveGroupOpen(false);
+        }}
+      />
+
+      {/* 🔥 DELETE GROUP */}
+      <ConfirmModal
+        open={deleteGroupOpen}
+        title="Delete Group"
+        message="This group will be permanently deleted."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger={true}
+        onClose={() => {
+          setDeleteGroupOpen(false);
+        }}
+        onConfirm={async () => {
+          const res = await deleteGroup(chat.id);
+
+          if (res.success) {
+            navigate("/");
+          }
+
+          setDeleteGroupOpen(false);
+        }}
+      />
     </div>
   );
 };

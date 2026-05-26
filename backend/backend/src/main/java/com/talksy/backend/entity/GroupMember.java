@@ -53,6 +53,11 @@ public class GroupMember {
     private GroupRole role;
 
     // ===============================
+    // 🔥 CLEAR CHAT SUPPORT
+    // ===============================
+    private LocalDateTime clearedAt;
+
+    // ===============================
     // 🕒 JOINED TIME
     // ===============================
     private LocalDateTime joinedAt;

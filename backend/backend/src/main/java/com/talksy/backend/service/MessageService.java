@@ -381,9 +381,53 @@ public class MessageService {
                         .findByConversationOrderByCreatedAtAsc(
                                 conversation
                         );
+
         // ===============================
-// 🔥 FILTER DELETED MESSAGES
-// ===============================
+        // 🔥 GROUP CLEAR CHAT FILTER
+        // ===============================
+        if (Boolean.TRUE.equals(
+                conversation.getIsGroup()
+        )) {
+
+            User user =
+                    userRepository.findById(userId)
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "User not found"
+                                    ));
+
+            GroupMember member =
+                    groupMemberRepository
+                            .findByGroupAndUser(
+                                    conversation.getGroup(),
+                                    user
+                            )
+                            .orElse(null);
+
+            if (
+                    member != null
+
+                            &&
+
+                            member.getClearedAt() != null
+            ) {
+
+                messages = messages.stream()
+
+                        .filter(m ->
+
+                                m.getCreatedAt().isAfter(
+                                        member.getClearedAt()
+                                )
+                        )
+
+                        .toList();
+            }
+        }
+
+        // ===============================
+        // 🔥 FILTER DELETED MESSAGES
+        // ===============================
         messages = messages.stream()
 
                 .filter(m -> {
@@ -936,18 +980,48 @@ public class MessageService {
         // 🔥 GROUP CHAT
         if (Boolean.TRUE.equals(conversation.getIsGroup())) {
 
+            User user =
+                    userRepository.findById(userId)
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "User not found"
+                                    ));
+
+            GroupMember member =
+                    groupMemberRepository
+                            .findByGroupAndUser(
+                                    conversation.getGroup(),
+                                    user
+                            )
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Group member not found"
+                                    ));
+
+            // 🔥 SAVE CLEAR CHAT TIME
+            member.setClearedAt(
+                    java.time.LocalDateTime.now()
+            );
+
+            groupMemberRepository.save(member);
+
             return;
         }
 
+        // ===============================
+        // 🔥 FETCH ALL MESSAGES
+        // ===============================
         List<Message> messages =
                 messageRepository
                         .findByConversationOrderByCreatedAtAsc(
                                 conversation
                         );
 
+
+
         // ===============================
-// 🔥 SAFE CLEAR CHAT
-// ===============================
+        // 🔥 SAFE CLEAR CHAT
+        // ===============================
         for (Message m : messages) {
 
             // 🔥 USER 1

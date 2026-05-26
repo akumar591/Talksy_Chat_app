@@ -88,6 +88,9 @@ function AppRoutes() {
   // 🔥 STEP STATE
   // =====================================
   const [step, setStep] = useState(getInitialStep);
+  
+  // 🔥 MOBILE NAVBAR SEARCH
+  const [mobileSearch, setMobileSearch] = useState("");
 
   // =====================================
   // 🔥 MOUNT SAFETY
@@ -291,20 +294,20 @@ function AppRoutes() {
 
       <ProtectedRoute>
         {/* 🔥 GLOBAL NAVBAR */}
-        <Navbar />
+        <Navbar mobileSearch={mobileSearch} setMobileSearch={setMobileSearch}/>
 
         <Routes>
           {/* ================= CHAT ================= */}
 
-          <Route path="/" element={<ChatLayout />} />
+          <Route path="/" element={<ChatLayout mobileSearch={mobileSearch} />} />
 
           {/* 🔥 CHAT WINDOW FULLSCREEN */}
-          <Route path="/chat/:id" element={<ChatLayout />} />
+          <Route path="/chat/:id" element={<ChatLayout mobileSearch={mobileSearch} />} />
 
           {/* 🔥 GROUP CHAT */}
-          <Route path="/group/:id" element={<ChatLayout />} />
+          <Route path="/group/:id" element={<ChatLayout mobileSearch={mobileSearch} />} />
 
-          <Route path="/groups" element={<ChatLayout />} />
+          <Route path="/groups" element={<ChatLayout mobileSearch={mobileSearch} />} />
 
           <Route path="/community" element={<ChatLayout />} />
 

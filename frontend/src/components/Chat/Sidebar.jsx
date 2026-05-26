@@ -1,28 +1,16 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { useChat } from "../../context/ChatContext";
 
 import { useGroup } from "../../context/GroupContext";
 import { FiSearch } from "react-icons/fi";
 
-const Sidebar = ({
-  onSelectChat,
-}) => {
+const Sidebar = ({ onSelectChat, mobileSearch }) => {
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
-
-  const location =
-    useLocation();
+  const location = useLocation();
 
   const {
     contacts,
@@ -40,366 +28,223 @@ const Sidebar = ({
   } = useChat();
 
   // 🔥 GROUP CONTEXT
-  const {
-    groups,
-    fetchGroups,
-    setSelectedGroup,
-  } = useGroup();
+  const { groups, fetchGroups, setSelectedGroup } = useGroup();
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
+
+  // ===============================
+  // 🔥 MOBILE VS DESKTOP SEARCH
+  // ===============================
+  const finalSearch = window.innerWidth < 768 ? mobileSearch || "" : search;
 
   // ===============================
   // 🔥 FETCH CONTACTS
   // ===============================
   useEffect(() => {
-
     fetchContacts();
-
   }, []);
 
   // ===============================
   // 🔥 FETCH GROUPS
   // ===============================
   useEffect(() => {
-
     fetchGroups();
-
   }, []);
 
   // ===============================
   // 🔥 MERGE CONTACTS + GROUPS
   // ===============================
-  const allChats =
-    useMemo(() => {
+  const allChats = useMemo(() => {
+    // 🔥 FORMAT GROUPS
+    const formattedGroups = groups.map((group) => ({
+      id: group.id,
 
-      // 🔥 FORMAT GROUPS
-      const formattedGroups =
-        groups.map((group) => ({
+      name: group.name || "Group",
 
-          id: group.id,
+      avatar: group.avatar || "",
 
-          name:
-            group.name || "Group",
+      isGroup: true,
 
-          avatar:
-            group.avatar || "",
+      // 🔥 IMPORTANT
+      conversationId: group.conversationId,
 
-          isGroup: true,
+      memberCount: group.memberCount || 0,
 
-          // 🔥 IMPORTANT
-          conversationId:
-            group.conversationId,
+      unreadCount: 0,
 
-          memberCount:
-            group.memberCount || 0,
+      lastMessage: group.lastMessage || "Group chat",
 
-          unreadCount: 0,
+      lastMessageTime: group.lastMessageTime || group.createdAt,
+    }));
 
-          lastMessage:
-            group.lastMessage ||
-            "Group chat",
-
-          lastMessageTime:
-            group.lastMessageTime ||
-            group.createdAt,
-        }));
-
-      return [
-        ...contacts,
-        ...formattedGroups,
-      ];
-
-    }, [
-      contacts,
-      groups,
-    ]);
+    return [...contacts, ...formattedGroups];
+  }, [contacts, groups]);
 
   // ===============================
   // 🔥 FILTER CHATS
   // ===============================
-  const filteredChats =
-    useMemo(() => {
+  const filteredChats = useMemo(() => {
+    let filtered = allChats;
 
-      let filtered =
-        allChats;
+    // 🔥 GROUP FILTER
+    if (activeFilter === "Groups") {
+      filtered = filtered.filter((chat) => chat.isGroup);
+    }
 
-      // 🔥 GROUP FILTER
-      if (
-        activeFilter ===
-        "Groups"
-      ) {
+    // 🔥 UNREAD FILTER
+    if (activeFilter === "Unread") {
+      filtered = filtered.filter((chat) => chat.unreadCount > 0);
+    }
 
-        filtered =
-          filtered.filter(
-            (chat) =>
-              chat.isGroup
-          );
-      }
+    // 🔥 FAVORITES FILTER
+    if (activeFilter === "Favorites") {
+      filtered = filtered.filter((chat) => chat.favorite);
+    }
 
-      // 🔥 UNREAD FILTER
-      if (
-        activeFilter ===
-        "Unread"
-      ) {
-
-        filtered =
-          filtered.filter(
-            (chat) =>
-              chat.unreadCount > 0
-          );
-      }
-
-      // 🔥 FAVORITES FILTER
-      if (
-        activeFilter ===
-        "Favorites"
-      ) {
-
-        filtered =
-          filtered.filter(
-            (chat) =>
-              chat.favorite
-          );
-      }
-
-      // 🔥 SEARCH
-      if (
-        search.trim()
-      ) {
-
-        filtered =
-          filtered.filter(
-            (chat) =>
-              chat.name
-                ?.toLowerCase()
-                .includes(
-                  search.toLowerCase()
-                )
-          );
-      }
-
-      // 🔥 SORT LATEST
-      filtered.sort(
-        (a, b) => {
-
-          if (
-            !a.lastMessageTime
-          ) {
-            return 1;
-          }
-
-          if (
-            !b.lastMessageTime
-          ) {
-            return -1;
-          }
-
-          return (
-            new Date(
-              b.lastMessageTime
-            ) -
-            new Date(
-              a.lastMessageTime
-            )
-          );
-        }
+    // 🔥 SEARCH
+    if (finalSearch.trim()) {
+      filtered = filtered.filter((chat) =>
+        chat.name?.toLowerCase().includes(finalSearch.toLowerCase()),
       );
+    }
 
-      return filtered;
+    // 🔥 SORT LATEST
+    filtered.sort((a, b) => {
+      if (!a.lastMessageTime) {
+        return 1;
+      }
 
-    }, [
-      allChats,
-      search,
-      activeFilter,
-    ]);
+      if (!b.lastMessageTime) {
+        return -1;
+      }
+
+      return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
+    });
+
+    return filtered;
+  }, [allChats, search, mobileSearch, activeFilter]);
 
   // ===============================
   // 🔥 FORMAT TIME
   // ===============================
-  const formatTime = (
-    time
-  ) => {
-
+  const formatTime = (time) => {
     if (!time) return "";
 
-    const date =
-      new Date(time);
+    const date = new Date(time);
 
-    const now =
-      new Date();
+    const now = new Date();
 
-    const diff =
-      now.getTime() -
-      date.getTime();
+    const diff = now.getTime() - date.getTime();
 
-    const oneDay =
-      24 * 60 * 60 * 1000;
+    const oneDay = 24 * 60 * 60 * 1000;
 
-    if (
-      diff < oneDay
-    ) {
-
-      return date.toLocaleTimeString(
-        [],
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      );
+    if (diff < oneDay) {
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     }
 
-    return date.toLocaleDateString(
-      [],
-      {
-        day: "numeric",
-        month: "short",
-      }
-    );
+    return date.toLocaleDateString([], {
+      day: "numeric",
+      month: "short",
+    });
   };
 
   // ===============================
   // 🔥 OPEN CHAT / GROUP
   // ===============================
-  const handleClick =
-    async (chat) => {
-
-      try {
-
-        // ===============================
-        // 🔥 GROUP CHAT
-        // ===============================
-        if (
-          chat.isGroup
-        ) {
-
-          // ❌ safety check
-          if (
-            !chat.conversationId
-          ) {
-
-            console.error(
-              "Group conversation not found"
-            );
-
-            return;
-          }
-
-          // 🔥 SAVE SELECTED GROUP
-          setSelectedGroup(
-            chat
-          );
-
-          // 🔥 CREATE GROUP CONVERSATION
-          const groupConversation = {
-
-            id:
-              chat.conversationId,
-
-            isGroup: true,
-
-            groupId:
-              chat.id,
-          };
-
-          // 🔥 SAVE ACTIVE CONVERSATION
-          setConversation(
-            groupConversation
-          );
-
-          // 🔥 FETCH GROUP MESSAGES
-          await fetchMessages(
-            chat.conversationId
-          );
-
-          onSelectChat &&
-            onSelectChat({
-              ...chat,
-              isGroup: true,
-            });
-
-          navigate(
-            `/group/${chat.id}`
-          );
+  const handleClick = async (chat) => {
+    try {
+      // ===============================
+      // 🔥 GROUP CHAT
+      // ===============================
+      if (chat.isGroup) {
+        // ❌ safety check
+        if (!chat.conversationId) {
+          console.error("Group conversation not found");
 
           return;
         }
 
-        // ===============================
-        // 🔥 PRIVATE CHAT
-        // ===============================
-        const conversation =
-          await openConversation(
-            chat
-          );
+        // 🔥 SAVE SELECTED GROUP
+        setSelectedGroup(chat);
 
-        if (
-          !conversation
-        ) {
+        // 🔥 CREATE GROUP CONVERSATION
+        const groupConversation = {
+          id: chat.conversationId,
 
-          return;
-        }
+          isGroup: true,
 
-        const updatedChat = {
-
-          ...chat,
-
-          conversationId:
-            conversation.id,
+          groupId: chat.id,
         };
 
+        // 🔥 SAVE ACTIVE CONVERSATION
+        setConversation(groupConversation);
+
+        // 🔥 FETCH GROUP MESSAGES
+        await fetchMessages(chat.conversationId);
+
         onSelectChat &&
-          onSelectChat(
-            updatedChat
-          );
+          onSelectChat({
+            ...chat,
+            isGroup: true,
+          });
 
-        navigate(
-          `/chat/${chat.id}`
-        );
+        navigate(`/group/${chat.id}`);
 
-      } catch (err) {
-
-        console.log(err);
+        return;
       }
-    };
+
+      // ===============================
+      // 🔥 PRIVATE CHAT
+      // ===============================
+      const conversation = await openConversation(chat);
+
+      if (!conversation) {
+        return;
+      }
+
+      const updatedChat = {
+        ...chat,
+
+        conversationId: conversation.id,
+      };
+
+      onSelectChat && onSelectChat(updatedChat);
+
+      navigate(`/chat/${chat.id}`);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <div className="w-full h-full bg-[var(--bg)]">
-
       {/* SEARCH */}
       <div className="hidden md:block px-3 pt-3 pb-2">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-full border bg-[var(--card)]/50 border-[var(--border)]" >
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border bg-[var(--card)]/50 border-[var(--border)]">
           <FiSearch className="text-sm opacity-60" />
 
           <input
             type="text"
             placeholder="Search chats..."
             value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
+            onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text)]/50"
           />
         </div>
       </div>
 
-
       {/* 🔥 SCROLL */}
       <div className="h-full md:h-[calc(100%-80px)] overflow-y-auto overflow-x-hidden px-2 pb-20 md:pb-2 hide-scrollbar">
-
         {/* 🔥 LOADING */}
         {sidebarLoading && (
-
           <div className="flex flex-col gap-2 mt-2">
-
-            {[1, 2, 3, 4, 5].map(
-              (i) => (
-
-                <div
-                  key={i}
-                  className="
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="
                     animate-pulse
                     flex
                     items-center
@@ -408,58 +253,38 @@ const Sidebar = ({
                     py-3
                     rounded-xl
                   "
-                >
+              >
+                <div className="w-12 h-12 rounded-full bg-[var(--card)]" />
 
-                  <div className="w-12 h-12 rounded-full bg-[var(--card)]" />
+                <div className="flex-1">
+                  <div className="h-3 w-32 rounded bg-[var(--card)] mb-2" />
 
-                  <div className="flex-1">
-
-                    <div className="h-3 w-32 rounded bg-[var(--card)] mb-2" />
-
-                    <div className="h-2 w-20 rounded bg-[var(--card)]" />
-                  </div>
+                  <div className="h-2 w-20 rounded bg-[var(--card)]" />
                 </div>
-              )
-            )}
+              </div>
+            ))}
           </div>
         )}
 
         {/* 🔥 EMPTY */}
-        {!sidebarLoading &&
-          filteredChats.length ===
-          0 && (
-
-            <div className="h-full flex items-center justify-center opacity-60 text-sm">
-
-              No chats found
-
-            </div>
-          )}
+        {!sidebarLoading && filteredChats.length === 0 && (
+          <div className="h-full flex items-center justify-center opacity-60 text-sm">
+            No chats found
+          </div>
+        )}
 
         {/* 🔥 CHAT LIST */}
         <div className="flex flex-col gap-1 pt-[72px] md:pt-0">
+          {filteredChats.map((chat) => {
+            const isActive =
+              location.pathname === `/chat/${chat.id}` ||
+              location.pathname === `/group/${chat.id}`;
 
-          {filteredChats.map(
-            (chat) => {
-
-              const isActive =
-
-                location.pathname ===
-                `/chat/${chat.id}`
-
-                ||
-
-                location.pathname ===
-                `/group/${chat.id}`;
-
-              return (
-
-                <div
-                  key={`${chat.isGroup ? "group" : "chat"}-${chat.id}`}
-                  onClick={() =>
-                    handleClick(chat)
-                  }
-                  className={`
+            return (
+              <div
+                key={`${chat.isGroup ? "group" : "chat"}-${chat.id}`}
+                onClick={() => handleClick(chat)}
+                className={`
                     flex
                     items-center
                     gap-3
@@ -469,40 +294,34 @@ const Sidebar = ({
                     cursor-pointer
                     transition
 
-                    ${isActive
-
-                      ? `
+                    ${
+                      isActive
+                        ? `
                           bg-[var(--card)]
                         `
-
-                      : `
+                        : `
                           hover:bg-[var(--card)]/60
                         `
                     }
                   `}
-                >
-
-                  {/* 🔥 AVATAR */}
-                  <div className="relative shrink-0">
-
-                    {chat.avatar ? (
-
-                      <img
-                        src={chat.avatar}
-                        alt={chat.name}
-                        draggable={false}
-                        className="
+              >
+                {/* 🔥 AVATAR */}
+                <div className="relative shrink-0">
+                  {chat.avatar ? (
+                    <img
+                      src={chat.avatar}
+                      alt={chat.name}
+                      draggable={false}
+                      className="
                           w-12
                           h-12
                           rounded-full
                           object-cover
                         "
-                      />
-
-                    ) : (
-
-                      <div
-                        className="
+                    />
+                  ) : (
+                    <div
+                      className="
                           w-12
                           h-12
                           rounded-full
@@ -514,17 +333,15 @@ const Sidebar = ({
                           font-semibold
                           uppercase
                         "
-                      >
-                        {chat.name?.charAt(0)}
-                      </div>
-                    )}
+                    >
+                      {chat.name?.charAt(0)}
+                    </div>
+                  )}
 
-                    {/* 🔥 ONLINE */}
-                    {chat.online &&
-                      !chat.isGroup && (
-
-                        <span
-                          className="
+                  {/* 🔥 ONLINE */}
+                  {chat.online && !chat.isGroup && (
+                    <span
+                      className="
                             absolute
                             bottom-0
                             right-0
@@ -535,50 +352,37 @@ const Sidebar = ({
                             border-[2px]
                             border-[var(--bg)]
                           "
-                        />
-                      )}
+                    />
+                  )}
+                </div>
+
+                {/* 🔥 INFO */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <h3 className="font-medium truncate">
+                      {chat.name}
+
+                      {chat.isGroup && " 👥"}
+                    </h3>
+
+                    <span className="text-xs opacity-60 whitespace-nowrap">
+                      {formatTime(chat.lastMessageTime)}
+                    </span>
                   </div>
 
-                  {/* 🔥 INFO */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mt-0.5 gap-2">
+                    <p className="text-sm opacity-70 truncate">
+                      {chat.isGroup
+                        ? `${chat.memberCount} members`
+                        : chat.lastMessage && chat.lastMessage.trim() !== ""
+                          ? chat.lastMessage
+                          : "Start conversation"}
+                    </p>
 
-                    <div className="flex justify-between items-center gap-2">
-
-                      <h3 className="font-medium truncate">
-
-                        {chat.name}
-
-                        {chat.isGroup &&
-                          " 👥"}
-                      </h3>
-
-                      <span className="text-xs opacity-60 whitespace-nowrap">
-
-                        {formatTime(
-                          chat.lastMessageTime
-                        )}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center mt-0.5 gap-2">
-
-                      <p className="text-sm opacity-70 truncate">
-
-                        {chat.isGroup
-                          ? `${chat.memberCount} members`
-                          : chat.lastMessage &&
-                            chat.lastMessage.trim() !==
-                            ""
-                            ? chat.lastMessage
-                            : "Start conversation"}
-                      </p>
-
-                      {/* 🔥 UNREAD */}
-                      {chat.unreadCount >
-                        0 && (
-
-                          <span
-                            className="
+                    {/* 🔥 UNREAD */}
+                    {chat.unreadCount > 0 && (
+                      <span
+                        className="
                             min-w-[18px]
                             h-[18px]
                             px-1
@@ -590,29 +394,25 @@ const Sidebar = ({
                             items-center
                             justify-center
                           "
-                          >
-                            {chat.unreadCount}
-                          </span>
-                        )}
+                      >
+                        {chat.unreadCount}
+                      </span>
+                    )}
 
-                      {/* 🔥 LAST SEEN */}
-                      {!chat.online &&
-                        !chat.isGroup &&
-                        chat.lastSeen &&
-                        chat.unreadCount ===
-                        0 && (
-
-                          <span className="text-[10px] opacity-50 whitespace-nowrap">
-
-                            last seen
-                          </span>
-                        )}
-                    </div>
+                    {/* 🔥 LAST SEEN */}
+                    {!chat.online &&
+                      !chat.isGroup &&
+                      chat.lastSeen &&
+                      chat.unreadCount === 0 && (
+                        <span className="text-[10px] opacity-50 whitespace-nowrap">
+                          last seen
+                        </span>
+                      )}
                   </div>
                 </div>
-              );
-            }
-          )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

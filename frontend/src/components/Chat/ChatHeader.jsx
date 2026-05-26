@@ -36,15 +36,18 @@ const ChatHeader = ({
 
   setShowAddMembersModal,
 
+  isCreator,
+  isAdmin,
+
+  setLeaveGroupOpen,
+  setDeleteGroupOpen,
+
   handleClearChat,
 }) => {
-
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-xl sticky top-0 z-40">
-
       {/* 🔥 LEFT */}
       <div className="flex items-center gap-3 min-w-0">
-
         <button
           onClick={onBack}
           aria-label="Go back"
@@ -56,23 +59,15 @@ const ChatHeader = ({
         {/* 🔥 PROFILE */}
         <div
           onClick={() => {
-
             if (chat.isGroup) {
-
               navigate(`/group-info/${chat.id}`);
-
             } else {
-
-              navigate(
-                `/user/${chat.userId || chat.id}`
-              );
+              navigate(`/user/${chat.userId || chat.id}`);
             }
           }}
           className="flex items-center gap-3 cursor-pointer min-w-0"
         >
-
           <div className="relative shrink-0">
-
             <img
               src={chat.avatar || "/default-avatar.png"}
               alt={chat.name}
@@ -82,17 +77,12 @@ const ChatHeader = ({
             {!chat.isGroup && chat.online && (
               <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--bg)]" />
             )}
-
           </div>
 
           <div className="min-w-0">
-
-            <h2 className="font-semibold truncate">
-              {chat.name}
-            </h2>
+            <h2 className="font-semibold truncate">{chat.name}</h2>
 
             <p className="text-xs opacity-60 truncate">
-
               {isRecording
                 ? "Recording..."
                 : chat.isGroup
@@ -100,7 +90,6 @@ const ChatHeader = ({
                   : chat.online
                     ? "online"
                     : "last seen recently"}
-
             </p>
           </div>
         </div>
@@ -108,7 +97,6 @@ const ChatHeader = ({
 
       {/* 🔥 RIGHT */}
       <div className="flex items-center gap-3 text-[22px] shrink-0">
-
         {/* 🔥 VIDEO */}
         <button
           aria-label="Start video call"
@@ -149,14 +137,12 @@ const ChatHeader = ({
 
         {/* 🔥 MENU */}
         <div ref={menuRef} className="relative">
-
           <button
             aria-label="Open menu"
             onClick={(e) => {
-
               e.stopPropagation();
 
-              setShowMenu(prev => !prev);
+              setShowMenu((prev) => !prev);
             }}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--primary)]/10 transition"
           >
@@ -165,20 +151,13 @@ const ChatHeader = ({
 
           {showMenu && (
             <div className="absolute right-0 top-12 w-56 p-1.5 z-50 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[0_12px_40px_rgba(0,0,0,0.35)] overflow-hidden animate-menu">
-
               {/* PROFILE */}
               <div
                 onClick={() => {
-
                   if (chat.isGroup) {
-
                     navigate(`/group-info/${chat.id}`);
-
                   } else {
-
-                    navigate(
-                      `/user/${chat.userId || chat.id}`
-                    );
+                    navigate(`/user/${chat.userId || chat.id}`);
                   }
 
                   setShowMenu(false);
@@ -195,10 +174,15 @@ const ChatHeader = ({
               {/* MEDIA */}
               <div
                 onClick={() => {
+                  // 🔥 GROUP CHAT
+                  if (chat?.isGroup) {
+                    navigate(`/group-media/${chat.id}`);
+                  }
 
-                  navigate(
-                    `/media/${chat.userId || chat.id}`
-                  );
+                  // 🔥 PRIVATE CHAT
+                  else {
+                    navigate(`/media/${chat.id}`);
+                  }
 
                   setShowMenu(false);
                 }}
@@ -206,42 +190,32 @@ const ChatHeader = ({
               >
                 <FiImage size={16} />
 
-                <span className="text-[13px] font-medium">
-                  Media & Files
-                </span>
+                <span className="text-[13px] font-medium">Media & Files</span>
               </div>
 
               {/* THEME */}
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
-
                 <FiEdit3 size={16} />
 
-                <span className="text-[13px] font-medium">
-                  Chat Theme
-                </span>
-
+                <span className="text-[13px] font-medium">Chat Theme</span>
               </div>
 
               {/* WALLPAPER */}
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
-
                 <FiGrid size={16} />
 
                 <span className="text-[13px] font-medium">
                   Change Wallpaper
                 </span>
-
               </div>
 
               {/* MUTE */}
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
-
                 <FiBellOff size={16} />
 
                 <span className="text-[13px] font-medium">
                   Mute Notifications
                 </span>
-
               </div>
 
               <div className="h-px bg-white/10 my-1.5" />
@@ -250,25 +224,20 @@ const ChatHeader = ({
               {!chat.isGroup && (
                 <div
                   onClick={async () => {
-
-                    await toggleBlockContact(chat.contactRecordId)
+                    await toggleBlockContact(chat.contactRecordId);
 
                     setShowMenu(false);
                   }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-yellow-400 hover:bg-yellow-500/10 transition-all duration-200"
                 >
-
-                  {chat?.blocked
-                    ? <FiUnlock size={16} />
-                    : <FiSlash size={16} />
-                  }
+                  {chat?.blocked ? (
+                    <FiUnlock size={16} />
+                  ) : (
+                    <FiSlash size={16} />
+                  )}
 
                   <span className="text-[13px] font-medium">
-
-                    {chat?.blocked
-                      ? "Unblock Contact"
-                      : "Block Contact"}
-
+                    {chat?.blocked ? "Unblock Contact" : "Block Contact"}
                   </span>
                 </div>
               )}
@@ -276,74 +245,142 @@ const ChatHeader = ({
               {/* 🔥 GROUP */}
               {chat.isGroup && (
                 <>
-                  <div
-                    onClick={() => {
+                  {/* ADD MEMBERS */}
+                  {(isCreator || isAdmin) && (
+                    <div
+                      onClick={() => {
+                        setShowAddMembersModal(true);
 
-                      setShowAddMembersModal(true);
+                        setShowMenu(false);
+                      }}
+                      className="
+          flex
+          items-center
+          gap-3
 
-                      setShowMenu(false);
-                    }}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200"
-                  >
+          px-3
+          py-2.5
 
-                    <FiUserPlus size={16} />
+          rounded-xl
 
-                    <span className="text-[13px] font-medium">
-                      Add Members
-                    </span>
-                  </div>
+          cursor-pointer
 
-                  <div
-                    onClick={async () => {
+          hover:bg-white/5
 
-                      await leaveGroup(chat.id);
+          transition-all
+          duration-200
+        "
+                    >
+                      <FiUserPlus size={16} />
 
-                      navigate("/");
+                      <span className="text-[13px] font-medium">
+                        Add Members
+                      </span>
+                    </div>
+                  )}
 
-                      setShowMenu(false);
-                    }}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
-                  >
+                  {/* DELETE GROUP */}
+                  {isCreator && (
+                    <div
+                      onClick={() => {
+                        setShowMenu(false);
 
-                    <FiLogOut size={16} />
+                        setTimeout(() => {
+                          setDeleteGroupOpen(true);
+                        }, 100);
+                      }}
+                      className="
+          flex
+          items-center
+          gap-3
 
-                    <span className="text-[13px] font-medium">
-                      Leave Group
-                    </span>
-                  </div>
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          text-red-400
+
+          hover:bg-red-500/10
+
+          transition-all
+          duration-200
+        "
+                    >
+                      <FiTrash2 size={16} />
+
+                      <span className="text-[13px] font-medium">
+                        Delete Group
+                      </span>
+                    </div>
+                  )}
+
+                  {/* LEAVE GROUP */}
+                  {!isCreator && (
+                    <div
+                      onClick={() => {
+                        setShowMenu(false);
+
+                        setTimeout(() => {
+                          setLeaveGroupOpen(true);
+                        }, 100);
+                      }}
+                      className="
+          flex
+          items-center
+          gap-3
+
+          px-3
+          py-2.5
+
+          rounded-xl
+
+          cursor-pointer
+
+          text-red-400
+
+          hover:bg-red-500/10
+
+          transition-all
+          duration-200
+        "
+                    >
+                      <FiLogOut size={16} />
+
+                      <span className="text-[13px] font-medium">
+                        Leave Group
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 
               {/* CLEAR */}
               <div
                 onClick={() => {
-
                   handleClearChat();
 
                   setShowMenu(false);
                 }}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
               >
-
                 <FiTrash2 size={16} />
 
-                <span className="text-[13px] font-medium">
-                  Clear Chat
-                </span>
+                <span className="text-[13px] font-medium">Clear Chat</span>
               </div>
 
               {/* DELETE */}
               {!chat.isGroup && (
                 <div
                   onClick={async () => {
-
                     await deleteContact(chat.contactRecordId);
 
                     setShowMenu(false);
                   }}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-red-400 hover:bg-red-500/10 transition-all duration-200"
                 >
-
                   <FiUserX size={16} />
 
                   <span className="text-[13px] font-medium">
@@ -351,10 +388,8 @@ const ChatHeader = ({
                   </span>
                 </div>
               )}
-
             </div>
           )}
-
         </div>
       </div>
     </div>

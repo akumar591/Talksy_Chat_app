@@ -11,7 +11,7 @@ import ChatWindow from "./ChatWindow";
 import { useChat } from "../../context/ChatContext";
 import { useGroup } from "../../context/GroupContext";
 
-const ChatLayout = () => {
+const ChatLayout = ({mobileSearch}) => {
 
   const { id } = useParams();
 
@@ -135,9 +135,8 @@ const ChatLayout = () => {
       >
 
         <Sidebar
-          onSelectChat={
-            setSelectedChat
-          }
+          mobileSearch={mobileSearch}
+          onSelectChat={setSelectedChat}
         />
 
       </div>

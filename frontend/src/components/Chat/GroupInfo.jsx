@@ -433,13 +433,13 @@ const GroupInfo = () => {
   }
 
   return (
-    <div className="w-full h-full overflow-hidden bg-[var(--bg)] text-[var(--text)] flex justify-center">
+    <div className=" w-full h-screen md:h-[calc(100vh-4rem)] mt-0 md:mt-16 overflow-hidden bg-[var(--bg)] text-[var(--text)] flex justify-center">
       {/* CONTAINER */}
       <div className="w-full md:max-w-2xl h-screen flex flex-col overflow-hidden">
         {/* =============================== */}
         {/* 🔥 HEADER */}
         {/* =============================== */}
-        <div className="fixed top-0 left-0 right-0 md:left-auto md:right-auto md:max-w-2xl w-full z-50 flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)]">
+        <div className="w-full flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)]">
           {/* LEFT */}
           <div className="flex items-center gap-3">
             <button

@@ -10,7 +10,7 @@ import { assets } from "../assets/assets";
 import { useTheme } from "../context/ThemeContext";
 import SettingsDrawer from "./Settings/SettingsDrawer";
 
-const Navbar = () => {
+const Navbar = ({mobileSearch, setMobileSearch}) => {
 
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -21,7 +21,6 @@ const Navbar = () => {
   const [openSettings, setOpenSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const { activeFilter, setActiveFilter } = useChat();
-  const [search, setSearch] = useState("");
   const menuRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -345,8 +344,8 @@ const Navbar = () => {
 
                     <input
                       type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      value={mobileSearch}
+                      onChange={(e) => setMobileSearch(e.target.value)}
                       placeholder="Search chats..."
                       className="bg-transparent outline-none text-sm w-full placeholder:text-[var(--text)]/50"
                     />
