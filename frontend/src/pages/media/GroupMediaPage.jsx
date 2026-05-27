@@ -167,7 +167,7 @@ const GroupMediaPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 md:top-16 bg-[var(--bg)] text-[var(--text)] overflow-y-auto hide-scrollbar">
+    <div className="fixed inset-0 md:top-16 bg-[var(--bg)] text-[var(--text)] overflow-y-auto hide-scrollbar"  style={{ background: "var(--bg)" }}>
       {/* =============================== */}
       {/* 🔥 HEADER */}
       {/* =============================== */}

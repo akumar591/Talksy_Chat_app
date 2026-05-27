@@ -323,7 +323,7 @@ const NewGroup = () => {
     ]);
 
   return (
-    <div className="fixed inset-0 md:top-16 bg-[var(--bg)] text-[var(--text)] overflow-hidden">
+    <div className="fixed inset-0 md:top-16 text-[var(--text)] overflow-hidden" style={{ background: "var(--bg)" }}>
 
       {/* 🔥 FIXED LAYOUT */}
       <div className="w-full md:max-w-2xl mx-auto h-full flex flex-col ">

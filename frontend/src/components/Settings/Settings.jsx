@@ -237,7 +237,7 @@ const Settings = () => {
             <Item
               label="Theme"
               icon={<FiSun />}
-              path="/settings/theme-drawer"
+              path="/settings/appearance"
             />
 
           </Section>

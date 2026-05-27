@@ -58,10 +58,17 @@ const WallpaperModal = ({
     setCustomWallpaper,
   } = useChatAppearance();
 
-  // ===============================
-  // 🔥 FINAL WALLPAPERS
-  // ===============================
   const FINAL_WALLPAPERS = WALLPAPERS;
+
+  // ======================================
+  // 🔥 LIGHT MODE WALLPAPERS
+  // ======================================
+  const LIGHT_THEME_IDS = [
+    "soft-cloud",
+    "peach-glow",
+    "mint-fresh",
+    "cream-sunset",
+  ];
 
   // ===============================
   // 🔥 CURRENT
@@ -138,19 +145,11 @@ const WallpaperModal = ({
 
           shadow-[0_20px_80px_rgba(0,0,0,0.45)]
 
-          ${
-            dark
-              ? `
-                bg-[#0b1120]
-                border-white/10
-                text-white
-              `
-              : `
-                bg-white
-                border-black/10
-                text-black
-              `
-          }
+          bg-[var(--card)]
+
+          border-[var(--border)]
+
+          text-[var(--text)]
 
           md:mt-14
         `}
@@ -248,6 +247,18 @@ const WallpaperModal = ({
               </h3>
             </div>
 
+            <p
+              className={`
+                  text-[12px]
+
+                  mb-4
+
+                  ${dark ? "text-yellow-300/80" : "text-orange-600"}
+                `}
+            >
+              ☀️ Light wallpapers are recommended for light mode experience.
+            </p>
+
             {/* 🔥 COLORS */}
             <div
               className="
@@ -264,6 +275,9 @@ const WallpaperModal = ({
               {FINAL_WALLPAPERS.filter((item) => item.type === "gradient").map(
                 (wallpaper) => {
                   const isActive = currentWallpaper?.id === wallpaper.id;
+                  const isLightWallpaper = LIGHT_THEME_IDS.includes(
+                    wallpaper.id,
+                  );
 
                   return (
                     <button
@@ -298,6 +312,35 @@ const WallpaperModal = ({
                           background: wallpaper.background,
                         }}
                       />
+
+                      {/* 🔥 LIGHT TAG */}
+                      {isLightWallpaper && (
+                        <div
+                          className="
+                            absolute
+
+                            top-3
+                            left-3
+
+                            px-2
+                            py-[4px]
+
+                            rounded-full
+
+                            bg-white/90
+                            backdrop-blur-xl
+
+                            text-[10px]
+                            font-semibold
+
+                            text-black
+
+                            shadow-[0_4px_12px_rgba(0,0,0,0.12)]
+                          "
+                        >
+                          Light Mode
+                        </div>
+                      )}
 
                       {/* 🔥 NAME */}
                       <div

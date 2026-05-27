@@ -1,5 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FiMessageCircle, FiUsers, FiSettings, FiSun, FiMoon, FiSearch, FiLink, FiPhone, FiUserPlus, FiUser } from "react-icons/fi";
+import {
+  FiMessageCircle,
+  FiUsers,
+  FiSettings,
+  FiSun,
+  FiMoon,
+  FiSearch,
+  FiLink,
+  FiPhone,
+  FiUserPlus,
+  FiUser,
+} from "react-icons/fi";
 import { MdOutlineGroups, MdOutlineGroup, MdGroups } from "react-icons/md";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { createPortal } from "react-dom";
@@ -8,17 +19,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { assets } from "../assets/assets";
 import { useTheme } from "../context/ThemeContext";
-import SettingsDrawer from "./Settings/SettingsDrawer";
 
-const Navbar = ({mobileSearch, setMobileSearch}) => {
-
+const Navbar = ({ mobileSearch, setMobileSearch }) => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
 
   /* 🔥 UI STATES */
-  const [openSettings, setOpenSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const { activeFilter, setActiveFilter } = useChat();
   const menuRef = useRef(null);
@@ -46,7 +54,6 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
   /* 🔥 MOBILE HIDE ROUTES */
   const mobileHideRoutes = [
-
     "/chat/",
 
     "/group/",
@@ -75,15 +82,12 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
   ];
 
   /* 🔥 HIDE NAVBAR */
-  const hideNavbar =
-    mobileHideRoutes.some(
-      (route) =>
-        location.pathname.startsWith(route)
-    );
+  const hideNavbar = mobileHideRoutes.some((route) =>
+    location.pathname.startsWith(route),
+  );
 
   return (
     <>
-
       <>
         {/* ================= DESKTOP NAVBAR ================= */}
         <div
@@ -141,7 +145,11 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
             <NavItem
               icon={<FiMessageCircle />}
               label="Chats"
-              onClick={() => { setActiveFilter("All"); navigate("/"); }} />
+              onClick={() => {
+                setActiveFilter("All");
+                navigate("/");
+              }}
+            />
 
             <NavItem
               icon={<FiUserPlus />}
@@ -164,14 +172,17 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
             <NavItem
               icon={<MdOutlineGroups />}
               label="Groups"
-              onClick={() => { setActiveFilter("Groups"); navigate("/"); }} />
+              onClick={() => {
+                setActiveFilter("Groups");
+                navigate("/");
+              }}
+            />
 
             <NavItem
               icon={<MdOutlineGroups />}
               label="New-group"
               onClick={() => navigate("/new-group")}
             />
-
           </div>
 
           {/* RIGHT SIDE */}
@@ -195,25 +206,8 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
             </div>
 
             {/* SETTINGS */}
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-
-                setOpenSettings(true);
-              }}
-              className="
-                  cursor-pointer
-                  group
-                "
-            >
-              <FiSettings
-                className="
-                    text-xl
-                    icon
-
-                    group-hover:text-[var(--primary)]
-                  "
-              />
+            <div className="cursor-pointer  group" onClick={() => navigate("/settings/appearance")}>
+              <FiSettings className="text-xl icon group-hover:text-[var(--primary)]"/> 
             </div>
 
             {/* THEME */}
@@ -225,20 +219,18 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
         {!hideNavbar && (
           <>
             <div className="md:hidden fixed top-0 left-0 w-full z-50 isolate">
-
               {/* BACKGROUND */}
               <div
-                className={`absolute inset-0 backdrop-blur-xl opacity-95 pointer-events-none ${theme === "light"
-                  ? "bg-gradient-to-r from-white via-gray-100 to-white"
-                  : "bg-gradient-to-r from-[#020617] via-[#0b0f1a] to-[#020617]"
-                  }`}
+                className={`absolute inset-0 backdrop-blur-xl opacity-95 pointer-events-none ${
+                  theme === "light"
+                    ? "bg-gradient-to-r from-white via-gray-100 to-white"
+                    : "bg-gradient-to-r from-[#020617] via-[#0b0f1a] to-[#020617]"
+                }`}
               />
 
               <div className="relative">
-
                 {/* TOP */}
                 <div className="flex items-center justify-between px-4 pt-3">
-
                   {/* LOGO */}
                   <img
                     src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
@@ -248,10 +240,8 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
                   {/* ACTIONS */}
                   <div className="flex items-center gap-3">
-
                     {/* NEW CHAT */}
                     <div className="group relative p-2.5 rounded-full cursor-pointer bg-[var(--card)]/40 hover:bg-[var(--primary)]/20 active:scale-95">
-
                       <div className="absolute inset-0 rounded-full bg-[var(--primary)] opacity-0 group-hover:opacity-20 blur-md" />
 
                       <FiUserPlus
@@ -262,7 +252,6 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
                     {/* MENU */}
                     <div ref={menuRef}>
-
                       <BsThreeDotsVertical
                         onClick={() => setShowMenu((prev) => !prev)}
                         className="text-xl cursor-pointer icon hover:text-[var(--primary)]"
@@ -280,7 +269,6 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
                               border: "1px solid var(--border)",
                             }}
                           >
-
                             <MenuItem
                               icon={<FiUser />}
                               label="Profile"
@@ -327,9 +315,8 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
                                 setShowMenu(false);
                               }}
                             />
-
                           </div>,
-                          document.body
+                          document.body,
                         )}
                     </div>
                   </div>
@@ -337,9 +324,7 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
                 {/* SEARCH */}
                 <div className="px-4 mt-3">
-
                   <div className="flex items-center gap-2 px-3 py-2 rounded-full border bg-[var(--card)]/50 border-[var(--border)]">
-
                     <FiSearch className="text-sm opacity-60" />
 
                     <input
@@ -354,7 +339,6 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
                 {/* TABS */}
                 <div className="flex gap-1.5 px-4 pb-2 mt-3 overflow-x-auto hide-scrollbar">
-
                   {["All", "Unread", "Favorites", "Groups"].map((tab) => (
                     <Tab
                       key={tab}
@@ -374,15 +358,11 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
 
         {/* ================= BOTTOM NAV ================= */}
         {!hideNavbar && (
-          <div
-            className="md:hidden fixed bottom-0 left-0 w-full flex justify-around py-2 z-50 glass"
-          >
-
+          <div className="md:hidden fixed bottom-0 left-0 w-full flex justify-around py-2 z-50 glass">
             <MobileItem
               icon={<FiMessageCircle />}
               label="Chats"
               onClick={() => {
-
                 setActiveFilter("All");
 
                 navigate("/");
@@ -405,23 +385,14 @@ const Navbar = ({mobileSearch, setMobileSearch}) => {
               icon={<MdOutlineGroup />}
               label="Groups"
               onClick={() => {
-
                 setActiveFilter("Groups");
 
                 navigate("/");
               }}
             />
-
           </div>
         )}
       </>
-
-
-      {/* SETTINGS DRAWER */}
-      <SettingsDrawer
-        open={openSettings}
-        onClose={() => setOpenSettings(false)}
-      />
     </>
   );
 };
@@ -633,12 +604,13 @@ const Tab = ({ label, active, onClick }) => (
 
       whitespace-nowrap
 
-      ${active
-        ? `
+      ${
+        active
+          ? `
             bg-[var(--primary)]
             text-black
           `
-        : `
+          : `
             bg-[var(--card)]/30
           `
       }

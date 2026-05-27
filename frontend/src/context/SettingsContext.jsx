@@ -3,66 +3,164 @@ import { createContext, useContext, useEffect, useState } from "react";
 const SettingsContext = createContext(null);
 
 export const SettingsProvider = ({ children }) => {
-  // 🔹 Default state
+
+  // ======================================
+  // 🔥 DEFAULT STATE
+  // ======================================
   const [font, setFont] = useState("Default");
+
   const [fontSize, setFontSize] = useState("M");
-  const [chatStyle, setChatStyle] = useState("Rounded");
+
   const [transparent, setTransparent] = useState(false);
 
-  // 🔹 Load saved settings (on mount)
+  // ======================================
+  // 🔥 LOAD SETTINGS
+  // ======================================
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("settings"));
+
+    const saved = JSON.parse(
+      localStorage.getItem("settings")
+    );
+
     if (saved) {
-      if (saved.font) setFont(saved.font);
-      if (saved.fontSize) setFontSize(saved.fontSize);
-      if (saved.chatStyle) setChatStyle(saved.chatStyle);
-      if (typeof saved.transparent === "boolean") {
+
+      if (saved.font) {
+        setFont(saved.font);
+      }
+
+      if (saved.fontSize) {
+        setFontSize(saved.fontSize);
+      }
+
+      if (
+        typeof saved.transparent === "boolean"
+      ) {
         setTransparent(saved.transparent);
       }
     }
+
   }, []);
 
-  // 🔹 Apply globally (CSS variables + classes)
+  // ======================================
+  // 🔥 APPLY GLOBAL SETTINGS
+  // ======================================
   useEffect(() => {
-    const root = document.documentElement;
 
+    const root =
+      document.documentElement;
+
+    // ======================================
+    // 🔥 FONT MAP
+    // ======================================
     const fontMap = {
+
+      // 🔥 DEFAULT
       Default: "sans-serif",
+
+      // 🔥 MODERN
       Poppins: "'Poppins', sans-serif",
+
       Inter: "'Inter', sans-serif",
+
       Montserrat: "'Montserrat', sans-serif",
+
+      Nunito: "'Nunito', sans-serif",
+
+      Outfit: "'Outfit', sans-serif",
+
+      Urbanist: "'Urbanist', sans-serif",
+
+      Rubik: "'Rubik', sans-serif",
+
+      Manrope: "'Manrope', sans-serif",
+
+      // 🔥 CURSIVE / STYLISH
+      Pacifico: "'Pacifico', cursive",
+
+      DancingScript:
+        "'Dancing Script', cursive",
+
+      Satisfy: "'Satisfy', cursive",
+
+      Caveat: "'Caveat', cursive",
     };
 
+    // ======================================
+    // 🔥 FONT SIZE MAP
+    // ======================================
     const sizeMap = {
+
       S: "14px",
+
       M: "16px",
+
       L: "18px",
+
+      XL: "20px",
     };
 
-    root.style.setProperty("--font", fontMap[font]);
-    root.style.setProperty("--font-size", sizeMap[fontSize]);
+    // ======================================
+    // 🔥 APPLY CSS VARIABLES
+    // ======================================
+    root.style.setProperty(
+      "--font",
+      fontMap[font]
+    );
 
-    // global transparent mode (class toggle)
-    root.classList.toggle("transparent", transparent);
+    root.style.setProperty(
+      "--font-size",
+      sizeMap[fontSize]
+    );
+
+    // ======================================
+    // 🔥 TRANSPARENT MODE
+    // ======================================
+    root.classList.toggle(
+      "transparent",
+      transparent
+    );
+
   }, [font, fontSize, transparent]);
 
-  // 🔹 Persist to localStorage
+  // ======================================
+  // 🔥 SAVE SETTINGS
+  // ======================================
   useEffect(() => {
+
     localStorage.setItem(
       "settings",
-      JSON.stringify({ font, fontSize, chatStyle, transparent })
-    );
-  }, [font, fontSize, chatStyle, transparent]);
 
+      JSON.stringify({
+        font,
+        fontSize,
+        transparent,
+      })
+    );
+
+  }, [font, fontSize, transparent]);
+
+  // ======================================
+  // 🔥 PROVIDER
+  // ======================================
   return (
     <SettingsContext.Provider
       value={{
+
+        // ==================================
+        // 🔥 FONT
+        // ==================================
         font,
         setFont,
+
+        // ==================================
+        // 🔥 FONT SIZE
+        // ==================================
         fontSize,
         setFontSize,
-        chatStyle,
-        setChatStyle,
+
+        // ==================================
+        // 🔥 TRANSPARENT
+        // ==================================
         transparent,
         setTransparent,
       }}
@@ -72,11 +170,20 @@ export const SettingsProvider = ({ children }) => {
   );
 };
 
-// 🔹 Safe hook
+// ======================================
+// 🔥 SAFE HOOK
+// ======================================
 export const useSettings = () => {
-  const context = useContext(SettingsContext);
+
+  const context =
+    useContext(SettingsContext);
+
   if (!context) {
-    throw new Error("useSettings must be used within SettingsProvider");
+
+    throw new Error(
+      "useSettings must be used within SettingsProvider"
+    );
   }
+
   return context;
 };

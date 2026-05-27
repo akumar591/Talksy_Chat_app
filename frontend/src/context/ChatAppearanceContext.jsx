@@ -87,6 +87,25 @@ export const WALLPAPERS = [
   },
 
   // ======================================
+  // 🔥 SPACE NIGHT
+  // ======================================
+  {
+    id: "space-night",
+
+    name: "Space Night",
+
+    type: "gradient",
+
+    background: "linear-gradient(135deg,#020617 0%,#13203f 45%,#6d5dfc 100%)",
+
+    overlay: "rgba(0,0,0,0.30)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
   // 🔥 GLASS NIGHT
   // ======================================
   {
@@ -105,7 +124,7 @@ export const WALLPAPERS = [
     opacity: 1,
   },
 
-    // ======================================
+  // ======================================
   // 🔥 SOFT CLOUD
   // ======================================
   {
@@ -115,8 +134,7 @@ export const WALLPAPERS = [
 
     type: "gradient",
 
-    background:
-      "linear-gradient(135deg,#f8fafc 0%,#e0f2fe 45%,#dbeafe 100%)",
+    background: "linear-gradient(135deg,#f8fafc 0%,#e0f2fe 45%,#dbeafe 100%)",
 
     overlay: "rgba(255,255,255,0.10)",
 
@@ -135,8 +153,7 @@ export const WALLPAPERS = [
 
     type: "gradient",
 
-    background:
-      "linear-gradient(135deg,#fff7ed 0%,#ffedd5 40%,#fed7aa 100%)",
+    background: "linear-gradient(135deg,#fff7ed 0%,#ffedd5 40%,#fed7aa 100%)",
 
     overlay: "rgba(255,255,255,0.08)",
 
@@ -155,8 +172,7 @@ export const WALLPAPERS = [
 
     type: "gradient",
 
-    background:
-      "linear-gradient(135deg,#ecfdf5 0%,#d1fae5 45%,#a7f3d0 100%)",
+    background: "linear-gradient(135deg,#ecfdf5 0%,#d1fae5 45%,#a7f3d0 100%)",
 
     overlay: "rgba(255,255,255,0.06)",
 
@@ -175,8 +191,7 @@ export const WALLPAPERS = [
 
     type: "gradient",
 
-    background:
-      "linear-gradient(135deg,#fffdf7 0%,#fef3c7 45%,#fde68a 100%)",
+    background: "linear-gradient(135deg,#fffdf7 0%,#fef3c7 45%,#fde68a 100%)",
 
     overlay: "rgba(255,255,255,0.06)",
 
@@ -226,6 +241,25 @@ export const WALLPAPERS = [
   },
 
   // ======================================
+  // 🔥 SUNSET FIRE
+  // ======================================
+  {
+    id: "sunset-fire",
+
+    name: "Sunset Fire",
+
+    type: "gradient",
+
+    background: "linear-gradient(135deg,#2b0a00 0%,#ff6b35 45%,#ff3d77 100%)",
+
+    overlay: "rgba(0,0,0,0.22)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
   // 🔥 LOVE RED
   // ======================================
   {
@@ -257,6 +291,25 @@ export const WALLPAPERS = [
     background: "linear-gradient(135deg,#1f0a1a 0%,#831843 45%,#e11d48 100%)",
 
     overlay: "rgba(0,0,0,0.30)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
+  // 🔥 CRIMSON BLOOD
+  // ======================================
+  {
+    id: "crimson-blood",
+
+    name: "Crimson Blood",
+
+    type: "gradient",
+
+    background: "linear-gradient(135deg,#140000 0%,#5f021f 45%,#ff1744 100%)",
+
+    overlay: "rgba(0,0,0,0.28)",
 
     blur: "0px",
 
@@ -386,11 +439,10 @@ export const CHAT_STYLES = {
 
   // 🔥 GLASS
   glass: {
-
-   id: "glass",
-   me: "rounded-[26px] rounded-br-[6px] backdrop-blur-3xl border border-white/10",
-   other: "rounded-[26px] rounded-bl-[6px] backdrop-blur-3xl border border-white/10",
-
+    id: "glass",
+    me: "rounded-[26px] rounded-br-[6px] backdrop-blur-3xl border border-white/10",
+    other:
+      "rounded-[26px] rounded-bl-[6px] backdrop-blur-3xl border border-white/10",
   },
 
   // 🔥 NEON
@@ -551,9 +603,7 @@ export const ChatAppearanceProvider = ({ children }) => {
 
     isGroup,
   }) => {
-    return isGroup
-  ? `group_${groupId}`
-  : `private_${chatId}`;
+    return isGroup ? `group_${groupId}` : `private_${chatId}`;
   };
 
   // ===============================
@@ -742,7 +792,6 @@ export const ChatAppearanceProvider = ({ children }) => {
 
       getChatStyle,
 
-      
       // ==================================
       // 🔥 BUBBLE COLOR
       // ==================================

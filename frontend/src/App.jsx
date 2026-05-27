@@ -37,7 +37,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import { SettingsProvider } from "./context/SettingsContext";
-import {ChatAppearanceProvider} from "./context/ChatAppearanceContext";
+import { ChatAppearanceProvider } from "./context/ChatAppearanceContext";
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -47,7 +47,7 @@ import UserProfile from "./components/User/UserProfile";
 
 import NewGroup from "./components/Chat/NewGroup";
 
-import SettingsDrawer from "./components/Settings/SettingsDrawer";
+import AppearanceSettings from "./components/Settings/AppearanceSettings";
 
 import { Toaster } from "react-hot-toast";
 
@@ -295,20 +295,32 @@ function AppRoutes() {
 
       <ProtectedRoute>
         {/* 🔥 GLOBAL NAVBAR */}
-        <Navbar mobileSearch={mobileSearch} setMobileSearch={setMobileSearch}/>
+        <Navbar mobileSearch={mobileSearch} setMobileSearch={setMobileSearch} />
 
         <Routes>
           {/* ================= CHAT ================= */}
 
-          <Route path="/" element={<ChatLayout mobileSearch={mobileSearch} />} />
+          <Route
+            path="/"
+            element={<ChatLayout mobileSearch={mobileSearch} />}
+          />
 
           {/* 🔥 CHAT WINDOW FULLSCREEN */}
-          <Route path="/chat/:id" element={<ChatLayout mobileSearch={mobileSearch} />} />
+          <Route
+            path="/chat/:id"
+            element={<ChatLayout mobileSearch={mobileSearch} />}
+          />
 
           {/* 🔥 GROUP CHAT */}
-          <Route path="/group/:id" element={<ChatLayout mobileSearch={mobileSearch} />} />
+          <Route
+            path="/group/:id"
+            element={<ChatLayout mobileSearch={mobileSearch} />}
+          />
 
-          <Route path="/groups" element={<ChatLayout mobileSearch={mobileSearch} />} />
+          <Route
+            path="/groups"
+            element={<ChatLayout mobileSearch={mobileSearch} />}
+          />
 
           <Route path="/community" element={<ChatLayout />} />
 
@@ -357,7 +369,7 @@ function AppRoutes() {
 
           <Route path="/linked-devices" element={<LinkedDevices />} />
 
-          <Route path="/settings/theme-drawer" element={<SettingsDrawer />} />
+          <Route path="/settings/appearance" element={<AppearanceSettings />}/>
 
           {/* ================= STATUS ================= */}
 
@@ -387,9 +399,9 @@ function App() {
             <ThemeProvider>
               <SettingsProvider>
                 <ChatAppearanceProvider>
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
                 </ChatAppearanceProvider>
               </SettingsProvider>
             </ThemeProvider>

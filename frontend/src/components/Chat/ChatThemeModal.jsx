@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiX } from "react-icons/fi";
 
 import {
   useChatAppearance,
@@ -10,14 +9,13 @@ import {
 
 const ChatThemeModal = ({
   open,
-
   onClose,
-
   chatKey,
 }) => {
-  // ===============================
+
+  // ======================================
   // 🔥 CONTEXT
-  // ===============================
+  // ======================================
   const {
     getChatStyle,
     setChatStyle,
@@ -26,22 +24,25 @@ const ChatThemeModal = ({
     setBubbleColor,
   } = useChatAppearance();
 
-  // ===============================
+  // ======================================
   // 🔥 CURRENT
-  // ===============================
-  const currentStyle = getChatStyle(chatKey);
+  // ======================================
+  const currentStyle =
+    getChatStyle(chatKey);
 
-  const currentColor = getBubbleColor(chatKey);
+  const currentColor =
+    getBubbleColor(chatKey);
 
-  // ===============================
+  // ======================================
   // 🔥 HIDE
-  // ===============================
+  // ======================================
   if (!open) {
     return null;
   }
 
   return (
     <div
+      onClick={onClose}
       className="
         fixed
         inset-0
@@ -52,37 +53,66 @@ const ChatThemeModal = ({
         backdrop-blur-md
 
         flex
-        items-center
+        items-start
+        md:items-center
+
         justify-center
 
-        p-4
+        p-0
+        md:p-6
+        md:pt-16
       "
     >
+
+      {/* ====================================== */}
+      {/* 🔥 MODAL */}
+      {/* ====================================== */}
       <motion.div
         initial={{
           opacity: 0,
-          scale: 0.92,
-          y: 30,
+          scale: 0.94,
+          y: 24,
         }}
+
         animate={{
           opacity: 1,
           scale: 1,
           y: 0,
         }}
+
         exit={{
           opacity: 0,
-          scale: 0.92,
-          y: 30,
+          scale: 0.94,
+          y: 24,
         }}
+
+        transition={{
+          duration: 0.22,
+          ease: "easeOut",
+        }}
+
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+
         className="
           relative
 
           w-full
-          max-w-md
+          md:max-w-[720px]
 
-          rounded-[30px]
+          h-screen
+          md:h-auto
+
+          md:max-h-[82vh]
+
+          rounded-none
+          md:rounded-[32px]
 
           overflow-hidden
+
+          flex
+          flex-col
 
           border
           border-white/10
@@ -92,56 +122,121 @@ const ChatThemeModal = ({
           shadow-[0_20px_80px_rgba(0,0,0,0.35)]
         "
       >
-        {/* ======================= */}
+
+        {/* ====================================== */}
         {/* 🔥 HEADER */}
-        {/* ======================= */}
+        {/* ====================================== */}
         <div
           className="
-            px-6
-            pt-6
+            sticky
+            top-0
+
+            z-30
+
+            flex
+            items-start
+            justify-between
+
+            px-5
+            md:px-6
+
+            pt-5
             pb-4
 
             border-b
             border-[var(--border)]
+
+            bg-[var(--card)]/95
+            backdrop-blur-xl
           "
         >
-          <h2
-            className="
-              text-[22px]
-              font-[700]
 
-              text-[var(--text)]
+          {/* 🔥 TITLE */}
+          <div>
+
+            <h2
+              className="
+                text-[24px]
+                md:text-[26px]
+
+                font-[700]
+
+                text-[var(--text)]
+              "
+            >
+              Chat Theme
+            </h2>
+
+            <p
+              className="
+                mt-1
+
+                text-sm
+
+                text-[var(--muted)]
+              "
+            >
+              Personalize your conversation
+            </p>
+
+          </div>
+
+          {/* 🔥 CLOSE */}
+          <button
+            onClick={onClose}
+
+            className="
+              w-10
+              h-10
+
+              rounded-full
+
+              flex
+              items-center
+              justify-center
+
+              transition-all
+
+              hover:bg-white/10
             "
           >
-            Chat Theme
-          </h2>
 
-          <p
-            className="
-              mt-1
+            <FiX
+              className="
+                text-[20px]
 
-              text-sm
+                text-[var(--text)]
+              "
+            />
 
-              text-[var(--muted)]
-            "
-          >
-            Personalize your conversation
-          </p>
+          </button>
+
         </div>
 
-        {/* ======================= */}
+        {/* ====================================== */}
         {/* 🔥 BODY */}
-        {/* ======================= */}
+        {/* ====================================== */}
         <div
           className="
-            p-6
+            flex-1
+
+            overflow-y-auto
+            overflow-x-hidden
+
+            hide-scrollbar
+
+            p-4
+            md:p-5
+
             space-y-7
           "
         >
-          {/* ======================= */}
+
+          {/* ====================================== */}
           {/* 🔥 CHAT STYLE */}
-          {/* ======================= */}
+          {/* ====================================== */}
           <div>
+
             <h3
               className="
                 text-sm
@@ -158,139 +253,168 @@ const ChatThemeModal = ({
             <div
               className="
                 grid
-                grid-cols-3
+                grid-cols-2
+                md:grid-cols-3
+
                 gap-3
               "
             >
+
               {Object.values(CHAT_STYLES).map((style) => {
-                const active = currentStyle?.id === style.id;
+
+                const active =
+                  currentStyle?.id === style.id;
 
                 return (
+
                   <button
                     key={style.id}
-                    onClick={() => setChatStyle(chatKey, style.id)}
+
+                    onClick={() =>
+                      setChatStyle(
+                        chatKey,
+                        style.id
+                      )
+                    }
+
                     className={`
-        relative
+                      relative
 
-        h-[92px]
+                      h-[88px]
+                      md:h-[96px]
 
-        rounded-[24px]
+                      rounded-[24px]
 
-        border
+                      border
 
-        transition-all
-        duration-300
+                      transition-all
+                      duration-300
 
-        flex
-        flex-col
-        items-center
-        justify-center
-        gap-3
+                      flex
+                      flex-col
+                      items-center
+                      justify-center
 
-        overflow-hidden
+                      gap-3
 
-        ${
-          active
-            ? `
-              border-[var(--primary)]
-              bg-[var(--primary)]/10
+                      overflow-hidden
 
-              shadow-[0_10px_30px_rgba(0,0,0,0.16)]
-            `
-            : `
-              border-[var(--border)]
-              bg-[var(--bg)]
-            `
-        }
-      `}
+                      ${
+                        active
+                          ? `
+                            border-[var(--primary)]
+                            bg-[var(--primary)]/10
+
+                            scale-[1.02]
+
+                            shadow-[0_10px_30px_rgba(0,0,0,0.16)]
+                          `
+                          : `
+                            border-[var(--border)]
+                            bg-[var(--bg)]
+                          `
+                      }
+                    `}
                   >
+
                     {/* 🔥 PREVIEW */}
                     <div
                       className={`
-          relative
+                        relative
 
-          w-[58px]
-          h-[38px]
+                        w-[58px]
+                        h-[38px]
 
-          ${style.me}
+                        ${style.me}
 
-          transition-all
-          duration-300
+                        transition-all
+                        duration-300
 
-          bg-[var(--primary)]
+                        bg-[var(--primary)]
 
-          ${
-            style.id === "glass"
-              ? `
-                  before:absolute
-                  before:inset-0
+                        ${
+                          style.id === "glass"
+                            ? `
+                              before:absolute
+                              before:inset-0
 
-                  before:rounded-inherit
+                              before:rounded-inherit
 
-                  before:bg-gradient-to-br
-                  before:from-white/20
-                  before:to-transparent
-                `
-              : ""
-          }
+                              before:bg-gradient-to-br
+                              before:from-white/20
+                              before:to-transparent
+                            `
+                            : ""
+                        }
 
-          ${
-            style.id === "neon"
-              ? `
-                  shadow-[0_0_16px_rgba(34,211,238,0.45)]
-                `
-              : ""
-          }
-        `}
+                        ${
+                          style.id === "neon"
+                            ? `
+                              shadow-[0_0_16px_rgba(34,211,238,0.45)]
+                            `
+                            : ""
+                        }
+                      `}
                     />
 
                     {/* 🔥 TITLE */}
                     <span
                       className="
-          text-xs
-          font-medium
+                        text-xs
+                        font-medium
 
-          capitalize
+                        capitalize
 
-          text-[var(--text)]
-        "
+                        text-[var(--text)]
+                      "
                     >
                       {style.id}
                     </span>
 
-                    {/* 🔥 ACTIVE ICON */}
+                    {/* 🔥 ACTIVE */}
                     {active && (
+
                       <div
                         className="
-                                    absolute
-                                    top-2
-                                    right-2
+                          absolute
+                          top-2
+                          right-2
 
-                                    w-5
-                                    h-5
+                          w-5
+                          h-5
 
-                                    rounded-full
+                          rounded-full
 
-                                    bg-[var(--primary)]
+                          bg-[var(--primary)]
 
-                                    flex
-                                    items-center
-                                    justify-center
-                                "
+                          flex
+                          items-center
+                          justify-center
+                        "
                       >
-                        <FiCheck size={12} className="text-black" />
+
+                        <FiCheck
+                          size={12}
+                          className="text-black"
+                        />
+
                       </div>
+
                     )}
+
                   </button>
                 );
               })}
+
             </div>
+
           </div>
 
-          {/* ======================= */}
+          {/* ====================================== */}
           {/* 🔥 BUBBLE COLOR */}
-          {/* ======================= */}
+          {/* ====================================== */}
           <div>
+
             <h3
               className="
                 text-sm
@@ -306,124 +430,151 @@ const ChatThemeModal = ({
 
             <div
               className="
-                flex
-                items-center
-                gap-4
+                grid
+                grid-cols-5
+                md:grid-cols-10
+
+                gap-3
               "
             >
+
               {Object.values(BUBBLE_COLORS).map((item) => {
 
-                    const active =
-                        currentColor?.id === item.id;
+                const active =
+                  currentColor?.id === item.id;
 
-                    return (
+                return (
 
-                        <button
-                        key={item.id}
+                  <button
+                    key={item.id}
 
-                        onClick={() =>
-                            setBubbleColor(
-                            chatKey,
-                            item.id
-                            )
-                        }
+                    onClick={() =>
+                      setBubbleColor(
+                        chatKey,
+                        item.id
+                      )
+                    }
 
-                        className={`
-                            relative
+                    className={`
+                      relative
 
-                            w-14
-                            h-14
+                      w-12
+                      h-12
 
-                            rounded-full
+                      md:w-14
+                      md:h-14
 
-                            border-[4px]
+                      rounded-full
 
-                            transition-all
-                            duration-300
+                      border-[4px]
 
-                            overflow-hidden
+                      overflow-hidden
 
-                            ${
-                            active
-                                ? `
-                                    scale-110
-                                    border-white
+                      transition-all
+                      duration-300
 
-                                    shadow-[0_0_20px_rgba(255,255,255,0.22)]
-                                `
-                                : `
-                                    border-transparent
-                                `
-                            }
+                      ${
+                        active
+                          ? `
+                            scale-110
 
-                            ${
-                            item.id === "glass"
-                                ? `
-                                    backdrop-blur-xl
-                                `
-                                : ""
-                            }
-                        `}
-                        style={{
-                            background: item.me,
-                        }}
-                        >
+                            border-white
 
-                        {/* 🔥 GLOW */}
-                        <div
-                            className="
-                            absolute
-                            inset-0
+                            shadow-[0_0_20px_rgba(255,255,255,0.22)]
+                          `
+                          : `
+                            border-transparent
+                          `
+                      }
 
-                            rounded-full
+                      ${
+                        item.id === "glass"
+                          ? `
+                            backdrop-blur-xl
+                          `
+                          : ""
+                      }
+                    `}
+                    style={{
+                      background: item.me,
+                    }}
+                  >
 
-                            bg-gradient-to-br
-                            from-white/20
-                            to-transparent
-                            "
+                    {/* 🔥 GLOW */}
+                    <div
+                      className="
+                        absolute
+                        inset-0
+
+                        rounded-full
+
+                        bg-gradient-to-br
+                        from-white/20
+                        to-transparent
+                      "
+                    />
+
+                    {/* 🔥 ACTIVE */}
+                    {active && (
+
+                      <div
+                        className="
+                          absolute
+                          inset-0
+
+                          flex
+                          items-center
+                          justify-center
+                        "
+                      >
+
+                        <FiCheck
+                          size={18}
+                          className="text-white"
                         />
 
-                        {/* 🔥 ACTIVE */}
-                        {active && (
+                      </div>
 
-                            <div
-                            className="
-                                absolute
-                                inset-0
+                    )}
 
-                                flex
-                                items-center
-                                justify-center
-                            "
-                            >
+                  </button>
+                );
+              })}
 
-                            <FiCheck
-                                size={18}
-                                className="text-white"
-                            />
-
-                            </div>
-                        )}
-
-                        </button>
-                    );
-                    })}
             </div>
+
           </div>
+
         </div>
 
-        {/* ======================= */}
+        {/* ====================================== */}
         {/* 🔥 FOOTER */}
-        {/* ======================= */}
+        {/* ====================================== */}
         <div
           className="
-            px-6
-            pb-6
-            pt-2
+            sticky
+            bottom-0
+
+            px-5
+            md:px-6
+
+            pb-5
+            md:pb-6
+
+            pt-3
+
+            border-t
+            border-[var(--border)]
+
+            bg-[var(--card)]/95
+
+            backdrop-blur-xl
           "
         >
+
           <button
             onClick={onClose}
+
             className="
               w-full
 
@@ -436,17 +587,20 @@ const ChatThemeModal = ({
               text-black
               font-semibold
 
+              transition-all
+
               hover:scale-[1.01]
 
               active:scale-[0.99]
-
-              transition-all
             "
           >
             Done
           </button>
+
         </div>
+
       </motion.div>
+
     </div>
   );
 };

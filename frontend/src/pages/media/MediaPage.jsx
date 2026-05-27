@@ -17,185 +17,99 @@ import { useChat } from "../../context/ChatContext";
 import MediaViewerModal from "../../components/Chat/MediaViewerModal";
 
 const MediaPage = () => {
-
   const navigate = useNavigate();
 
   // 🔥 NOW USING OPTIMIZED CONTEXT DATA
-  const {
-    selectedChat,
-  } = useChat();
+  const { selectedChat } = useChat();
 
-  const [
-    mediaMessages,
-    setMediaMessages,
-  ] = useState([]);
+  const [mediaMessages, setMediaMessages] = useState([]);
 
   // ===============================
   // 🔥 STATES
   // ===============================
-  const [activeTab, setActiveTab] =
-    useState("ALL");
+  const [activeTab, setActiveTab] = useState("ALL");
 
-  const [viewerOpen, setViewerOpen] =
-    useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
-  const [viewerMedia, setViewerMedia] =
-    useState([]);
+  const [viewerMedia, setViewerMedia] = useState([]);
 
-  const [viewerIndex, setViewerIndex] =
-    useState(0);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   // ===============================
   // 🔥 GET CONVERSATION ID
   // ===============================
-  const activeChat =
-    JSON.parse(
-      localStorage.getItem(
-        "activeChat"
-      )
-    );
+  const activeChat = JSON.parse(localStorage.getItem("activeChat"));
 
-  const conversationId =
-
-    activeChat?.conversationId
-
-    ||
-
-    activeChat?.id;
+  const conversationId = activeChat?.conversationId || activeChat?.id;
 
   // ===============================
   // 🔥 FETCH MEDIA
   // ===============================
   useEffect(() => {
-
-    const fetchMedia =
-      async () => {
-
-        try {
-
-          if (!conversationId) {
-            return;
-          }
-
-          const res =
-            await API.get(
-              `/messages/media/${conversationId}`
-            );
-
-          setMediaMessages(
-            res?.data?.data || []
-          );
-
-        } catch (err) {
-
-          console.log(err);
+    const fetchMedia = async () => {
+      try {
+        if (!conversationId) {
+          return;
         }
-      };
+
+        const res = await API.get(`/messages/media/${conversationId}`);
+
+        setMediaMessages(res?.data?.data || []);
+      } catch (err) {
+        console.log(err);
+      }
+    };
 
     fetchMedia();
-
   }, [conversationId]);
 
   // ===============================
   // 🔥 CURRENT ITEMS
   // ===============================
-  const currentItems =
-    useMemo(() => {
+  const currentItems = useMemo(() => {
+    const filteredMedia = mediaMessages.filter((msg) => {
+      const isMedia =
+        msg.type === "IMAGE" ||
+        msg.type === "VIDEO" ||
+        msg.type === "FILE" ||
+        msg.type === "MEDIA_GROUP";
 
-      const filteredMedia =
-        mediaMessages.filter(
-          (msg) => {
+      return isMedia && !msg.deletedForEveryone;
+    });
 
-            const isMedia =
-
-              msg.type === "IMAGE" ||
-
-              msg.type === "VIDEO" ||
-
-              msg.type === "FILE" ||
-
-              msg.type === "MEDIA_GROUP";
-
-            return (
-              isMedia &&
-              !msg.deletedForEveryone
-            );
-          }
+    switch (activeTab) {
+      case "IMAGES":
+        return filteredMedia.filter(
+          (msg) => msg.type === "IMAGE" || msg.type === "MEDIA_GROUP",
         );
 
-      switch (activeTab) {
+      case "VIDEOS":
+        return filteredMedia.filter((msg) => msg.type === "VIDEO");
 
-        case "IMAGES":
+      case "FILES":
+        return filteredMedia.filter((msg) => msg.type === "FILE");
 
-          return filteredMedia.filter(
-            (msg) =>
+      case "PDF":
+        return filteredMedia.filter(
+          (msg) =>
+            msg.type === "FILE" && msg.content?.toLowerCase().includes(".pdf"),
+        );
 
-              msg.type === "IMAGE" ||
+      default:
+        return filteredMedia;
+    }
+  }, [activeTab, mediaMessages]);
 
-              msg.type === "MEDIA_GROUP"
-          );
+  const fileMessages = currentItems.filter((msg) => msg.type === "FILE");
 
-        case "VIDEOS":
-
-          return filteredMedia.filter(
-            (msg) =>
-              msg.type === "VIDEO"
-          );
-
-        case "FILES":
-
-          return filteredMedia.filter(
-            (msg) =>
-              msg.type === "FILE"
-          );
-
-        case "PDF":
-
-          return filteredMedia.filter(
-            (msg) =>
-
-              msg.type === "FILE" &&
-
-              msg.content
-                ?.toLowerCase()
-                .includes(".pdf")
-          );
-
-        default:
-
-          return filteredMedia;
-      }
-
-    }, [
-      activeTab,
-      mediaMessages,
-    ]);
-
-  const fileMessages =
-    currentItems.filter(
-      (msg) =>
-        msg.type === "FILE"
-    );
-
-  const pdfMessages =
-    currentItems.filter(
-      (msg) =>
-
-        msg.type === "FILE" &&
-
-        msg.content
-          ?.toLowerCase()
-          .includes(".pdf")
-    );
+  const pdfMessages = currentItems.filter(
+    (msg) => msg.type === "FILE" && msg.content?.toLowerCase().includes(".pdf"),
+  );
 
   // ===============================
   // 🔥 OPEN VIEWER
   // ===============================
-  const openViewer = (
-    medias,
-    index
-  ) => {
-
+  const openViewer = (medias, index) => {
     setViewerMedia(medias);
 
     setViewerIndex(index);
@@ -206,30 +120,19 @@ const MediaPage = () => {
   // ===============================
   // 🔥 DOWNLOAD
   // ===============================
-  const handleDownload = async (
-    url,
-    name
-  ) => {
-
+  const handleDownload = async (url, name) => {
     try {
+      const response = await fetch(url);
 
-      const response =
-        await fetch(url);
+      const blob = await response.blob();
 
-      const blob =
-        await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
 
-      const downloadUrl =
-        window.URL.createObjectURL(blob);
-
-      const a =
-        document.createElement("a");
+      const a = document.createElement("a");
 
       a.href = downloadUrl;
 
-      a.download =
-        name ||
-        `talksy-file-${Date.now()}`;
+      a.download = name || `talksy-file-${Date.now()}`;
 
       document.body.appendChild(a);
 
@@ -237,63 +140,43 @@ const MediaPage = () => {
 
       a.remove();
 
-      window.URL.revokeObjectURL(
-        downloadUrl
-      );
-
+      window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-
       console.log(err);
     }
   };
 
   return (
-    <div className="fixed inset-0 md:top-16 bg-[var(--bg)] text-[var(--text)] overflow-y-auto hide-scrollbar">
-
+    <div
+      className="fixed inset-0 md:top-16 text-[var(--text)] overflow-y-auto hide-scrollbar"
+      style={{ background: "var(--bg)" }}
+    >
       {/* =============================== */}
       {/* 🔥 HEADER */}
       {/* =============================== */}
       <div className="sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-xl border-b border-[var(--border)]">
-
         <div className="flex items-center justify-between px-4 py-4">
-
           {/* 🔥 LEFT */}
           <div className="flex items-center gap-3">
-
             <button
               onClick={() => navigate(-1)}
               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition"
             >
-
               <FiArrowLeft size={20} />
-
             </button>
 
             <div>
+              <h2 className="text-lg font-semibold">Shared Media</h2>
 
-              <h2 className="text-lg font-semibold">
-                Shared Media
-              </h2>
-
-              <p className="text-xs opacity-60">
-
-                {currentItems.length}
-
-                {" "}items
-
-              </p>
-
+              <p className="text-xs opacity-60">{currentItems.length} items</p>
             </div>
-
           </div>
-
         </div>
 
         {/* =============================== */}
         {/* 🔥 FILTER TABS */}
         {/* =============================== */}
         <div className="flex gap-2 overflow-x-auto hide-scrollbar px-4 pb-4">
-
           {[
             {
               key: "ALL",
@@ -319,14 +202,10 @@ const MediaPage = () => {
               key: "PDF",
               label: "PDF",
             },
-
           ].map((tab) => (
-
             <button
               key={tab.key}
-              onClick={() =>
-                setActiveTab(tab.key)
-              }
+              onClick={() => setActiveTab(tab.key)}
               className={`
                 px-4
                 py-2
@@ -340,50 +219,36 @@ const MediaPage = () => {
                 transition-all
                 duration-200
 
-                ${activeTab === tab.key
-
-                  ? `
+                ${
+                  activeTab === tab.key
+                    ? `
                     bg-[var(--primary)]
                     text-black
                     shadow-lg
                   `
-
-                  : `
+                    : `
                     bg-[var(--card)]
                     hover:bg-white/5
                   `
                 }
               `}
             >
-
               {tab.label}
-
             </button>
           ))}
-
         </div>
-
       </div>
 
       {/* =============================== */}
       {/* 🔥 BODY */}
       {/* =============================== */}
       <div className="p-4">
-
         {/* =============================== */}
         {/* 🔥 FILES + PDF */}
         {/* =============================== */}
-        {activeTab === "FILES" ||
-          activeTab === "PDF" ? (
-
+        {activeTab === "FILES" || activeTab === "PDF" ? (
           <div className="space-y-4">
-
-            {(
-              activeTab === "PDF"
-                ? pdfMessages
-                : fileMessages
-            ).map((file) => (
-
+            {(activeTab === "PDF" ? pdfMessages : fileMessages).map((file) => (
               <div
                 key={file.id}
                 className="
@@ -406,47 +271,26 @@ const MediaPage = () => {
                   transition-all
                 "
               >
-
                 {/* 🔥 LEFT */}
                 <div className="flex items-center gap-4 min-w-0">
-
                   <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center shrink-0">
-
                     <FiFile className="text-2xl text-[var(--primary)]" />
-
                   </div>
 
                   <div className="min-w-0">
-
                     <p className="font-medium truncate">
-
-                      {file.content
-                        ?.split("/")
-                        ?.pop()}
-
+                      {file.content?.split("/")?.pop()}
                     </p>
 
                     <p className="text-sm opacity-60">
-
-                      {currentItems
-
-                        ? "PDF document"
-
-                        : "Shared file"}
-
+                      {currentItems ? "PDF document" : "Shared file"}
                     </p>
-
                   </div>
-
                 </div>
 
                 {/* 🔥 DOWNLOAD */}
                 <button
-                  onClick={() =>
-                    handleDownload(
-                      file.content
-                    )
-                  }
+                  onClick={() => handleDownload(file.content)}
                   className="
                     w-12
                     h-12
@@ -464,58 +308,30 @@ const MediaPage = () => {
                     transition-all
                   "
                 >
-
                   <FiDownload />
-
                 </button>
-
               </div>
             ))}
 
-            {(
-              activeTab === "PDF"
-                ? pdfMessages
-                : fileMessages
-            ).length === 0 && (
-
-                <EmptyState
-                  icon={<FiFile />}
-                  text={
-                    activeTab === "PDF"
-
-                      ? "No PDF files"
-
-                      : "No shared files"
-                  }
-                />
-
-              )}
-
+            {(activeTab === "PDF" ? pdfMessages : fileMessages).length ===
+              0 && (
+              <EmptyState
+                icon={<FiFile />}
+                text={activeTab === "PDF" ? "No PDF files" : "No shared files"}
+              />
+            )}
           </div>
-
         ) : (
-
           <>
             {/* =============================== */}
             {/* 🔥 MEDIA GRID */}
             {/* =============================== */}
             {currentItems.length > 0 ? (
-
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-
-                {currentItems.map((
-                  item,
-                  index
-                ) => (
-
+                {currentItems.map((item, index) => (
                   <div
                     key={item.id}
-                    onClick={() =>
-                      openViewer(
-                        currentItems,
-                        index
-                      )
-                    }
+                    onClick={() => openViewer(currentItems, index)}
                     className="
                       relative
 
@@ -539,10 +355,8 @@ const MediaPage = () => {
                       transition-all
                     "
                   >
-
                     {/* 🔥 IMAGE */}
                     {item.type === "IMAGE" && (
-
                       <img
                         src={item.content}
                         alt=""
@@ -563,7 +377,6 @@ const MediaPage = () => {
 
                     {/* 🔥 VIDEO */}
                     {item.type === "VIDEO" && (
-
                       <>
                         <video
                           src={item.content}
@@ -575,43 +388,31 @@ const MediaPage = () => {
                         />
 
                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-
                           <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center">
-
                             <FiVideo className="text-white text-2xl" />
-
                           </div>
-
                         </div>
                       </>
                     )}
-
                   </div>
                 ))}
-
               </div>
-
             ) : (
-
               <EmptyState
                 icon={
-                  activeTab === "VIDEOS"
-
-                    ? <FiVideo />
-
-                    : activeTab === "IMAGES"
-
-                      ? <FiImage />
-
-                      : <FiFile />
+                  activeTab === "VIDEOS" ? (
+                    <FiVideo />
+                  ) : activeTab === "IMAGES" ? (
+                    <FiImage />
+                  ) : (
+                    <FiFile />
+                  )
                 }
                 text={`No ${activeTab.toLowerCase()} found`}
               />
-
             )}
           </>
         )}
-
       </div>
 
       {/* =============================== */}
@@ -619,14 +420,11 @@ const MediaPage = () => {
       {/* =============================== */}
       <MediaViewerModal
         open={viewerOpen}
-        onClose={() =>
-          setViewerOpen(false)
-        }
+        onClose={() => setViewerOpen(false)}
         medias={viewerMedia}
         selectedIndex={viewerIndex}
         setSelectedIndex={setViewerIndex}
       />
-
     </div>
   );
 };
@@ -636,20 +434,10 @@ export default MediaPage;
 /* =============================== */
 /* 🔥 EMPTY STATE */
 /* =============================== */
-const EmptyState = ({
-  icon,
-  text,
-}) => (
-
+const EmptyState = ({ icon, text }) => (
   <div className="flex flex-col items-center justify-center py-20 opacity-60">
-
-    <div className="text-5xl mb-4">
-
-      {icon}
-
-    </div>
+    <div className="text-5xl mb-4">{icon}</div>
 
     <p>{text}</p>
-
   </div>
 );

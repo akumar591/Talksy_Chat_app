@@ -102,13 +102,25 @@
 
 /* ================= NEON ================= */
 .neon {
-  --bg: #020617;
-  --text: #22c55e;
-  --card: #052e2b;
-  --border: rgba(34, 197, 94, 0.2);
-  --primary: #22c55e;
+  --bg:
+    radial-gradient(
+      circle at top left,
+      rgba(0, 255, 170, 0.18) 0%,
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(0, 217, 255, 0.16) 0%,
+      transparent 30%
+    ),
+    linear-gradient(145deg, #020617 0%, #00110f 38%, #000000 100%);
 
-  /* ================= GROUP ROLE COLORS ================= */
+  --text: #ecfeff;
+  --card: #052e2b;
+  --border: rgba(0, 255, 170, 0.18);
+
+  --primary: #00ffb3;
+  --secondary: #00d9ff;
 
   --group-creator: #ffee00;
   --group-admin: #00e5ff;
@@ -118,21 +130,31 @@
   --group-admin-bg: rgba(0, 229, 255, 0.12);
   --group-member-bg: rgba(0, 255, 153, 0.12);
 
-  /* ================= MESSAGE TIME ================= */
-
-  --message-time: rgba(34, 197, 94, 0.75);
-  --message-time-me: rgba(0, 0, 0, 0.75);
+  --message-time: rgba(236, 254, 255, 0.75);
+  --message-time-me: rgba(0, 0, 0, 0.78);
 }
 
 /* ================= OCEAN ================= */
 .ocean {
-  --bg: #020617;
-  --text: #38bdf8;
-  --card: #0c4a6e;
-  --border: rgba(56, 189, 248, 0.2);
-  --primary: #38bdf8;
+  --bg:
+    radial-gradient(
+      circle at top right,
+      rgba(56, 189, 248, 0.18) 0%,
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(6, 182, 212, 0.16) 0%,
+      transparent 30%
+    ),
+    linear-gradient(155deg, #02131f 0%, #041b2d 42%, #010812 100%);
 
-  /* ================= GROUP ROLE COLORS ================= */
+  --text: #e0f7ff;
+  --card: #0c4a6e;
+  --border: rgba(125, 211, 252, 0.16);
+
+  --primary: #38bdf8;
+  --secondary: #06b6d4;
 
   --group-creator: #ffd166;
   --group-admin: #4cc9f0;
@@ -142,21 +164,31 @@
   --group-admin-bg: rgba(76, 201, 240, 0.12);
   --group-member-bg: rgba(6, 214, 160, 0.12);
 
-  /* ================= MESSAGE TIME ================= */
-
-  --message-time: rgba(255, 255, 255, 0.72);
-  --message-time-me: rgba(0, 0, 0, 0.72);
+  --message-time: rgba(224, 247, 255, 0.76);
+  --message-time-me: rgba(0, 0, 0, 0.75);
 }
 
 /* ================= PURPLE ================= */
 .purple {
-  --bg: #020617;
-  --text: #c084fc;
-  --card: #3b0764;
-  --border: rgba(192, 132, 252, 0.2);
-  --primary: #c084fc;
+  --bg:
+    radial-gradient(
+      circle at top left,
+      rgba(192, 132, 252, 0.18) 0%,
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(168, 85, 247, 0.16) 0%,
+      transparent 30%
+    ),
+    linear-gradient(145deg, #0b0014 0%, #1a0f3d 45%, #020617 100%);
 
-  /* ================= GROUP ROLE COLORS ================= */
+  --text: #f5ecff;
+  --card: #3b0764;
+  --border: rgba(192, 132, 252, 0.18);
+
+  --primary: #d8b4fe;
+  --secondary: #a855f7;
 
   --group-creator: #f9c74f;
   --group-admin: #90e0ef;
@@ -166,15 +198,13 @@
   --group-admin-bg: rgba(144, 224, 239, 0.12);
   --group-member-bg: rgba(128, 237, 153, 0.12);
 
-  /* ================= MESSAGE TIME ================= */
-
-  --message-time: rgba(255, 255, 255, 0.72);
-  --message-time-me: rgba(0, 0, 0, 0.72);
+  --message-time: rgba(245, 236, 255, 0.76);
+  --message-time-me: rgba(0, 0, 0, 0.75);
 }
 
 /* ================= GLOBAL ================= */
 body {
-  background-color: var(--bg);
+  background: var(--bg);
   color: var(--text);
 
   /* 🔥 FIX: FORCE FONT APPLY */
