@@ -105,6 +105,86 @@ export const WALLPAPERS = [
     opacity: 1,
   },
 
+    // ======================================
+  // 🔥 SOFT CLOUD
+  // ======================================
+  {
+    id: "soft-cloud",
+
+    name: "Soft Cloud",
+
+    type: "gradient",
+
+    background:
+      "linear-gradient(135deg,#f8fafc 0%,#e0f2fe 45%,#dbeafe 100%)",
+
+    overlay: "rgba(255,255,255,0.10)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
+  // 🔥 PEACH GLOW
+  // ======================================
+  {
+    id: "peach-glow",
+
+    name: "Peach Glow",
+
+    type: "gradient",
+
+    background:
+      "linear-gradient(135deg,#fff7ed 0%,#ffedd5 40%,#fed7aa 100%)",
+
+    overlay: "rgba(255,255,255,0.08)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
+  // 🔥 MINT FRESH
+  // ======================================
+  {
+    id: "mint-fresh",
+
+    name: "Mint Fresh",
+
+    type: "gradient",
+
+    background:
+      "linear-gradient(135deg,#ecfdf5 0%,#d1fae5 45%,#a7f3d0 100%)",
+
+    overlay: "rgba(255,255,255,0.06)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
+  // ======================================
+  // 🔥 CREAM SUNSET
+  // ======================================
+  {
+    id: "cream-sunset",
+
+    name: "Cream Sunset",
+
+    type: "gradient",
+
+    background:
+      "linear-gradient(135deg,#fffdf7 0%,#fef3c7 45%,#fde68a 100%)",
+
+    overlay: "rgba(255,255,255,0.06)",
+
+    blur: "0px",
+
+    opacity: 1,
+  },
+
   // ======================================
   // 🔥 ANIME NIGHT
   // ======================================
@@ -248,59 +328,84 @@ export const WALLPAPERS = [
 // 🔥 CHAT STYLES
 // ===============================
 export const CHAT_STYLES = {
-  // ======================================
-  // 🔥 DEFAULT
-  // ======================================
+  // 🔥 DEFAULT (CURRENT APP STYLE)
   default: {
     id: "default",
 
-    name: "Rounded Premium",
-
     me: "rounded-[18px] rounded-br-[5px]",
-
     other: "rounded-[18px] rounded-bl-[5px]",
   },
 
-  // ======================================
   // 🔥 SHARP
-  // ======================================
   sharp: {
     id: "sharp",
 
-    name: "Sharp Edge",
-
     me: "rounded-[10px] rounded-br-[2px]",
-
     other: "rounded-[10px] rounded-bl-[2px]",
   },
 
-  // ======================================
+  // 🔥 MODERN
+  modern: {
+    id: "modern",
+
+    me: "rounded-[24px] rounded-br-[8px]",
+    other: "rounded-[24px] rounded-bl-[8px]",
+  },
+
+  // 🔥 BUBBLE
+  bubble: {
+    id: "bubble",
+
+    me: "rounded-[30px] rounded-br-[10px]",
+    other: "rounded-[30px] rounded-bl-[10px]",
+  },
+
+  // 🔥 TELEGRAM
+  telegram: {
+    id: "telegram",
+
+    me: "rounded-[18px] rounded-br-[4px]",
+    other: "rounded-[18px] rounded-bl-[4px]",
+  },
+
+  // 🔥 WHATSAPP
+  whatsapp: {
+    id: "whatsapp",
+
+    me: "rounded-[16px] rounded-br-[3px]",
+    other: "rounded-[16px] rounded-bl-[3px]",
+  },
+
+  // 🔥 IOS
+  ios: {
+    id: "ios",
+
+    me: "rounded-[28px]",
+    other: "rounded-[28px]",
+  },
+
   // 🔥 GLASS
-  // ======================================
   glass: {
-    id: "glass",
 
-    name: "Glass Morph",
+   id: "glass",
+   me: "rounded-[26px] rounded-br-[6px] backdrop-blur-3xl border border-white/10",
+   other: "rounded-[26px] rounded-bl-[6px] backdrop-blur-3xl border border-white/10",
 
-    me: `
-      rounded-[24px]
-      rounded-br-[6px]
+  },
 
-      backdrop-blur-3xl
+  // 🔥 NEON
+  neon: {
+    id: "neon",
+    me: "rounded-[22px] border border-cyan-400/40",
+    other: "rounded-[22px] border border-pink-400/40",
+  },
 
-      border
-      border-white/10
-      `,
+  // 🔥 SOFT
+  soft: {
+    id: "soft",
 
-    other: `
-      rounded-[24px]
-      rounded-bl-[6px]
-
-      backdrop-blur-3xl
-
-      border
-      border-white/10
-      `,
+    me: "rounded-[20px] shadow-inner",
+    other: "rounded-[20px] shadow-inner",
   },
 };
 
@@ -308,47 +413,83 @@ export const CHAT_STYLES = {
 // 🔥 BUBBLE COLORS
 // ===============================
 export const BUBBLE_COLORS = {
-  // ======================================
   // 🔥 DEFAULT
-  // ======================================
   default: {
     id: "default",
 
     me: "var(--primary)",
-
     other: "var(--card)",
   },
 
-  // ======================================
   // 🔥 EMERALD
-  // ======================================
   emerald: {
     id: "emerald",
 
-    me: "#34d399",
-
+    me: "#25D366",
     other: "rgba(255,255,255,0.06)",
   },
 
-  // ======================================
   // 🔥 OCEAN
-  // ======================================
   ocean: {
     id: "ocean",
 
-    me: "#38bdf8",
-
+    me: "#3B82F6",
     other: "rgba(255,255,255,0.06)",
   },
 
-  // ======================================
   // 🔥 PURPLE
-  // ======================================
   purple: {
     id: "purple",
 
-    me: "#a855f7",
+    me: "#8B5CF6",
+    other: "rgba(255,255,255,0.06)",
+  },
 
+  // 🔥 SUNSET
+  sunset: {
+    id: "sunset",
+
+    me: "#FF7849",
+    other: "rgba(255,255,255,0.06)",
+  },
+
+  // 🔥 ROSE
+  rose: {
+    id: "rose",
+
+    me: "#F43F5E",
+    other: "rgba(255,255,255,0.06)",
+  },
+
+  // 🔥 GOLD
+  gold: {
+    id: "gold",
+
+    me: "#EAB308",
+    other: "rgba(255,255,255,0.06)",
+  },
+
+  // 🔥 CYAN
+  cyan: {
+    id: "cyan",
+
+    me: "#06B6D4",
+    other: "rgba(255,255,255,0.06)",
+  },
+
+  // 🔥 MIDNIGHT
+  midnight: {
+    id: "midnight",
+
+    me: "#111827",
+    other: "#1F2937",
+  },
+
+  // 🔥 LAVA
+  lava: {
+    id: "lava",
+
+    me: "#DC2626",
     other: "rgba(255,255,255,0.06)",
   },
 };
@@ -387,6 +528,12 @@ export const ChatAppearanceProvider = ({ children }) => {
   // 🔥 SAVE STORAGE
   // ===============================
   useEffect(() => {
+    // 🔥 PREVENT EMPTY SAVE
+    if (!appearance) {
+      return;
+    }
+
+    // 🔥 SAVE
     localStorage.setItem(
       "chatAppearance",
 
@@ -404,7 +551,9 @@ export const ChatAppearanceProvider = ({ children }) => {
 
     isGroup,
   }) => {
-    return isGroup ? `group_${groupId}` : `chat_${chatId}`;
+    return isGroup
+  ? `group_${groupId}`
+  : `private_${chatId}`;
   };
 
   // ===============================
@@ -450,9 +599,16 @@ export const ChatAppearanceProvider = ({ children }) => {
   // ===============================
   const getWallpaper = (key) => {
     // ======================================
+    // 🔥 INVALID KEY
+    // ======================================
+    if (!key) {
+      return WALLPAPERS[0];
+    }
+
+    // ======================================
     // 🔥 CUSTOM WALLPAPER
     // ======================================
-    const customImage = appearance.customWallpapers?.[key];
+    const customImage = appearance?.customWallpapers?.[key];
 
     if (customImage) {
       return {
@@ -473,7 +629,14 @@ export const ChatAppearanceProvider = ({ children }) => {
     // ======================================
     // 🔥 SAVED WALLPAPER ID
     // ======================================
-    const wallpaperId = appearance.wallpapers?.[key];
+    const wallpaperId = appearance?.wallpapers?.[key];
+
+    // ======================================
+    // 🔥 NO SAVED WALLPAPER
+    // ======================================
+    if (!wallpaperId) {
+      return WALLPAPERS[0];
+    }
 
     // ======================================
     // 🔥 FIND WALLPAPER
@@ -511,7 +674,7 @@ export const ChatAppearanceProvider = ({ children }) => {
   // 🔥 GET CHAT STYLE
   // ===============================
   const getChatStyle = (key) => {
-    const styleId = appearance.chatStyles[key] || "default";
+    const styleId = appearance?.chatStyles?.[key] || "default";
 
     return CHAT_STYLES[styleId] || CHAT_STYLES.default;
   };
@@ -539,7 +702,7 @@ export const ChatAppearanceProvider = ({ children }) => {
   // 🔥 GET BUBBLE COLOR
   // ===============================
   const getBubbleColor = (key) => {
-    const colorId = appearance.bubbleColors[key] || "default";
+    const colorId = appearance?.bubbleColors?.[key] || "default";
 
     return BUBBLE_COLORS[colorId] || BUBBLE_COLORS.default;
   };
@@ -579,6 +742,7 @@ export const ChatAppearanceProvider = ({ children }) => {
 
       getChatStyle,
 
+      
       // ==================================
       // 🔥 BUBBLE COLOR
       // ==================================

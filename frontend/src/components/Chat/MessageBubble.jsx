@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useMemo } from "react";
 import MessageActions from "./MessageActions";
 import ReactionPicker from "./ReactionPicker";
 import DeleteMenu from "./DeleteMenu";
@@ -6,7 +6,14 @@ import MediaGrid from "./MediaGrid";
 
 const MessageBubble = ({
   msg,
+
   isMe,
+
+  // 🔥 CHAT STYLE
+  currentChatStyle,
+
+  // 🔥 BUBBLE COLOR
+  currentBubbleColor,
 
   // 🔥 VIEWER
   setViewerOpen,
@@ -67,6 +74,18 @@ const MessageBubble = ({
   };
 
   const onlyEmoji = isOnlyEmoji();
+
+  // ===============================
+  // 🔥 BUBBLE RADIUS
+  // ===============================
+  const bubbleRadius = isMe ? currentChatStyle?.me : currentChatStyle?.other;
+
+  // ===============================
+  // 🔥 BUBBLE COLOR
+  // ===============================
+  const bubbleColor = isMe
+    ? currentBubbleColor?.me || "var(--primary)"
+    : currentBubbleColor?.other || "var(--card)";
 
   // ===============================
   // 🔥 TYPES
@@ -190,31 +209,61 @@ const MessageBubble = ({
         {/* 🔥 MESSAGE CARD */}
         {/* =============================== */}
         <div
-          className={`relative z-[1] ${onlyEmoji ? "w-fit max-w-fit" : "w-full max-w-full"} whitespace-pre-wrap break-words transition-all duration-300
+          className={`relative z-[1] ${onlyEmoji ? "w-fit max-w-fit" : "w-full max-w-full"} whitespace-pre-wrap break-words transition-colors duration-300
 
           ${onlyEmoji ? ` bg-transparent p-0 shadow-none ` : ""}
               
-          ${
-            !onlyEmoji && isTextMessage
-              ? `
-                px-[10px] pt-[7px] pb-[2px] border backdrop-blur-2xl
+            ${
+              !onlyEmoji && isTextMessage
+                ? `
+                    px-[10px]
+                    pt-[7px]
+                    pb-[2px]
 
-                ${
-                  isMe
-                    ? `
-                      bg-[var(--primary)] text-black border-[rgba(255,255,255,0.08)]
-                      rounded-[18px] rounded-br-[5px]
-                      shadow-[0_10px_30px_rgba(0,0,0,0.18)]
-                    `
-                    : `
-                      bg-[var(--card)] text-[var(--text)] border-[rgba(255,255,255,0.05)]
-                      rounded-[18px] rounded-bl-[5px]
-                      shadow-[0_10px_30px_rgba(0,0,0,0.22)]
-                    `
-                }
-              `
-              : ""
-          }
+                    backdrop-blur-2xl
+
+                    ${bubbleRadius}
+
+                    ${
+                      isMe
+                        ? `
+                            bg-transparent
+                            text-black
+                            border-[rgba(255,255,255,0.08)]
+                          `
+                        : `
+                            bg-transparent
+                            text-[var(--message-text)]
+                            border-[rgba(255,255,255,0.05)]
+                          `
+                    }
+
+                    ${
+                      currentChatStyle?.id === "glass"
+                        ? `
+                            shadow-[0_8px_32px_rgba(0,0,0,0.24)]
+
+                            before:absolute
+                            before:inset-0
+                            before:rounded-inherit
+
+                            before:bg-gradient-to-br
+                            before:from-white/10
+                            before:to-transparent
+
+                            before:pointer-events-none
+                          `
+                        : currentChatStyle?.id === "sharp"
+                          ? `
+                              shadow-[0_6px_18px_rgba(0,0,0,0.16)]
+                            `
+                          : `
+                              shadow-[0_10px_30px_rgba(0,0,0,0.20)]
+                            `
+                    }
+                  `
+                : ""
+            }
 
           ${
             msg.type === "MEDIA_GROUP" ||
@@ -237,7 +286,20 @@ const MessageBubble = ({
        `}
           style={{
             overflowWrap: "anywhere",
+
             wordBreak: "break-word",
+
+            background:
+              onlyEmoji ||
+              msg.type === "IMAGE" ||
+              msg.type === "VIDEO" ||
+              msg.type === "MEDIA_GROUP" ||
+              msg.type === "VOICE" ||
+              msg.type === "FILE" ||
+              msg.type === "STATUS_REPLY" ||
+              msg.type === "STATUS_REACTION"
+                ? undefined
+                : bubbleColor,
           }}
         >
           {/* =============================== */}
@@ -413,6 +475,46 @@ const MessageBubble = ({
 
                   {/* 🔥 OVERLAY */}
                   <div className="absolute inset-0 rounded-[22px] bg-black/0 group-hover:bg-black/10 transition-all duration-200 pointer-events-none" />
+                  {/* 🔥 VIDEO META */}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
+                    {/* 🔥 LEFT */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* 🔥 RECEIVER TIME */}
+                      {!isMe && (
+                        <span className="px-2 py-[2px] rounded-full bg-black/45 backdrop-blur-xl border border-white/10 text-[10px] text-white shrink-0">
+                          {formattedTime}
+                        </span>
+                      )}
+
+                      {/* 🔥 SENDER REACTIONS */}
+                      {isMe && reactions.length > 0 && (
+                        <div className="flex items-center gap-[2px] px-[7px] h-[24px] rounded-full bg-black/45 backdrop-blur-xl border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.25)] text-[14px] shrink-0">
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 🔥 RIGHT */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* 🔥 RECEIVER REACTIONS */}
+                      {!isMe && reactions.length > 0 && (
+                        <div className="flex items-center gap-[2px] px-[7px] h-[24px] rounded-full bg-black/45 backdrop-blur-xl border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.25)] text-[14px] shrink-0">
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 🔥 SENDER TIME */}
+                      {isMe && (
+                        <span className="px-2 py-[2px] rounded-full bg-black/45 backdrop-blur-xl border border-white/10 text-[10px] text-white shrink-0">
+                          {formattedTime}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -421,22 +523,50 @@ const MessageBubble = ({
               {/* =============================== */}
               {msg.type === "FILE" && (
                 <a
+                  style={{
+                    background: bubbleColor,
+                  }}
                   href={msg.content}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`
-              flex items-center gap-3 px-4 py-3 rounded-[20px]
+                    relative
+                    overflow-hidden
+                    flex
+                    items-center
+                    gap-3
 
-              ${
-                isMe
-                  ? `
-                    bg-black/10
-                  `
-                  : `
-                    bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]
-                  `
-              }
-            `}
+                    px-4
+                    py-3
+
+                    ${bubbleRadius}
+
+                    border
+                    border-white/5
+
+                    shadow-[0_8px_24px_rgba(0,0,0,0.14)]
+
+                    ${
+                      currentChatStyle?.id === "glass"
+                        ? `
+                              relative
+                              overflow-hidden
+
+                              backdrop-blur-2xl
+
+                              before:absolute
+                              before:inset-0
+                              before:rounded-inherit
+
+                              before:bg-gradient-to-br
+                              before:from-white/10
+                              before:to-transparent
+
+                              before:pointer-events-none
+                            `
+                        : ""
+                    }
+                  `}
                 >
                   <div className="w-11 h-11 rounded-2xl bg-[var(--primary)]/20 flex items-center justify-center">
                     📄
@@ -457,7 +587,7 @@ const MessageBubble = ({
                 <div
                   className={`
                     relative
-
+                    overflow-hidden
                     flex
                     items-center
                     gap-2
@@ -466,11 +596,31 @@ const MessageBubble = ({
                     pt-2
                     pb-4
 
-                    rounded-[18px]
+                    ${bubbleRadius}
+
+                   ${
+                     currentChatStyle?.id === "glass"
+                       ? `
+                            overflow-hidden
+
+                            backdrop-blur-2xl
+
+                            before:absolute
+                            before:inset-0
+                            before:rounded-inherit
+
+                            before:bg-gradient-to-br
+                            before:from-white/10
+                            before:to-transparent
+
+                            before:pointer-events-none
+                          `
+                       : ""
+                   }
 
                     ${
                       isMe
-                        ? "bg-black/10"
+                        ? "bg-transparent"
                         : `
                           bg-[rgba(255,255,255,0.03)]
                           border
@@ -512,25 +662,104 @@ const MessageBubble = ({
                     "
                   />
 
-                  {/* 🔥 TIME */}
-                  <span
-                    className="
-                        absolute
-                        bottom-[4px]
-                        right-2
+                  {/* 🔥 VOICE META */}
+                  <div
+                    className={`
+                      absolute
+                      bottom-[4px]
 
-                        text-[10px]
-                        font-medium
-                        opacity-70
-                      "
-                    style={{
-                      color: isMe
-                        ? "rgba(255,255,255,0.72)"
-                        : "var(--message-time)",
-                    }}
+                      left-3
+                      right-3
+
+                      flex
+                      items-center
+                      justify-between
+                    `}
                   >
-                    {formattedTime}
-                  </span>
+                    {/* 🔥 LEFT */}
+                    <div className="flex items-center gap-1">
+                      {/* 🔥 RECEIVER TIME */}
+                      {!isMe && (
+                        <span
+                          className="
+                            text-[10px]
+                            opacity-70
+                          "
+                          style={{
+                            color: "var(--message-time)",
+                          }}
+                        >
+                          {formattedTime}
+                        </span>
+                      )}
+
+                      {/* 🔥 SENDER REACTIONS */}
+                      {isMe && reactions.length > 0 && (
+                        <div
+                          className="
+                            flex
+                            items-center
+                            gap-[2px]
+
+                            px-[6px]
+                            h-[20px]
+
+                            rounded-full
+
+                            bg-black/10
+
+                            text-[13px]
+                          "
+                        >
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 🔥 RIGHT */}
+                    <div className="flex items-center gap-1">
+                      {/* 🔥 RECEIVER REACTIONS */}
+                      {!isMe && reactions.length > 0 && (
+                        <div
+                          className="
+                            flex
+                            items-center
+                            gap-[2px]
+
+                            px-[6px]
+                            h-[20px]
+
+                            rounded-full
+
+                            bg-white/10
+
+                            text-[13px]
+                          "
+                        >
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 🔥 SENDER TIME */}
+                      {isMe && (
+                        <span
+                          className="
+                            text-[10px]
+                            opacity-70
+                          "
+                          style={{
+                            color: "rgba(255,255,255,0.72)",
+                          }}
+                        >
+                          {formattedTime}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -550,30 +779,108 @@ const MessageBubble = ({
                     {msg.content}
                   </span>
 
-                  {/* 🔥 TIME */}
+                  {/* 🔥 META ROW */}
                   <div
-                    className={`flex
-                ${
-                  onlyEmoji
-                    ? isMe
-                      ? "justify-end pr-[4px]"
-                      : "justify-start pl-[4px]"
-                    : "justify-end"
-                }
-                ${onlyEmoji ? "mt-[4px]" : "mt-[2px]"}
-              `}
+                    className={`
+                          flex
+                          items-center
+
+                          mt-[4px]
+
+                          ${isMe ? "justify-between" : "justify-between"}
+
+                          gap-2
+                        `}
                   >
-                    <span
-                      className={`text-[10px] opacity-60 ${
-                        onlyEmoji
-                          ? `dark:text-white/70 text-black/70`
-                          : isMe
-                            ? "text-[var(--message-time-me)]"
-                            : "text-[var(--message-time)]"
-                      }`}
-                    >
-                      {formattedTime}
-                    </span>
+                    {/* 🔥 LEFT SIDE */}
+                    <div className="flex items-center gap-1 min-w-0">
+                      {/* 🔥 RECEIVER TIME */}
+                      {!isMe && (
+                        <span
+                          className={`
+                                text-[10px]
+                                opacity-60
+
+                                ${
+                                  onlyEmoji
+                                    ? "text-white/70"
+                                    : "text-[var(--message-time)]"
+                                }
+                              `}
+                        >
+                          {formattedTime}
+                        </span>
+                      )}
+
+                      {/* 🔥 SENDER REACTIONS */}
+                      {isMe && reactions.length > 0 && (
+                        <div
+                          className="
+                                flex
+                                items-center
+                                gap-[2px]
+
+                                px-[6px]
+                                h-[20px]
+
+                                rounded-full
+
+                                bg-black/10
+
+                                text-[13px]
+                              "
+                        >
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 🔥 RIGHT SIDE */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {/* 🔥 RECEIVER REACTIONS */}
+                      {!isMe && reactions.length > 0 && (
+                        <div
+                          className="
+                                flex
+                                items-center
+                                gap-[2px]
+
+                                px-[6px]
+                                h-[20px]
+
+                                rounded-full
+
+                                bg-white/10
+
+                                text-[13px]
+                              "
+                        >
+                          {reactions.map((r, i) => (
+                            <span key={i}>{r.emoji}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 🔥 SENDER TIME */}
+                      {isMe && (
+                        <span
+                          className={`
+                                text-[10px]
+                                opacity-60
+
+                                ${
+                                  onlyEmoji
+                                    ? "text-black/70"
+                                    : "text-[var(--message-time-me)]"
+                                }
+                              `}
+                        >
+                          {formattedTime}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -710,7 +1017,6 @@ const MessageBubble = ({
               {/* 🔥 MEDIA TIME */}
               {/* =============================== */}
               {(msg.type === "IMAGE" ||
-                msg.type === "VIDEO" ||
                 msg.type === "MEDIA_GROUP") && (
                 <div
                   className={`
@@ -731,29 +1037,51 @@ const MessageBubble = ({
                   </span>
                 </div>
               )}
-            </>
-          )}
 
-          {/* =============================== */}
-          {/* 🔥 REACTIONS */}
-          {/* =============================== */}
-          {reactions.length > 0 && (
-            <div
-              className={`
-          absolute -bottom-3 ${isMe ? "left-2" : "left-2"}
-          flex items-center gap-1 px-2 h-[28px]
-          rounded-full bg-[var(--card)]
-          border border-[rgba(255,255,255,0.08)]
-          shadow-[0_4px_12px_rgba(0,0,0,0.25)]
-          text-[15px] backdrop-blur-xl z-20
-        `}
-            >
-              {reactions.map((r, i) => (
-                <span key={i} className="relative top-[1px]">
-                  {r.emoji}
-                </span>
-              ))}
-            </div>
+              {/* =============================== */}
+              {/* 🔥 MEDIA / FILE REACTIONS */}
+              {/* =============================== */}
+              {reactions.length > 0 &&
+                msg.type !== "TEXT" &&
+                msg.type !== "VOICE" &&
+                msg.type !== "VIDEO" && (
+                  <div
+                    className={`
+                      absolute
+
+                      -bottom-3
+
+                      ${isMe ? "right-2" : "left-2"}
+
+                      flex
+                      items-center
+                      gap-[2px]
+
+                      px-[7px]
+                      h-[24px]
+
+                      rounded-full
+
+                      bg-[var(--card)]
+
+                      border
+                      border-white/10
+
+                      shadow-[0_4px_12px_rgba(0,0,0,0.22)]
+
+                      backdrop-blur-xl
+
+                      z-20
+                    `}
+                  >
+                    {reactions.map((r, i) => (
+                      <span key={i} className="text-[14px]">
+                        {r.emoji}
+                      </span>
+                    ))}
+                  </div>
+                )}
+            </>
           )}
         </div>
 

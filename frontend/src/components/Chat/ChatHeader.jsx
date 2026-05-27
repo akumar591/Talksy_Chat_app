@@ -15,10 +15,15 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+
+import ChatThemeModal from "./ChatThemeModal";
+
+import { useChatAppearance } from "../../context/ChatAppearanceContext";
 
 const ChatHeader = ({
   chat,
+  chatKey,
   onBack,
   navigate,
 
@@ -45,7 +50,17 @@ const ChatHeader = ({
   handleClearChat,
   setShowWallpaperModal,
 }) => {
+  // ===============================
+  // 🔥 THEME MODAL
+  // ===============================
+  const [openThemeModal, setOpenThemeModal] = useState(false);
+
+  // ===============================
+  // 🔥 CHAT KEY
+  // ===============================
+  
   return (
+    <>
     <div className="flex items-center justify-between px-4 py-3 bg-[var(--card)] border-b border-[var(--border)] backdrop-blur-xl sticky top-0 z-40">
       {/* 🔥 LEFT */}
       <div className="flex items-center gap-3 min-w-0">
@@ -195,23 +210,50 @@ const ChatHeader = ({
               </div>
 
               {/* THEME */}
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200">
+              <div
+                onClick={() => {
+                  setOpenThemeModal(true);
+
+                  setShowMenu(false);
+                }}
+                className="
+    flex
+    items-center
+    gap-3
+
+    px-3
+    py-2.5
+
+    rounded-xl
+
+    cursor-pointer
+
+    hover:bg-white/5
+
+    transition-all
+    duration-200
+  "
+              >
                 <FiEdit3 size={16} />
 
                 <span className="text-[13px] font-medium">Chat Theme</span>
               </div>
 
+              
+
               {/* WALLPAPER */}
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200 "
+              <div
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-all duration-200 "
                 onClick={() => {
                   setShowWallpaperModal(true);
 
                   setShowMenu(false);
-              }} >
-            
+                }}
+              >
                 <FiGrid size={16} />
-                <span className="text-[13px] font-medium">Change Wallpaper</span>  
-                 
+                <span className="text-[13px] font-medium">
+                  Change Wallpaper
+                </span>
               </div>
 
               {/* MUTE */}
@@ -397,8 +439,15 @@ const ChatHeader = ({
           )}
         </div>
       </div>
-    </div>
-  );
+        </div>
+
+    <ChatThemeModal
+      open={openThemeModal}
+      onClose={() => setOpenThemeModal(false)}
+      chatKey={chatKey}
+    />
+  </>
+);
 };
 
 export default ChatHeader;

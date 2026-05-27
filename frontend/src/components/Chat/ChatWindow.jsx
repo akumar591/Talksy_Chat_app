@@ -46,7 +46,8 @@ const ChatWindow = ({ chat, onBack }) => {
   const { leaveGroup, deleteGroup, fetchGroupById, groupDetails } = useGroup();
 
   const { user } = useAuth();
-  const { createChatKey, getWallpaper } = useChatAppearance();
+  const { createChatKey, getWallpaper, getChatStyle, getBubbleColor } =
+    useChatAppearance();
 
   // ===============================
   // 🔥 INPUT
@@ -247,10 +248,26 @@ const ChatWindow = ({ chat, onBack }) => {
     ? `group_${conversation?.id}`
     : `private_${conversation?.id}`;
 
+  console.log("CHAT KEY:", chatKey);
+
+  console.log("CONVERSATION:", conversation);
+
+  console.log("CHAT:", chat);
+
   // ===============================
   // 🔥 CURRENT WALLPAPER
   // ===============================
   const currentWallpaper = getWallpaper(chatKey);
+
+  // ===============================
+  // 🔥 CURRENT CHAT STYLE
+  // ===============================
+  const currentChatStyle = getChatStyle(chatKey);
+
+  // ===============================
+  // 🔥 CURRENT BUBBLE COLOR
+  // ===============================
+  const currentBubbleColor = getBubbleColor(chatKey);
 
   // ===============================
   // 🔥 GROUP MEDIA
@@ -473,32 +490,30 @@ const ChatWindow = ({ chat, onBack }) => {
       className="relative flex flex-col w-full h-full overflow-hidden text-[var(--text)]"
       style={{
         // ======================================
-        // 🔥 GRADIENT
+        // 🔥 IMAGE WALLPAPER
         // ======================================
-        background:
-          currentWallpaper?.type === "gradient"
-            ? currentWallpaper.background
-            : undefined,
+        ...(currentWallpaper?.type === "image"
+          ? {
+              backgroundImage: `
+          linear-gradient(
+            ${currentWallpaper.overlay || "rgba(0,0,0,0.35)"},
+            ${currentWallpaper.overlay || "rgba(0,0,0,0.35)"}
+          ),
+          url(${currentWallpaper.image})
+          `,
 
-        // ======================================
-        // 🔥 IMAGE
-        // ======================================
-        backgroundImage:
-          currentWallpaper?.type === "image"
-            ? `
-        linear-gradient(
-          ${currentWallpaper.overlay || "rgba(0,0,0,0.45)"},
-          ${currentWallpaper.overlay || "rgba(0,0,0,0.45)"}
-        ),
-        url(${currentWallpaper.image})
-      `
-            : undefined,
+              backgroundSize: "cover",
 
-        backgroundSize: "cover",
+              backgroundPosition: "center center",
 
-        backgroundPosition: "center",
-
-        backgroundRepeat: "no-repeat",
+              backgroundRepeat: "no-repeat",
+            }
+          : {
+              // ======================================
+              // 🔥 GRADIENT WALLPAPER
+              // ======================================
+              background: currentWallpaper?.background,
+            }),
 
         transition: "all 0.35s ease",
       }}
@@ -507,6 +522,7 @@ const ChatWindow = ({ chat, onBack }) => {
 
       <ChatHeader
         chat={chat}
+        chatKey={chatKey}
         onBack={onBack}
         navigate={navigate}
         showMenu={showMenu}
@@ -534,6 +550,8 @@ const ChatWindow = ({ chat, onBack }) => {
         setViewerOpen={setViewerOpen}
         setViewerMedia={setViewerMedia}
         setViewerIndex={setViewerIndex}
+        currentChatStyle={currentChatStyle}
+        currentBubbleColor={currentBubbleColor}
       />
 
       {/* 🔥 REPLY */}

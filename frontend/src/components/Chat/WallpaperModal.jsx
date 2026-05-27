@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import {
   FiCheck,
@@ -14,6 +14,7 @@ import { useTheme } from "../../context/ThemeContext";
 
 import { useChatAppearance } from "../../context/ChatAppearanceContext";
 
+import ImageCropper from "../Common/ImageCropper";
 
 // ===============================
 // 🔥 COMPONENT
@@ -25,15 +26,24 @@ const WallpaperModal = ({
 
   chatKey,
 }) => {
+  const fileInputRef = useRef(null);
 
-  const fileInputRef =
-    useRef(null);
+  // ===============================
+  // 🔥 CROPPER
+  // ===============================
+  const [cropImage, setCropImage] = useState(null);
+
+  const [zoom, setZoom] = useState(1);
+
+  const [crop, setCrop] = useState({
+    x: 0,
+    y: 0,
+  });
 
   // ===============================
   // 🔥 THEME
   // ===============================
-  const { dark } =
-    useTheme();
+  const { dark } = useTheme();
 
   // ===============================
   // 🔥 CONTEXT
@@ -56,28 +66,20 @@ const WallpaperModal = ({
   // ===============================
   // 🔥 CURRENT
   // ===============================
-  const currentWallpaper =
-    getWallpaper(chatKey);
+  const currentWallpaper = getWallpaper(chatKey);
 
   // ===============================
   // 🔥 HIDE
   // ===============================
   if (!open) {
-
     return null;
   }
 
   // ===============================
   // 🔥 SELECT
   // ===============================
-  const handleSelectWallpaper = (
-    wallpaperId
-  ) => {
-
-    setWallpaper(
-      chatKey,
-      wallpaperId
-    );
+  const handleSelectWallpaper = (wallpaperId) => {
+    setWallpaper(chatKey, wallpaperId);
 
     onClose();
   };
@@ -85,31 +87,21 @@ const WallpaperModal = ({
   // ===============================
   // 🔥 CUSTOM WALLPAPER
   // ===============================
-  const handleCustomWallpaper =
-    (event) => {
+  const handleCustomWallpaper = (event) => {
+    const file = event.target.files?.[0];
 
-      const file =
-        event.target.files?.[0];
+    if (!file) {
+      return;
+    }
 
-      if (!file) {
+    // 🔥 PREVIEW URL
+    const imageUrl = URL.createObjectURL(file);
 
-        return;
-      }
-
-      const imageUrl =
-        URL.createObjectURL(file);
-
-      // 🔥 CROPPER NEXT 🙂
-      setCustomWallpaper(
-        chatKey,
-        imageUrl
-      );
-
-      onClose();
-    };
+    // 🔥 OPEN CROPPER
+    setCropImage(imageUrl);
+  };
 
   return (
-
     <div
       className="
         fixed
@@ -128,12 +120,10 @@ const WallpaperModal = ({
         md:p-6
       "
     >
-
       {/* =============================== */}
       {/* 🔥 MODAL */}
       {/* =============================== */}
       <div
-
         className={`
           w-full
           max-w-5xl
@@ -150,13 +140,11 @@ const WallpaperModal = ({
 
           ${
             dark
-
               ? `
                 bg-[#0b1120]
                 border-white/10
                 text-white
               `
-
               : `
                 bg-white
                 border-black/10
@@ -167,12 +155,10 @@ const WallpaperModal = ({
           md:mt-14
         `}
       >
-
         {/* =============================== */}
         {/* 🔥 HEADER */}
         {/* =============================== */}
         <div
-
           className={`
             flex
             items-center
@@ -185,19 +171,11 @@ const WallpaperModal = ({
 
             border-b
 
-            ${
-              dark
-
-                ? "border-white/10"
-
-                : "border-black/10"
-            }
+            ${dark ? "border-white/10" : "border-black/10"}
           `}
         >
-
           {/* 🔥 LEFT */}
           <div>
-
             <h2
               className="
                 text-[22px]
@@ -212,25 +190,16 @@ const WallpaperModal = ({
                 text-[13px]
                 mt-1
 
-                ${
-                  dark
-
-                    ? "text-white/60"
-
-                    : "text-black/60"
-                }
+                ${dark ? "text-white/60" : "text-black/60"}
               `}
             >
               Customize your conversation 🙂
             </p>
-
           </div>
 
           {/* 🔥 CLOSE */}
           <button
-
             onClick={onClose}
-
             className={`
               w-10
               h-10
@@ -243,32 +212,21 @@ const WallpaperModal = ({
 
               transition
 
-              ${
-                dark
-
-                  ? "hover:bg-white/5"
-
-                  : "hover:bg-black/5"
-              }
+              ${dark ? "hover:bg-white/5" : "hover:bg-black/5"}
             `}
           >
-
             <FiX size={20} />
-
           </button>
-
         </div>
 
         {/* =============================== */}
         {/* 🔥 BODY */}
         {/* =============================== */}
         <div className="overflow-y-auto hide-scrollbar max-h-[78vh] p-5 md:p-7">
-
           {/* =============================== */}
           {/* 🔥 COLOR THEMES */}
           {/* =============================== */}
           <div className="mb-10">
-
             <div
               className="
                 flex
@@ -278,7 +236,6 @@ const WallpaperModal = ({
                 mb-5
               "
             >
-
               <FiMoon />
 
               <h3
@@ -289,7 +246,6 @@ const WallpaperModal = ({
               >
                 Color Themes
               </h3>
-
             </div>
 
             {/* 🔥 COLORS */}
@@ -305,30 +261,14 @@ const WallpaperModal = ({
                 gap-4
               "
             >
-
-              {FINAL_WALLPAPERS
-                .filter(
-                  (item) =>
-                    item.type === "gradient"
-                )
-                .map((wallpaper) => {
-
-                  const isActive =
-                    currentWallpaper?.id ===
-                    wallpaper.id;
+              {FINAL_WALLPAPERS.filter((item) => item.type === "gradient").map(
+                (wallpaper) => {
+                  const isActive = currentWallpaper?.id === wallpaper.id;
 
                   return (
-
                     <button
-
                       key={wallpaper.id}
-
-                      onClick={() =>
-                        handleSelectWallpaper(
-                          wallpaper.id
-                        )
-                      }
-
+                      onClick={() => handleSelectWallpaper(wallpaper.id)}
                       className={`
                         relative
 
@@ -345,27 +285,17 @@ const WallpaperModal = ({
 
                         hover:scale-[1.03]
 
-                        ${
-                          dark
-
-                            ? "border-white/10"
-
-                            : "border-black/10"
-                        }
+                        ${dark ? "border-white/10" : "border-black/10"}
                       `}
                     >
-
                       {/* 🔥 COLOR */}
                       <div
-
                         className="
                           absolute
                           inset-0
                         "
-
                         style={{
-                          background:
-                            wallpaper.background,
+                          background: wallpaper.background,
                         }}
                       />
 
@@ -378,7 +308,6 @@ const WallpaperModal = ({
                           bottom-3
                         "
                       >
-
                         <p
                           className="
                             text-white
@@ -388,12 +317,10 @@ const WallpaperModal = ({
                         >
                           {wallpaper.name}
                         </p>
-
                       </div>
 
                       {/* 🔥 ACTIVE */}
                       {isActive && (
-
                         <div
                           className="
                             absolute
@@ -413,28 +340,24 @@ const WallpaperModal = ({
                             justify-center
                           "
                         >
-
                           <FiCheck
                             className="
                               text-black
                             "
                           />
-
                         </div>
                       )}
-
                     </button>
                   );
-                })}
+                },
+              )}
             </div>
-
           </div>
 
           {/* =============================== */}
           {/* 🔥 IMAGE WALLPAPERS */}
           {/* =============================== */}
           <div className="mb-10">
-
             <div
               className="
                 flex
@@ -444,7 +367,6 @@ const WallpaperModal = ({
                 mb-5
               "
             >
-
               <FiImage />
 
               <h3
@@ -455,7 +377,6 @@ const WallpaperModal = ({
               >
                 Image Wallpapers
               </h3>
-
             </div>
 
             {/* 🔥 GRID */}
@@ -470,30 +391,14 @@ const WallpaperModal = ({
                 gap-4
               "
             >
-
-              {FINAL_WALLPAPERS
-                .filter(
-                  (item) =>
-                    item.type === "image"
-                )
-                .map((wallpaper) => {
-
-                  const isActive =
-                    currentWallpaper?.id ===
-                    wallpaper.id;
+              {FINAL_WALLPAPERS.filter((item) => item.type === "image").map(
+                (wallpaper) => {
+                  const isActive = currentWallpaper?.id === wallpaper.id;
 
                   return (
-
                     <button
-
                       key={wallpaper.id}
-
-                      onClick={() =>
-                        handleSelectWallpaper(
-                          wallpaper.id
-                        )
-                      }
-
+                      onClick={() => handleSelectWallpaper(wallpaper.id)}
                       className={`
                         relative
 
@@ -510,28 +415,17 @@ const WallpaperModal = ({
                         transition-all
                         duration-300
 
-                        ${
-                          dark
-
-                            ? "border-white/10"
-
-                            : "border-black/10"
-                        }
+                        ${dark ? "border-white/10" : "border-black/10"}
                       `}
                     >
-
                       {/* 🔥 IMAGE */}
                       <div
-
                         className="
                           absolute
                           inset-0
                         "
-
                         style={{
-
-                          backgroundImage:
-                            `
+                          backgroundImage: `
                             linear-gradient(
                               rgba(0,0,0,0.2),
                               rgba(0,0,0,0.35)
@@ -539,11 +433,9 @@ const WallpaperModal = ({
                             url(${wallpaper.image})
                             `,
 
-                          backgroundSize:
-                            "cover",
+                          backgroundSize: "cover",
 
-                          backgroundPosition:
-                            "center",
+                          backgroundPosition: "center",
                         }}
                       />
 
@@ -556,7 +448,6 @@ const WallpaperModal = ({
                           bottom-3
                         "
                       >
-
                         <p
                           className="
                             text-white
@@ -566,12 +457,10 @@ const WallpaperModal = ({
                         >
                           {wallpaper.name}
                         </p>
-
                       </div>
 
                       {/* 🔥 ACTIVE */}
                       {isActive && (
-
                         <div
                           className="
                             absolute
@@ -591,28 +480,24 @@ const WallpaperModal = ({
                             justify-center
                           "
                         >
-
                           <FiCheck
                             className="
                               text-black
                             "
                           />
-
                         </div>
                       )}
-
                     </button>
                   );
-                })}
+                },
+              )}
             </div>
-
           </div>
 
           {/* =============================== */}
           {/* 🔥 CUSTOM UPLOAD */}
           {/* =============================== */}
           <div>
-
             <div
               className="
                 flex
@@ -622,7 +507,6 @@ const WallpaperModal = ({
                 mb-5
               "
             >
-
               <FiHeart />
 
               <h3
@@ -633,16 +517,11 @@ const WallpaperModal = ({
               >
                 Your Wallpaper
               </h3>
-
             </div>
 
             {/* 🔥 UPLOAD */}
             <button
-
-              onClick={() =>
-                fileInputRef.current?.click()
-              }
-
+              onClick={() => fileInputRef.current?.click()}
               className={`
                 w-full
 
@@ -666,13 +545,11 @@ const WallpaperModal = ({
 
                 ${
                   dark
-
                     ? `
                       border-white/10
                       hover:border-[var(--primary)]
                       hover:bg-white/5
                     `
-
                     : `
                       border-black/10
                       hover:border-[var(--primary)]
@@ -681,7 +558,6 @@ const WallpaperModal = ({
                 }
               `}
             >
-
               {/* 🔥 ICON */}
               <div
                 className="
@@ -697,11 +573,7 @@ const WallpaperModal = ({
                   justify-center
                 "
               >
-
-                <FiUpload
-                  size={28}
-                />
-
+                <FiUpload size={28} />
               </div>
 
               {/* 🔥 TEXT */}
@@ -710,7 +582,6 @@ const WallpaperModal = ({
                   text-center
                 "
               >
-
                 <p
                   className="
                     font-semibold
@@ -725,44 +596,165 @@ const WallpaperModal = ({
                     text-[13px]
                     mt-1
 
-                    ${
-                      dark
-
-                        ? "text-white/60"
-
-                        : "text-black/60"
-                    }
+                    ${dark ? "text-white/60" : "text-black/60"}
                   `}
                 >
                   Crop & fit support coming 🙂
                 </p>
-
               </div>
-
             </button>
 
             {/* 🔥 INPUT */}
             <input
-
               ref={fileInputRef}
-
               type="file"
-
               accept="image/*"
-
               hidden
-
-              onChange={
-                handleCustomWallpaper
-              }
+              onChange={handleCustomWallpaper}
             />
-
           </div>
 
+          {/* =============================== */}
+          {/* 🔥 IMAGE CROPPER */}
+          {/* =============================== */}
+          {cropImage && (
+            <div
+              className="
+      fixed
+      inset-0
+
+      z-[10000]
+
+      bg-black/90
+
+      flex
+      items-center
+      justify-center
+
+      p-3
+    "
+            >
+              <div
+                className="
+        relative
+
+        w-full
+        max-w-5xl
+
+        h-[85vh]
+
+        rounded-[32px]
+
+        overflow-hidden
+      "
+              >
+                <ImageCropper
+                  image={cropImage}
+                  aspect={1.8}
+                  crop={crop}
+                  setCrop={setCrop}
+                  zoom={zoom}
+                  setZoom={setZoom}
+                  cropShape="rect"
+                  showGrid={false}
+                  onCropDone={(croppedFile) => {
+                    // 🔥 CROPPED URL
+                    // 🔥 FILE READER
+                    const reader = new FileReader();
+
+                    reader.onloadend = () => {
+                      // 🔥 BASE64
+                      const base64Image = reader.result;
+
+                      // 🔥 SAVE
+                      setCustomWallpaper(
+                        chatKey,
+
+                        base64Image,
+                      );
+
+                      // 🔥 RESET
+                      setCropImage(null);
+
+                      setZoom(1);
+
+                      setCrop({
+                        x: 0,
+                        y: 0,
+                      });
+
+                      // 🔥 CLOSE
+                      onClose();
+                    };
+
+                    // 🔥 READ
+                    reader.readAsDataURL(croppedFile);
+
+                    // 🔥 SAVE
+                    setCustomWallpaper(
+                      chatKey,
+
+                      croppedUrl,
+                    );
+
+                    // 🔥 RESET
+                    setCropImage(null);
+
+                    setZoom(1);
+
+                    setCrop({
+                      x: 0,
+                      y: 0,
+                    });
+
+                    // 🔥 CLOSE
+                    onClose();
+                  }}
+                />
+
+                {/* 🔥 CANCEL */}
+                <button
+                  onClick={() => {
+                    setCropImage(null);
+
+                    setZoom(1);
+
+                    setCrop({
+                      x: 0,
+                      y: 0,
+                    });
+                  }}
+                  className="
+                    absolute
+
+                    top-5
+                    left-5
+
+                    z-[10001]
+
+                    px-5
+                    py-2.5
+
+                    rounded-full
+
+                    bg-white/10
+                    backdrop-blur-xl
+
+                    border
+                    border-white/10
+
+                    text-white
+                    text-sm
+                    font-medium
+                  "
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
       </div>
-
     </div>
   );
 };
