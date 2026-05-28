@@ -22,6 +22,7 @@ import { useTheme } from "../context/ThemeContext";
 
 const Navbar = ({ mobileSearch, setMobileSearch }) => {
   const { theme, setTheme } = useTheme();
+  const isLightTheme = ["light","frost","rose-gold"].includes(theme);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -121,7 +122,7 @@ const Navbar = ({ mobileSearch, setMobileSearch }) => {
           {/* LOGO */}
           <div className="flex items-center gap-3">
             <img
-              src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
+              src={isLightTheme ? assets.LightMoodLogo : assets.Logo}
               alt="logo"
               className="
                   w-24
@@ -218,22 +219,54 @@ const Navbar = ({ mobileSearch, setMobileSearch }) => {
         {/* ================= MOBILE NAV ================= */}
         {!hideNavbar && (
           <>
-            <div className="md:hidden fixed top-0 left-0 w-full z-50 isolate">
+            <div
+  className="
+    md:hidden
+
+    fixed
+    top-0
+    left-0
+
+    w-full
+
+    z-50
+
+    isolate
+
+    glass
+
+    border-b
+    border-[var(--border)]
+  "
+>
               {/* BACKGROUND */}
               <div
-                className={`absolute inset-0 backdrop-blur-xl opacity-95 pointer-events-none ${
-                  theme === "light"
-                    ? "bg-gradient-to-r from-white via-gray-100 to-white"
-                    : "bg-gradient-to-r from-[#020617] via-[#0b0f1a] to-[#020617]"
-                }`}
-              />
+  className="
+    md:hidden
+
+    fixed
+    top-0
+    left-0
+
+    w-full
+
+    z-50
+
+    isolate
+
+    glass
+
+    border-b
+    border-[var(--border)]
+  "
+></div>
 
               <div className="relative">
                 {/* TOP */}
                 <div className="flex items-center justify-between px-4 pt-3">
                   {/* LOGO */}
                   <img
-                    src={theme === "light" ? assets.LightMoodLogo : assets.Logo}
+                    src={isLightTheme ? assets.LightMoodLogo : assets.Logo}
                     alt="logo"
                     className="w-20 h-8 object-contain"
                   />

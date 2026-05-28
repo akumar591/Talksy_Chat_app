@@ -16,7 +16,12 @@ export const ThemeProvider = ({ children }) => {
       "dark",
       "neon",
       "ocean",
-      "purple"
+      "purple",
+      "amoled",
+      "sunset",
+      "frost",
+      "galaxy",
+      "rose-gold",
     );
 
     // add current theme

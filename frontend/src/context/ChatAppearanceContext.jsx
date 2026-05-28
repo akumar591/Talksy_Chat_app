@@ -1,9 +1,158 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+// ======================================
+// 🔥 THEME
+// ======================================
+import { useTheme } from "./ThemeContext";
 
 // ===============================
 // 🔥 CONTEXT
 // ===============================
 const ChatAppearanceContext = createContext(null);
+
+// ======================================
+// 🔥 THEME DEFAULT CHAT SETTINGS
+// ======================================
+export const THEME_CHAT_DEFAULTS = {
+  // ====================================
+  // 🔥 AMOLED
+  // ====================================
+  amoled: {
+    wallpaper: "default-dark",
+
+    bubble: {
+      me: "#00e676",
+      other: "#0a0a0a",
+    },
+
+    style: "glass",
+  },
+
+  // ====================================
+  // 🔥 SUNSET
+  // ====================================
+  sunset: {
+    wallpaper: "sunset-fire",
+
+    bubble: {
+      me: "#ff7849",
+      other: "#7c2d12",
+    },
+
+    style: "modern",
+  },
+
+  // ====================================
+  // 🔥 FROST
+  // ====================================
+  frost: {
+    wallpaper: "soft-cloud",
+
+    bubble: {
+      me: "#7dd3fc",
+      other: "rgba(255,255,255,0.25)",
+    },
+
+    style: "glass",
+  },
+
+  // ====================================
+  // 🔥 GALAXY
+  // ====================================
+  galaxy: {
+    wallpaper: "space-night",
+
+    bubble: {
+      me: "#8b5cf6",
+      other: "#312e81",
+    },
+
+    style: "neon",
+  },
+
+  // ====================================
+  // 🔥 ROSE GOLD
+  // ====================================
+  "rose-gold": {
+    wallpaper: "cream-sunset",
+
+    bubble: {
+      me: "#f472b6",
+      other: "#fbcfe8",
+    },
+
+    style: "glass",
+  },
+
+  // ====================================
+  // 🔥 LIGHT
+  // ====================================
+  light: {
+    wallpaper: "soft-cloud",
+
+    bubble: {
+      me: "#00c896",
+      other: "#ffffff",
+    },
+
+    style: "default",
+  },
+
+  // ====================================
+  // 🔥 DARK
+  // ====================================
+  dark: {
+    wallpaper: "default-dark",
+
+    bubble: {
+      me: "#00c896",
+      other: "#111827",
+    },
+
+    style: "default",
+  },
+
+  // ====================================
+  // 🔥 NEON
+  // ====================================
+  neon: {
+    wallpaper: "midnight-glow",
+
+    bubble: {
+      me: "#00ffb3",
+      other: "#052e2b",
+    },
+
+    style: "default",
+  },
+
+  // ====================================
+  // 🔥 OCEAN
+  // ====================================
+  ocean: {
+    wallpaper: "ocean-vibe",
+
+    bubble: {
+      me: "#38bdf8",
+      other: "#0c4a6e",
+    },
+
+    style: "default",
+  },
+
+  // ====================================
+  // 🔥 PURPLE
+  // ====================================
+  purple: {
+    wallpaper: "purple-dream",
+
+    bubble: {
+      me: "#a855f7",
+      other: "#3b0764",
+    },
+
+    style: "glass",
+  },
+};
 
 // ===============================
 // 🔥 WALLPAPERS
@@ -563,6 +712,10 @@ const DEFAULT_APPEARANCE = {
 // 🔥 PROVIDER
 // ===============================
 export const ChatAppearanceProvider = ({ children }) => {
+  // ======================================
+  // 🔥 CURRENT THEME
+  // ======================================
+  const { theme } = useTheme();
   // ===============================
   // 🔥 STATE
   // ===============================
@@ -683,8 +836,19 @@ export const ChatAppearanceProvider = ({ children }) => {
 
     // ======================================
     // 🔥 NO SAVED WALLPAPER
+    // 🔥 THEME DEFAULT WALLPAPER
     // ======================================
-    if (!wallpaperId) {
+    const themeWallpaperId = THEME_CHAT_DEFAULTS?.[theme]?.wallpaper;
+
+    // ======================================
+    // 🔥 FINAL WALLPAPER ID
+    // ======================================
+    const finalWallpaperId = wallpaperId || themeWallpaperId;
+
+    // ======================================
+    // 🔥 NO WALLPAPER
+    // ======================================
+    if (!finalWallpaperId) {
       return WALLPAPERS[0];
     }
 
@@ -692,7 +856,7 @@ export const ChatAppearanceProvider = ({ children }) => {
     // 🔥 FIND WALLPAPER
     // ======================================
     const foundWallpaper = WALLPAPERS.find(
-      (wallpaper) => wallpaper.id === wallpaperId,
+      (wallpaper) => wallpaper.id === finalWallpaperId,
     );
 
     // ======================================
@@ -724,9 +888,13 @@ export const ChatAppearanceProvider = ({ children }) => {
   // 🔥 GET CHAT STYLE
   // ===============================
   const getChatStyle = (key) => {
-    const styleId = appearance?.chatStyles?.[key] || "default";
+    const savedStyleId = appearance?.chatStyles?.[key];
 
-    return CHAT_STYLES[styleId] || CHAT_STYLES.default;
+    const themeStyleId = THEME_CHAT_DEFAULTS?.[theme]?.style;
+
+    const finalStyleId = savedStyleId || themeStyleId || "default";
+
+    return CHAT_STYLES[finalStyleId] || CHAT_STYLES.default;
   };
 
   // ===============================
@@ -752,9 +920,19 @@ export const ChatAppearanceProvider = ({ children }) => {
   // 🔥 GET BUBBLE COLOR
   // ===============================
   const getBubbleColor = (key) => {
-    const colorId = appearance?.bubbleColors?.[key] || "default";
+    const savedColorId = appearance?.bubbleColors?.[key];
 
-    return BUBBLE_COLORS[colorId] || BUBBLE_COLORS.default;
+    // ======================================
+    // 🔥 USER CUSTOM COLOR
+    // ======================================
+    if (savedColorId) {
+      return BUBBLE_COLORS[savedColorId] || BUBBLE_COLORS.default;
+    }
+
+    // ======================================
+    // 🔥 THEME DEFAULT COLOR
+    // ======================================
+    return THEME_CHAT_DEFAULTS?.[theme]?.bubble || BUBBLE_COLORS.default;
   };
 
   // ===============================
@@ -799,7 +977,7 @@ export const ChatAppearanceProvider = ({ children }) => {
 
       getBubbleColor,
     }),
-    [appearance],
+    [appearance, theme],
   );
 
   return (

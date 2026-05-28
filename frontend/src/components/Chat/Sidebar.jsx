@@ -274,7 +274,7 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
         )}
 
         {/* 🔥 CHAT LIST */}
-        <div className="flex flex-col gap-1 pt-[72px] md:pt-0">
+        <div className="flex flex-col gap-1 pt-[80px] md:pt-0">
           {filteredChats.map((chat) => {
             const isActive =
               location.pathname === `/chat/${chat.id}` ||
