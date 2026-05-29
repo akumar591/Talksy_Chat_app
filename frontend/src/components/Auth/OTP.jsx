@@ -1,8 +1,4 @@
-import {
-  useState,
-  useRef,
-  useEffect,
-} from "react";
+import { useState, useRef, useEffect } from "react";
 
 import { motion } from "framer-motion";
 
@@ -16,88 +12,55 @@ import toast from "react-hot-toast";
 
 import { useAuth } from "../../context/AuthContext";
 
-function OTP({
-  onVerify,
-}) {
-
+function OTP({ onVerify }) {
   // =====================================
   // 🔥 STATES
   // =====================================
-  const [otp, setOtp] =
-    useState([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-    ]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [devOtp] = useState(sessionStorage.getItem("devOtp") || "");
 
-  const [timer, setTimer] =
-    useState(30);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+
+  const [loading, setLoading] = useState(false);
+
+  const [timer, setTimer] = useState(30);
 
   // =====================================
   // 🔥 REFS
   // =====================================
-  const inputsRef =
-    useRef([]);
+  const inputsRef = useRef([]);
 
-  const initializedRef =
-    useRef(false);
+  const initializedRef = useRef(false);
 
   // =====================================
   // 🔥 AUTH
   // =====================================
-  const {
-    phone,
-    setPhone,
-    setUser,
-  } = useAuth();
+  const { phone, setPhone, setUser } = useAuth();
 
   // =====================================
   // 🔥 ACTIVE PHONE
   // =====================================
-  const activePhone =
-    phone ||
-    sessionStorage.getItem(
-      "phone"
-    );
+  const activePhone = phone || sessionStorage.getItem("phone");
 
   // =====================================
   // 🔥 VALIDATION
   // =====================================
-  const isValid =
-    otp.join("").length ===
-    6;
+  const isValid = otp.join("").length === 6;
 
   // =====================================
   // 🔥 REFRESH SAFETY
   // =====================================
   useEffect(() => {
-
     // 🔥 strict mode safety
-    if (
-      initializedRef.current
-    ) {
-
+    if (initializedRef.current) {
       return;
     }
 
-    initializedRef.current =
-      true;
+    initializedRef.current = true;
 
     // 🔥 invalid access
-    if (
-      !activePhone
-    ) {
-
-      localStorage.setItem(
-        "step",
-        "login"
-      );
+    if (!activePhone) {
+      localStorage.setItem("step", "login");
 
       onVerify("login");
 
@@ -105,356 +68,203 @@ function OTP({
     }
 
     // 🔥 keep otp step
-    localStorage.setItem(
-      "step",
-      "otp"
-    );
-
-  }, [
-    activePhone,
-    onVerify,
-  ]);
+    localStorage.setItem("step", "otp");
+  }, [activePhone, onVerify]);
 
   // =====================================
   // 🔥 TIMER
   // =====================================
   useEffect(() => {
+    if (timer <= 0) return;
 
-    if (timer <= 0)
-      return;
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
 
-    const interval =
-      setInterval(() => {
+          return 0;
+        }
 
-        setTimer((prev) => {
+        return prev - 1;
+      });
+    }, 1000);
 
-          if (prev <= 1) {
-
-            clearInterval(
-              interval
-            );
-
-            return 0;
-          }
-
-          return prev - 1;
-        });
-
-      }, 1000);
-
-    return () =>
-      clearInterval(
-        interval
-      );
-
+    return () => clearInterval(interval);
   }, [timer]);
 
   // =====================================
   // 🔥 OTP INPUT
   // =====================================
-  const handleChange = (
-    value,
-    index
-  ) => {
+  const handleChange = (value, index) => {
+    if (!/^[0-9]?$/.test(value)) return;
 
-    if (
-      !/^[0-9]?$/.test(
-        value
-      )
-    )
-      return;
+    const newOtp = [...otp];
 
-    const newOtp = [
-      ...otp,
-    ];
-
-    newOtp[index] =
-      value;
+    newOtp[index] = value;
 
     setOtp(newOtp);
 
-    if (
-      value &&
-      index < 5
-    ) {
-
-      inputsRef.current[
-        index + 1
-      ]?.focus();
+    if (value && index < 5) {
+      inputsRef.current[index + 1]?.focus();
     }
   };
 
   // =====================================
   // 🔥 BACKSPACE
   // =====================================
-  const handleKeyDown = (
-    e,
-    index
-  ) => {
-
-    if (
-      e.key ===
-        "Backspace" &&
-      !otp[index] &&
-      index > 0
-    ) {
-
-      inputsRef.current[
-        index - 1
-      ]?.focus();
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
     }
   };
 
   // =====================================
   // 🔥 PASTE OTP
   // =====================================
-  const handlePaste = (
-    e
-  ) => {
+  const handlePaste = (e) => {
+    const paste = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
 
-    const paste =
-      e.clipboardData
-        .getData("text")
-        .replace(/\D/g, "")
-        .slice(0, 6);
+    if (!paste) return;
 
-    if (!paste)
-      return;
+    const newOtp = paste.split("");
 
-    const newOtp =
-      paste.split("");
-
-    while (
-      newOtp.length < 6
-    ) {
-
+    while (newOtp.length < 6) {
       newOtp.push("");
     }
 
     setOtp(newOtp);
 
-    const nextIndex =
-      Math.min(
-        paste.length,
-        5
-      );
+    const nextIndex = Math.min(paste.length, 5);
 
-    inputsRef.current[
-      nextIndex
-    ]?.focus();
+    inputsRef.current[nextIndex]?.focus();
   };
 
   // =====================================
   // 🔥 CHANGE NUMBER
   // =====================================
-  const handleBack =
-    () => {
+  const handleBack = () => {
+    setOtp(["", "", "", "", "", ""]);
 
-      setOtp([
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-      ]);
+    setPhone(null);
 
-      setPhone(null);
+    sessionStorage.removeItem("phone");
 
-      sessionStorage.removeItem(
-        "phone"
-      );
+    localStorage.setItem("step", "login");
 
-      localStorage.setItem(
-        "step",
-        "login"
-      );
-
-      onVerify("login");
-    };
+    onVerify("login");
+  };
 
   // =====================================
   // 🔥 VERIFY OTP
   // =====================================
-  const handleVerify =
-    async () => {
+  const handleVerify = async () => {
+    if (!isValid || loading) return;
 
-      if (
-        !isValid ||
-        loading
-      )
-        return;
+    try {
+      setLoading(true);
 
-      try {
+      // 🔥 VERIFY OTP
+      await API.post(
+        "/auth/verify-otp",
+        {
+          phone: activePhone,
+          otp: otp.join(""),
+        },
+        {
+          withCredentials: true,
+        },
+      );
 
-        setLoading(true);
+      // 🔥 FETCH USER
+      const userRes = await API.get("/users/me", {
+        withCredentials: true,
+      });
 
-        // 🔥 VERIFY OTP
-        await API.post(
-          "/auth/verify-otp",
-          {
-            phone:
-              activePhone,
-            otp: otp.join(
-              ""
-            ),
-          },
-          {
-            withCredentials: true,
-          }
-        );
+      const currentUser = userRes.data.data;
 
-        // 🔥 FETCH USER
-        const userRes =
-          await API.get(
-            "/users/me",
-            {
-              withCredentials: true,
-            }
-          );
+      // 🔥 SAVE USER
+      setUser(currentUser);
 
-        const currentUser =
-          userRes.data.data;
+      // 🔥 KEEP PHONE
+      // don't clear phone
 
-        // 🔥 SAVE USER
-        setUser(
-          currentUser
-        );
+      // 🔥 CHECK PROFILE
+      const hasProfile = currentUser?.name && currentUser?.avatar;
 
-        // 🔥 KEEP PHONE
-        // don't clear phone
+      // 🔥 EXISTING USER
+      if (hasProfile) {
+        localStorage.setItem("step", "profile");
 
-        // 🔥 CHECK PROFILE
-        const hasProfile =
+        toast.success("Welcome back 🚀");
 
-          currentUser?.name &&
-          currentUser?.avatar;
+        onVerify("profile");
+      } else {
+        // 🔥 NEW USER
+        localStorage.setItem("step", "profile-setup");
 
-        // 🔥 EXISTING USER
-        if (hasProfile) {
+        toast.success("OTP verified ✅");
 
-          localStorage.setItem(
-            "step",
-            "profile"
-          );
-
-          toast.success(
-            "Welcome back 🚀"
-          );
-
-          onVerify(
-            "profile"
-          );
-
-        } else {
-
-          // 🔥 NEW USER
-          localStorage.setItem(
-            "step",
-            "profile-setup"
-          );
-
-          toast.success(
-            "OTP verified ✅"
-          );
-
-          onVerify(
-            "profile-setup"
-          );
-        }
-
-      } catch (err) {
-
-        // 🔥 CLEAR WRONG OTP
-        setOtp([
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-        ]);
-
-        inputsRef.current[0]?.focus();
-
-        const msg =
-          err.response?.data
-            ?.message ||
-          "Verification failed ❌";
-
-        toast.error(msg);
-
-      } finally {
-
-        setLoading(false);
+        onVerify("profile-setup");
       }
-    };
+    } catch (err) {
+      // 🔥 CLEAR WRONG OTP
+      setOtp(["", "", "", "", "", ""]);
+
+      inputsRef.current[0]?.focus();
+
+      const msg = err.response?.data?.message || "Verification failed ❌";
+
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // =====================================
   // 🔥 RESEND OTP
   // =====================================
-  const resendOtp =
-    async () => {
+  const resendOtp = async () => {
+    if (timer > 0 || loading) return;
 
-      if (
-        timer > 0 ||
-        loading
-      )
-        return;
+    try {
+      setLoading(true);
 
-      try {
+      const res = await API.post(
+        "/auth/send-otp",
+        {
+          phone: activePhone,
+        },
+        {
+          withCredentials: true,
+        },
+      );
 
-        setLoading(true);
+      sessionStorage.setItem("devOtp", res.data?.data?.otp || "");
 
-        await API.post(
-          "/auth/send-otp",
-          {
-            phone:
-              activePhone,
-          },
-          {
-            withCredentials: true,
-          }
-        );
+      // 🔥 RESET TIMER
+      setTimer(30);
 
-        // 🔥 RESET TIMER
-        setTimer(30);
+      // 🔥 CLEAR OTP
+      setOtp(["", "", "", "", "", ""]);
 
-        // 🔥 CLEAR OTP
-        setOtp([
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-        ]);
+      // 🔥 FOCUS
+      inputsRef.current[0]?.focus();
 
-        // 🔥 FOCUS
-        inputsRef.current[0]?.focus();
+      toast.success("OTP resent successfully ✅");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to resend ❌";
 
-        toast.success(
-          "OTP resent successfully ✅"
-        );
-
-      } catch (err) {
-
-        const msg =
-          err.response?.data
-            ?.message ||
-          "Failed to resend ❌";
-
-        toast.error(msg);
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative h-screen flex flex-col items-center justify-center bg-[#0b0f1a] text-white overflow-hidden">
-
       {/* BG */}
       <div className="absolute w-[250px] h-[250px] sm:w-[450px] sm:h-[450px] bg-[#00c896] blur-[120px] opacity-10 top-[-80px] left-[-80px]" />
 
@@ -465,7 +275,6 @@ function OTP({
 
       {/* CONTENT */}
       <div className="relative z-10 flex flex-col items-center">
-
         {/* LOGO */}
         <motion.img
           src={assets.Logo}
@@ -482,90 +291,105 @@ function OTP({
         />
 
         {/* TITLE */}
-        <p className="text-white/60 text-sm mb-2">
-
-          Enter verification code
-
-        </p>
+        <p className="text-white/60 text-sm mb-2">Enter verification code</p>
 
         {/* PHONE */}
         <p className="text-white/30 text-xs mb-8">
-
-          OTP sent to +91{" "}
-
-          {activePhone}
-
+          OTP sent to +91 {activePhone}
         </p>
 
         {/* OTP */}
-        <div
-          className="flex gap-3 mb-6"
-          onPaste={
-            handlePaste
-          }
-        >
-
-          {otp.map(
-            (
-              digit,
-              i
-            ) => (
-
-              <input
-                key={i}
-                ref={(el) =>
-                  (
-                    inputsRef.current[
-                      i
-                    ] = el
-                  )
-                }
-                maxLength={1}
-                value={otp[i]}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                onChange={(e) =>
-                  handleChange(
-                    e.target
-                      .value,
-                    i
-                  )
-                }
-                onKeyDown={(e) =>
-                  handleKeyDown(
-                    e,
-                    i
-                  )
-                }
-                className="w-5 h-12 text-center bg-transparent border-b border-white/20 outline-none focus:border-[#00c896] transition"
-              />
-            )
-          )}
-
+        <div className="flex gap-3 mb-6" onPaste={handlePaste}>
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => (inputsRef.current[i] = el)}
+              maxLength={1}
+              value={otp[i]}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              onChange={(e) => handleChange(e.target.value, i)}
+              onKeyDown={(e) => handleKeyDown(e, i)}
+              className="w-5 h-12 text-center bg-transparent border-b border-white/20 outline-none focus:border-[#00c896] transition"
+            />
+          ))}
         </div>
+
+        {/* =====================================
+🔥 DEV OTP CARD
+===================================== */}
+        {devOtp && (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            className="
+      mt-4
+      w-full
+      max-w-[320px]
+      rounded-2xl
+      border
+      border-[#00c896]/20
+      bg-white/[0.03]
+      backdrop-blur-xl
+      p-4
+    "
+          >
+            <p className="text-[11px] text-white/40 mb-2">Development OTP</p>
+
+            <div className="flex items-center justify-between">
+              <span
+                className="
+          text-xl
+          font-bold
+          tracking-[6px]
+          text-[#00c896]
+        "
+              >
+                {devOtp}
+              </span>
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(devOtp);
+
+                  toast.success("OTP copied ✅");
+                }}
+                className="
+          px-3
+          py-2
+          rounded-xl
+          text-xs
+          bg-[#00c896]/10
+          border
+          border-[#00c896]/20
+          hover:bg-[#00c896]/20
+          transition
+        "
+              >
+                Copy
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* VERIFY */}
         <motion.button
-          onClick={
-            handleVerify
-          }
-          disabled={
-            !isValid ||
-            loading
-          }
+          onClick={handleVerify}
+          disabled={!isValid || loading}
           whileTap={{
-            scale: isValid
-              ? 0.92
-              : 1,
+            scale: isValid ? 0.92 : 1,
           }}
           whileHover={{
-            scale: isValid
-              ? 1.05
-              : 1,
+            scale: isValid ? 1.05 : 1,
           }}
           className={`mt-4 flex items-center justify-center gap-3 transition-all ${(!isValid || loading) && "cursor-not-allowed"}`}
         >
-
           <div
             className={`w-10 h-10 rounded-full flex items-center justify-center ${
               isValid
@@ -573,70 +397,42 @@ function OTP({
                 : "bg-white/10 text-white/30"
             }`}
           >
-
             {loading ? (
-
               <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-
             ) : (
-
               "✓"
             )}
-
           </div>
 
           <span
             className={`${isValid ? "text-white" : "text-white/30"} text-sm`}
           >
-
-            {loading
-              ? "Verifying..."
-              : "Verify"}
-
+            {loading ? "Verifying..." : "Verify"}
           </span>
-
         </motion.button>
 
         {/* RESEND */}
         <p className="mt-6 text-xs text-white/40">
-
           Didn’t receive code?{" "}
-
           <span
-            onClick={
-              resendOtp
-            }
+            onClick={resendOtp}
             className={
-              timer === 0
-                ? "text-[#00c896] cursor-pointer"
-                : "text-white/30"
+              timer === 0 ? "text-[#00c896] cursor-pointer" : "text-white/30"
             }
           >
-
-            {timer === 0
-              ? "Resend"
-              : `Resend in ${timer}s`}
-
+            {timer === 0 ? "Resend" : `Resend in ${timer}s`}
           </span>
-
         </p>
 
         {/* CHANGE NUMBER */}
         <button
-          onClick={
-            handleBack
-          }
+          onClick={handleBack}
           className="mt-4 flex items-center gap-2 text-xs text-white/50 hover:text-[#00c896] transition"
         >
-
           <FiArrowLeft size={14} />
-
           Change phone number
-
         </button>
-
       </div>
-
     </div>
   );
 }

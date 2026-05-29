@@ -2,6 +2,16 @@ package com.talksy.backend.service;
 
 import com.talksy.backend.entity.Otp;
 import com.talksy.backend.entity.OtpType;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.talksy.backend.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
@@ -17,11 +27,28 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class OtpService {
 
+    // ===============================
+    // 🔥 MSG91 CONFIG
+    // ===============================
+    @Value("${msg91.api.key}")
+    private String apiKey;
+
+    @Value("${msg91.template.id}")
+    private String templateId;
+
+
+
     private final OtpRepository otpRepository;
     private final JavaMailSender mailSender;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
+
+    // ===============================
+    // 🔥 DEV MODE OTP
+    // ===============================
+    private final Map<String, String> phoneOtpMap =
+            new ConcurrentHashMap<>();
 
     // 📤 SEND OTP
     @Transactional
@@ -38,6 +65,13 @@ public class OtpService {
         }
 
         String otpValue = String.valueOf(100000 + random.nextInt(900000));
+        if (type == OtpType.PHONE) {
+
+            phoneOtpMap.put(
+                    identifier,
+                    otpValue
+            );
+        }
         String hashedOtp = encoder.encode(otpValue);
 
         Otp otp = (existing != null) ? existing : new Otp();
@@ -53,9 +87,25 @@ public class OtpService {
         otpRepository.save(otp);
 
         if (type == OtpType.PHONE) {
-            sendSms(identifier, otpValue);
+
+            // =====================================
+            // DEV MODE
+            // MSG91 TEMPORARILY DISABLED
+            // =====================================
+
+    /*
+    sendSms(
+            identifier,
+            otpValue
+    );
+    */
+
         } else {
-            sendEmail(identifier, otpValue);
+
+            sendEmail(
+                    identifier,
+                    otpValue
+            );
         }
     }
 
@@ -89,8 +139,93 @@ public class OtpService {
         return true;
     }
 
+
+    // ===============================
+    // 🔥 SEND SMS VIA MSG91
+    // ===============================
     private void sendSms(String phone, String otp) {
-        System.out.println("OTP for " + phone + " is: " + otp);
+
+        try {
+
+            // ===============================
+            // 🔥 MSG91 API URL
+            // ===============================
+            String url = "https://control.msg91.com/api/v5/otp";
+
+            // ===============================
+            // 🔥 REQUEST BODY
+            // ===============================
+            Map<String, Object> body = new HashMap<>();
+
+            body.put("template_id", templateId);
+
+            // ===============================
+            // 🔥 CLEAN PHONE NUMBER
+            // ===============================
+            String cleanPhone = phone.replaceAll("[^0-9]", "");
+
+            if (!cleanPhone.startsWith("91")) {
+                cleanPhone = "91" + cleanPhone;
+            }
+
+            body.put("mobile", cleanPhone);
+
+            body.put("otp", otp);
+
+            // ===============================
+            // 🔥 HEADERS
+            // ===============================
+            HttpHeaders headers = new HttpHeaders();
+
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            headers.set("authkey", apiKey);
+
+            System.out.println("API KEY: " + apiKey);
+
+            System.out.println("TEMPLATE ID: " + templateId);
+
+            System.out.println("PHONE: " + cleanPhone);
+
+            System.out.println("OTP: " + otp);
+
+            System.out.println("BODY: " + body);
+
+            // ===============================
+            // 🔥 REQUEST ENTITY
+            // ===============================
+            HttpEntity<Map<String, Object>> request =
+                    new HttpEntity<>(body, headers);
+
+            // ===============================
+            // 🔥 API CALL
+            // ===============================
+            RestTemplate restTemplate = new RestTemplate();
+
+            ResponseEntity<String> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            request,
+                            String.class
+                    );
+
+            // ===============================
+            // 🔥 SUCCESS LOG
+            // ===============================
+            System.out.println(
+                    "MSG91 Response: " + response.getBody()
+            );
+
+        } catch (Exception e) {
+
+            // ===============================
+            // 🔥 ERROR LOG
+            // ===============================
+            throw new RuntimeException(
+                    "Failed to send SMS OTP: " + e.getMessage()
+            );
+        }
     }
 
     private void sendEmail(String email, String otp) {
@@ -99,5 +234,15 @@ public class OtpService {
         message.setSubject("Talksy OTP");
         message.setText("Your OTP is: " + otp);
         mailSender.send(message);
+    }
+
+    // ===============================
+    // 🔥 GET LAST OTP (DEV MODE)
+    // ===============================
+    public String getOtpForPhone(
+            String phone
+    ) {
+
+        return phoneOtpMap.get(phone);
     }
 }

@@ -1,7 +1,5 @@
 package com.talksy.backend.controller;
-
 import lombok.RequiredArgsConstructor;
-
 import com.talksy.backend.dto.*;
 import com.talksy.backend.entity.OtpType;
 import com.talksy.backend.entity.RefreshToken;
@@ -76,11 +74,29 @@ public class AuthController {
                 OtpType.PHONE
         );
 
+// ===============================
+// 🔥 DEV MODE OTP RESPONSE
+// ===============================
+        Map<String, Object> data =
+                new HashMap<>();
+
+        data.put(
+                "phone",
+                phone
+        );
+
+        data.put(
+                "otp",
+                otpService.getOtpForPhone(
+                        phone
+                )
+        );
+
         return ResponseEntity.ok(
                 new ApiResponse<>(
                         true,
                         "OTP sent",
-                        null
+                        data
                 )
         );
     }
