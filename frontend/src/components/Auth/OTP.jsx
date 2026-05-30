@@ -203,11 +203,11 @@ function OTP({ onVerify }) {
         onVerify("profile");
       } else {
         // 🔥 NEW USER
-        localStorage.setItem("step", "profile-setup");
+        localStorage.setItem("step", "profile");
 
         toast.success("OTP verified ✅");
 
-        onVerify("profile-setup");
+        onVerify("profile");
       }
     } catch (err) {
       // 🔥 CLEAR WRONG OTP
