@@ -161,7 +161,18 @@ function OTP({ onVerify }) {
   // 🔥 VERIFY OTP
   // =====================================
   const handleVerify = async () => {
-    if (!isValid || loading) return;
+
+     console.log("VERIFY CLICKED");
+
+  console.log("OTP:", otp);
+
+  console.log("OTP JOIN:", otp.join(""));
+
+  console.log("IS VALID:", isValid);
+
+  if (!isValid || loading) return;
+
+  alert("API CALL STARTING");
 
     try {
       setLoading(true);
@@ -315,9 +326,9 @@ function OTP({ onVerify }) {
           ))}
         </div>
 
-        {/* =====================================
-🔥 DEV OTP CARD
-===================================== */}
+        {/* ===================================== */}
+                  {/* 🔥 DEV OTP CARD */}
+        {/* =====================================  */}
         {devOtp && (
           <motion.div
             initial={{

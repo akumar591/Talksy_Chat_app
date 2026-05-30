@@ -208,15 +208,17 @@ public class AuthController {
 
                         .httpOnly(true)
 
-                        .secure(false)
+                        .secure(true)
 
                         .path("/")
 
-                        .sameSite("Lax")
+                        .sameSite("None")
 
                         .maxAge(15 * 60)
 
                         .build();
+
+
 
         // ===============================
         // 🍪 REFRESH COOKIE
@@ -229,17 +231,18 @@ public class AuthController {
 
                         .httpOnly(true)
 
-                        .secure(false)
+                        .secure(true)
 
                         .path("/")
 
-                        .sameSite("Lax")
+                        .sameSite("None")
 
                         .maxAge(
                                 7 * 24 * 60 * 60
                         )
 
                         .build();
+
 
         response.addHeader(
                 "Set-Cookie",
@@ -590,11 +593,11 @@ public class AuthController {
 
                         .httpOnly(true)
 
-                        .secure(false)
+                        .secure(true)
 
                         .path("/")
 
-                        .sameSite("Lax")
+                        .sameSite("None")
 
                         .maxAge(0)
 
@@ -609,11 +612,11 @@ public class AuthController {
 
                         .httpOnly(true)
 
-                        .secure(false)
+                        .secure(true)
 
                         .path("/")
 
-                        .sameSite("Lax")
+                        .sameSite("None")
 
                         .maxAge(0)
 
@@ -756,11 +759,11 @@ public class AuthController {
 
                         .httpOnly(true)
 
-                        .secure(false)
+                        .secure(true)
 
                         .path("/")
 
-                        .sameSite("Lax")
+                        .sameSite("None")
 
                         .maxAge(15 * 60)
 

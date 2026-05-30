@@ -152,7 +152,8 @@ public class SecurityConfig {
         // ⚠️ FRONTEND URL
         config.setAllowedOrigins(
                 List.of(
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "https://talksy-chat-app-seven.vercel.app"
                 )
         );
 
