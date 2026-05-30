@@ -15,7 +15,3 @@ target/
 
 # Uploads
 uploads/
-
-# Spring sensitive file (VERY IMPORTANT)
-backend/src/main/resources/application.properties
-backend/backend/src/main/resources/application.properties
