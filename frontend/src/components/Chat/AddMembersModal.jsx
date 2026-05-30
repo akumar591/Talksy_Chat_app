@@ -334,7 +334,7 @@ const AddMembersModal = ({ group, onClose, setGroup }) => {
                       src={
                         contact.avatar?.startsWith("http")
                           ? contact.avatar
-                          : `http://localhost:8080${contact.avatar}`
+                          : `https://talksy-chat-app-pnk2.onrender.com${contact.avatar}`
                       }
                       alt={contact.name}
                       className="

@@ -3,7 +3,7 @@ import axios from "axios";
 const API = axios.create({
 
   baseURL:
-    "http://localhost:8080/api",
+    "https://talksy-chat-app-pnk2.onrender.com",
 
   withCredentials: true,
 });
@@ -46,7 +46,7 @@ API.interceptors.response.use(
 
           await axios.post(
 
-            "http://localhost:8080/api/auth/refresh-token",
+            "https://talksy-chat-app-pnk2.onrender.com/api/auth/refresh-token",
 
             {},
 
