@@ -260,7 +260,7 @@ public class OtpService {
 
             System.out.println("STEP-2 Message created");
 
-            message.setFrom(fromEmail);
+            message.setFrom("akumar.12121999@gmail.com");
             message.setTo(email);
             message.setSubject("Talksy OTP");
             message.setText("Your OTP is: " + otp);
