@@ -162,17 +162,7 @@ function OTP({ onVerify }) {
   // =====================================
   const handleVerify = async () => {
 
-     console.log("VERIFY CLICKED");
-
-  console.log("OTP:", otp);
-
-  console.log("OTP JOIN:", otp.join(""));
-
-  console.log("IS VALID:", isValid);
-
   if (!isValid || loading) return;
-
-  alert("API CALL STARTING");
 
     try {
       setLoading(true);
