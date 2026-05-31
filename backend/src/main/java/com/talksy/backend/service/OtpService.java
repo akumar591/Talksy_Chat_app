@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,26 @@ public class OtpService {
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
+
+    // ===============================
+// 🔥 RENDER MAIL ENV DEBUG
+// ===============================
+    @PostConstruct
+    public void testMailConfig() {
+
+        System.out.println(
+                "MAIL USER = "
+                        + System.getenv("MAIL_USERNAME")
+        );
+
+        String pass =
+                System.getenv("MAIL_PASSWORD");
+
+        System.out.println(
+                "MAIL PASSWORD EXISTS = "
+                        + (pass != null && !pass.isBlank())
+        );
+    }
 
     // ===============================
     // 🔥 DEV MODE OTP
