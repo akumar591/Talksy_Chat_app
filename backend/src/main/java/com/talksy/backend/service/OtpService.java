@@ -229,11 +229,36 @@ public class OtpService {
     }
 
     private void sendEmail(String email, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Talksy OTP");
-        message.setText("Your OTP is: " + otp);
-        mailSender.send(message);
+
+        try {
+
+            System.out.println("STEP-1 Email method entered");
+
+            SimpleMailMessage message = new SimpleMailMessage();
+
+            System.out.println("STEP-2 Message created");
+
+            message.setTo(email);
+            message.setSubject("Talksy OTP");
+            message.setText("Your OTP is: " + otp);
+
+            System.out.println("STEP-3 Before mailSender.send");
+
+            mailSender.send(message);
+
+            System.out.println("STEP-4 Mail sent successfully");
+
+        } catch (Exception e) {
+
+            System.out.println("STEP-5 Mail exception");
+
+            e.printStackTrace();
+
+            throw new RuntimeException(
+                    "Mail send failed: " + e.getMessage(),
+                    e
+            );
+        }
     }
 
     // ===============================
