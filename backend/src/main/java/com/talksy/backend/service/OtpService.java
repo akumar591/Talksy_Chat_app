@@ -37,7 +37,8 @@ public class OtpService {
     @Value("${msg91.template.id}")
     private String templateId;
 
-
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     private final OtpRepository otpRepository;
     private final JavaMailSender mailSender;
@@ -53,11 +54,11 @@ public class OtpService {
 
         System.out.println(
                 "MAIL USER = "
-                        + System.getenv("MAIL_USERNAME")
+                        + System.getenv("BREVO_USERNAME")
         );
 
         String pass =
-                System.getenv("MAIL_PASSWORD");
+                System.getenv("BREVO_PASSWORD");
 
         System.out.println(
                 "MAIL PASSWORD EXISTS = "
@@ -259,6 +260,7 @@ public class OtpService {
 
             System.out.println("STEP-2 Message created");
 
+            message.setFrom(fromEmail);
             message.setTo(email);
             message.setSubject("Talksy OTP");
             message.setText("Your OTP is: " + otp);
