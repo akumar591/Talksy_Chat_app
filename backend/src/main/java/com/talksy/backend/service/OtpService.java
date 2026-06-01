@@ -1,5 +1,4 @@
 package com.talksy.backend.service;
-
 import com.talksy.backend.entity.Otp;
 import com.talksy.backend.entity.OtpType;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +13,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.talksy.backend.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,34 +34,52 @@ public class OtpService {
     @Value("${msg91.template.id}")
     private String templateId;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
 
-    private final OtpRepository otpRepository;
-    private final JavaMailSender mailSender;
+    @Value("${brevo.sender.email}")
+    private String senderEmail;
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    private final SecureRandom random = new SecureRandom();
+    @Value("${brevo.sender.name}")
+    private String senderName;
 
     // ===============================
-// 🔥 RENDER MAIL ENV DEBUG
-// ===============================
+    // 🔥 BREVO ENV DEBUG
+    // ===============================
     @PostConstruct
     public void testMailConfig() {
 
         System.out.println(
-                "MAIL USER = "
-                        + System.getenv("BREVO_USERNAME")
+                "KEY EXISTS = "
+                        + (brevoApiKey != null)
         );
-
-        String pass =
-                System.getenv("BREVO_PASSWORD");
 
         System.out.println(
-                "MAIL PASSWORD EXISTS = "
-                        + (pass != null && !pass.isBlank())
+                "KEY LENGTH = "
+                        + (brevoApiKey != null
+                        ? brevoApiKey.length()
+                        : 0)
+        );
+
+        if (brevoApiKey != null
+                && brevoApiKey.length() > 10) {
+
+            System.out.println(
+                    "KEY START = "
+                            + brevoApiKey.substring(0, 10)
+            );
+        }
+
+        System.out.println(
+                "SENDER EMAIL = "
+                        + senderEmail
         );
     }
+
+    private final OtpRepository otpRepository;
+
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final SecureRandom random = new SecureRandom();
 
     // ===============================
     // 🔥 DEV MODE OTP
@@ -254,31 +269,118 @@ public class OtpService {
 
         try {
 
-            System.out.println("STEP-1 Email method entered");
+            System.out.println("BREVO STEP-1 Email method entered");
 
-            SimpleMailMessage message = new SimpleMailMessage();
+            String url =
+                    "https://api.brevo.com/v3/smtp/email";
 
-            System.out.println("STEP-2 Message created");
+            HttpHeaders headers =
+                    new HttpHeaders();
 
-            message.setFrom("akumar.12121999@gmail.com");
-            message.setTo(email);
-            message.setSubject("Talksy OTP");
-            message.setText("Your OTP is: " + otp);
+            headers.setContentType(
+                    MediaType.APPLICATION_JSON
+            );
 
-            System.out.println("STEP-3 Before mailSender.send");
+            headers.set(
+                    "api-key",
+                    brevoApiKey
+            );
 
-            mailSender.send(message);
+            Map<String, Object> body =
+                    new HashMap<>();
 
-            System.out.println("STEP-4 Mail sent successfully");
+            Map<String, String> sender =
+                    new HashMap<>();
+
+            sender.put(
+                    "name",
+                    senderName
+            );
+
+            sender.put(
+                    "email",
+                    senderEmail
+            );
+
+            body.put(
+                    "sender",
+                    sender
+            );
+
+            body.put(
+                    "subject",
+                    "Talksy OTP"
+            );
+
+            body.put(
+                    "htmlContent",
+                    "<h2>Your OTP is: "
+                            + otp
+                            + "</h2><p>Valid for 5 minutes.</p>"
+            );
+
+            body.put(
+                    "to",
+                    java.util.List.of(
+                            Map.of(
+                                    "email",
+                                    email
+                            )
+                    )
+            );
+
+            HttpEntity<Map<String, Object>> request =
+                    new HttpEntity<>(
+                            body,
+                            headers
+                    );
+
+            RestTemplate restTemplate =
+                    new RestTemplate();
+
+            System.out.println("BREVO STEP-2 Before API Call");
+
+            ResponseEntity<String> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            request,
+                            String.class
+                    );
+
+            System.out.println(
+                    "BREVO STATUS: "
+                            + response.getStatusCode()
+            );
+
+            System.out.println(
+                    "BREVO RESPONSE: "
+                            + response.getBody()
+            );
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+
+                throw new RuntimeException(
+                        "Brevo API Error: "
+                                + response.getBody()
+                );
+            }
+
+            System.out.println(
+                    "BREVO STEP-3 Email Sent Successfully"
+            );
 
         } catch (Exception e) {
 
-            System.out.println("STEP-5 Mail exception");
+            System.out.println(
+                    "BREVO STEP-4 Email Failed"
+            );
 
             e.printStackTrace();
 
             throw new RuntimeException(
-                    "Mail send failed: " + e.getMessage(),
+                    "Mail send failed: "
+                            + e.getMessage(),
                     e
             );
         }
