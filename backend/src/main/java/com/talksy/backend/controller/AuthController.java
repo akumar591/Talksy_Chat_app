@@ -281,8 +281,25 @@ public class AuthController {
 
             @Valid
             @RequestBody
-            SendEmailOtpRequest req
+            SendEmailOtpRequest req,
+
+            HttpServletRequest request
     ) {
+
+        // ===============================
+        // 🔥 CURRENT LOGGED IN USER
+        // ===============================
+        User user =
+                getCurrentUser(
+                        request
+                );
+
+        if (!user.isPhoneVerified()) {
+
+            throw new RuntimeException(
+                    "Verify phone first"
+            );
+        }
 
         String email =
                 req.getEmail();
@@ -300,6 +317,16 @@ public class AuthController {
             );
         }
 
+        // ===============================
+        // 🔥 OPTIONAL EMAIL NORMALIZE
+        // ===============================
+        email =
+                email.trim()
+                        .toLowerCase();
+
+        // ===============================
+        // 🔥 SEND OTP
+        // ===============================
         otpService.sendOtp(
                 email,
                 OtpType.EMAIL
@@ -322,42 +349,38 @@ public class AuthController {
 
             @Valid
             @RequestBody
-            VerifyEmailRequest req
+            VerifyEmailRequest req,
+
+            HttpServletRequest request
     ) {
 
-        String phone =
-                req.getPhone();
-
         String email =
-                req.getEmail();
+                req.getEmail()
+                        .trim()
+                        .toLowerCase();
 
         String otp =
-                req.getOtp();
+                req.getOtp()
+                        .trim();
 
         if (
-                phone == null
+                email.isBlank()
                         ||
-                        email == null
-                        ||
-                        otp == null
+                        otp.isBlank()
         ) {
 
             throw new RuntimeException(
-                    "Phone, Email and OTP required"
+                    "Email and OTP required"
             );
         }
 
+        // ===============================
+        // 🔥 CURRENT LOGGED IN USER
+        // ===============================
         User user =
-                userService.getByPhone(
-                        phone
+                getCurrentUser(
+                        request
                 );
-
-        if (user == null) {
-
-            throw new RuntimeException(
-                    "User not found"
-            );
-        }
 
         if (!user.isPhoneVerified()) {
 
@@ -366,6 +389,9 @@ public class AuthController {
             );
         }
 
+        // ===============================
+        // 🔥 VERIFY EMAIL OTP
+        // ===============================
         boolean valid =
                 otpService.verifyOtp(
                         email,
@@ -380,12 +406,17 @@ public class AuthController {
             );
         }
 
+        // ===============================
+        // 🔥 SAVE EMAIL
+        // ===============================
         user.setEmail(email);
 
         user.setEmailVerified(true);
 
         User saved =
-                userService.saveUser(user);
+                userService.saveUser(
+                        user
+                );
 
         return ResponseEntity.ok(
                 new ApiResponse<>(
@@ -404,34 +435,18 @@ public class AuthController {
 
             @Valid
             @RequestBody
-            ProfileSetupRequest req
+            ProfileSetupRequest req,
+
+            HttpServletRequest request
     ) {
 
-        if (
-                req.getPhone() == null
-                        ||
-                        req.getPhone().isBlank()
-        ) {
-
-            throw new RuntimeException(
-                    "Phone required"
-            );
-        }
-
-        String phone =
-                req.getPhone().trim();
-
+        // ===============================
+        // 🔥 CURRENT LOGGED IN USER
+        // ===============================
         User user =
-                userService.getByPhone(
-                        phone
+                getCurrentUser(
+                        request
                 );
-
-        if (user == null) {
-
-            throw new RuntimeException(
-                    "User not found"
-            );
-        }
 
         if (!user.isPhoneVerified()) {
 
@@ -447,6 +462,9 @@ public class AuthController {
             );
         }
 
+        // ===============================
+        // 🔥 NAME
+        // ===============================
         if (
                 req.getName() != null
                         &&
@@ -458,6 +476,9 @@ public class AuthController {
             );
         }
 
+        // ===============================
+        // 🔥 BIO
+        // ===============================
         if (req.getBio() != null) {
 
             user.setBio(
@@ -470,9 +491,11 @@ public class AuthController {
         // ===============================
         if (req.getAvatar() != null) {
 
-            String newAvatar = req.getAvatar().trim();
+            String newAvatar =
+                    req.getAvatar().trim();
 
-            String oldAvatar = user.getAvatar();
+            String oldAvatar =
+                    user.getAvatar();
 
             // 🔥 SKIP IF SAME
             if (
@@ -485,13 +508,14 @@ public class AuthController {
             }
 
             // ===============================
-            // 🔥 REMOVE AVATAR EXPLICITLY
+            // 🔥 REMOVE AVATAR
             // ===============================
             else if (
-                    "__REMOVE__".equalsIgnoreCase(newAvatar)
+                    "__REMOVE__".equalsIgnoreCase(
+                            newAvatar
+                    )
             ) {
 
-                // 🔥 DELETE OLD CLOUDINARY IMAGE
                 if (
                         oldAvatar != null
                                 &&
@@ -499,9 +523,10 @@ public class AuthController {
                 ) {
 
                     String publicId =
-                            cloudinaryService.extractPublicId(
-                                    oldAvatar
-                            );
+                            cloudinaryService
+                                    .extractPublicId(
+                                            oldAvatar
+                                    );
 
                     cloudinaryService.deleteFile(
                             publicId,
@@ -513,23 +538,27 @@ public class AuthController {
             }
 
             // ===============================
-            // 🔥 NEW AVATAR UPLOADED
+            // 🔥 NEW AVATAR
             // ===============================
-            else if (!newAvatar.isBlank()) {
+            else if (
+                    !newAvatar.isBlank()
+            ) {
 
-                // 🔥 DELETE OLD IMAGE
                 if (
                         oldAvatar != null
                                 &&
                                 !oldAvatar.isBlank()
                                 &&
-                                !oldAvatar.equals(newAvatar)
+                                !oldAvatar.equals(
+                                        newAvatar
+                                )
                 ) {
 
                     String publicId =
-                            cloudinaryService.extractPublicId(
-                                    oldAvatar
-                            );
+                            cloudinaryService
+                                    .extractPublicId(
+                                            oldAvatar
+                                    );
 
                     cloudinaryService.deleteFile(
                             publicId,
@@ -537,12 +566,19 @@ public class AuthController {
                     );
                 }
 
-                user.setAvatar(newAvatar);
+                user.setAvatar(
+                        newAvatar
+                );
             }
         }
 
+        // ===============================
+        // 🔥 SAVE USER
+        // ===============================
         User updated =
-                userService.saveUser(user);
+                userService.saveUser(
+                        user
+                );
 
         return ResponseEntity.ok(
                 new ApiResponse<>(
@@ -814,5 +850,71 @@ public class AuthController {
         }
 
         return null;
+    }
+
+    private User getCurrentUser(
+            HttpServletRequest request
+    ) {
+
+        String token =
+                extractToken(
+                        request,
+                        "accessToken"
+                );
+
+        if (
+                token == null
+                        ||
+                        token.isBlank()
+        ) {
+
+            throw new RuntimeException(
+                    "Unauthorized"
+            );
+        }
+
+        // ===============================
+        // 🔥 TOKEN VALIDATION
+        // ===============================
+        if (
+                !jwtService.isTokenValid(
+                        token
+                )
+        ) {
+
+            throw new RuntimeException(
+                    "Invalid token"
+            );
+        }
+
+        String phone =
+                jwtService.extractPhone(
+                        token
+                );
+
+        if (
+                phone == null
+                        ||
+                        phone.isBlank()
+        ) {
+
+            throw new RuntimeException(
+                    "Invalid token payload"
+            );
+        }
+
+        User user =
+                userService.getByPhone(
+                        phone
+                );
+
+        if (user == null) {
+
+            throw new RuntimeException(
+                    "User not found"
+            );
+        }
+
+        return user;
     }
 }

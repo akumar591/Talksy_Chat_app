@@ -1,19 +1,41 @@
 import axios from "axios";
 
 const API = axios.create({
-
   baseURL:
     "https://talksy-chat-app-pnk2.onrender.com/api",
-
   withCredentials: true,
 });
 
-// 🔥 refresh control
+// ======================================
+// 🔥 REFRESH QUEUE
+// ======================================
 let isRefreshing = false;
 
-// ===============================
+let failedQueue = [];
+
+const processQueue = (
+  error,
+  success = false
+) => {
+
+  failedQueue.forEach((prom) => {
+
+    if (error) {
+
+      prom.reject(error);
+
+    } else {
+
+      prom.resolve(success);
+    }
+  });
+
+  failedQueue = [];
+};
+
+// ======================================
 // 🔥 RESPONSE INTERCEPTOR
-// ===============================
+// ======================================
 API.interceptors.response.use(
 
   (response) => response,
@@ -23,7 +45,6 @@ API.interceptors.response.use(
     const originalRequest =
       error.config;
 
-    // 🔥 ACCESS TOKEN EXPIRED
     if (
 
       error.response?.status === 401 &&
@@ -35,56 +56,83 @@ API.interceptors.response.use(
       )
     ) {
 
+      // ======================================
+      // 🔥 WAIT IF REFRESH RUNNING
+      // ======================================
+      if (isRefreshing) {
+
+        return new Promise(
+          (resolve, reject) => {
+
+            failedQueue.push({
+              resolve,
+              reject,
+            });
+          }
+        ).then(() => {
+
+          return API(
+            originalRequest
+          );
+        });
+      }
+
       originalRequest._retry = true;
+
+      isRefreshing = true;
 
       try {
 
-        // ❌ prevent multiple refresh calls
-        if (!isRefreshing) {
+        await axios.post(
 
-          isRefreshing = true;
+          "https://talksy-chat-app-pnk2.onrender.com/api/auth/refresh-token",
 
-          await axios.post(
+          {},
 
-            "https://talksy-chat-app-pnk2.onrender.com/api/auth/refresh-token",
+          {
+            withCredentials: true,
+          }
+        );
 
-            {},
+        processQueue(
+          null,
+          true
+        );
 
-            {
-              withCredentials: true,
-            }
-          );
-
-          isRefreshing = false;
-        }
-
-        // ✅ retry original request
-        return API(originalRequest);
+        return API(
+          originalRequest
+        );
 
       } catch (refreshError) {
 
-        isRefreshing = false;
-
-        console.log(
-          "Refresh token expired"
+        processQueue(
+          refreshError,
+          false
         );
 
-        // 🔥 CLEAR STORAGE
         localStorage.removeItem(
           "step"
         );
 
-        // 🔥 ONLY ONE REDIRECT
+        // 🔥 no full reload
         if (
           window.location.pathname !== "/"
         ) {
 
-          window.location.href = "/";
+          window.dispatchEvent(
+            new CustomEvent(
+              "session-expired"
+            )
+          );
         }
 
         return Promise.reject(
           refreshError
         );
+
+      } finally {
+
+        isRefreshing = false;
       }
     }
 

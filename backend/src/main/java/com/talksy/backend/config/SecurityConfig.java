@@ -108,12 +108,15 @@ public class SecurityConfig {
 
                 // 🔐 ROUTES
                 .authorizeHttpRequests(auth ->
+                        // 🔓 PUBLIC AUTH APIs
+                        auth.requestMatchers(
 
-                        auth
+                                        "/api/auth/send-otp",
 
-                                // 🔓 AUTH APIs
-                                .requestMatchers(
-                                        "/api/auth/**"
+                                        "/api/auth/verify-otp",
+
+                                        "/api/auth/refresh-token"
+
                                 ).permitAll()
 
                                 // 🔓 FILE APIs

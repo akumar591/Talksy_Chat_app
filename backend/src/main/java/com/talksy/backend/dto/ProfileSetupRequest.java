@@ -6,9 +6,6 @@ import lombok.Data;
 @Data
 public class ProfileSetupRequest {
 
-    @NotBlank(message = "Phone is required ❌")
-    private String phone;
-
     @NotBlank(message = "Name is required ❌")
     private String name;
 

@@ -6,10 +6,6 @@ import lombok.Data;
 
 @Data
 public class VerifyEmailRequest {
-
-    @NotBlank(message = "Phone required ❌")
-    private String phone;
-
     @NotBlank(message = "Email required ❌")
     @Email(message = "Invalid email ❌")
     private String email;
