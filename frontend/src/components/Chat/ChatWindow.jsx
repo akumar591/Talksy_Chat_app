@@ -38,8 +38,6 @@ const ChatWindow = ({ chat, onBack }) => {
     replyTo,
     setReplyTo,
 
-    fetchMessages,
-
     uploadChatMedia,
   } = useChat();
 
@@ -142,16 +140,7 @@ const ChatWindow = ({ chat, onBack }) => {
     if (chat?.isGroup && chat?.id) {
       fetchGroupById(chat.id);
     }
-  }, [chat?.id]);
-
-  // ===============================
-  // 🔥 FETCH MESSAGES
-  // ===============================
-  useEffect(() => {
-    if (conversation?.id) {
-      fetchMessages(conversation.id);
-    }
-  }, [conversation?.id, fetchMessages]);
+  }, [chat?.id, chat?.isGroup]);
 
   // ===============================
   // 🔥 AUTO SCROLL

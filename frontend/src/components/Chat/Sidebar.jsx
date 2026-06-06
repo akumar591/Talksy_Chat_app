@@ -16,19 +16,14 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
     contacts,
     fetchContacts,
     openConversation,
-
-    // 🔥 NEW
-    fetchMessages,
     setConversation,
-
     sidebarLoading,
-
-    // 🔥 FILTER
     activeFilter,
+    setSelectedChat,
+    setMessages,
   } = useChat();
 
-  // 🔥 GROUP CONTEXT
-  const { groups, fetchGroups, setSelectedGroup } = useGroup();
+  const { groups, fetchGroups, setSelectedGroup, setGroupDetails } = useGroup();
 
   const [search, setSearch] = useState("");
 
@@ -57,24 +52,9 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
   const allChats = useMemo(() => {
     // 🔥 FORMAT GROUPS
     const formattedGroups = groups.map((group) => ({
-      id: group.id,
-
-      name: group.name || "Group",
-
-      avatar: group.avatar || "",
+      ...group,
 
       isGroup: true,
-
-      // 🔥 IMPORTANT
-      conversationId: group.conversationId,
-
-      memberCount: group.memberCount || 0,
-
-      unreadCount: 0,
-
-      lastMessage: group.lastMessage || "Group chat",
-
-      lastMessageTime: group.lastMessageTime || group.createdAt,
     }));
 
     return [...contacts, ...formattedGroups];
@@ -160,41 +140,62 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
       // 🔥 GROUP CHAT
       // ===============================
       if (chat.isGroup) {
-        // ❌ safety check
         if (!chat.conversationId) {
           console.error("Group conversation not found");
-
           return;
         }
 
-        // 🔥 SAVE SELECTED GROUP
+        // ===================================
+        // 🔥 RESET OLD PRIVATE CHAT
+        // ===================================
+
+        setSelectedChat(null);
+
+        // ===================================
+        // 🔥 CLEAR OLD MESSAGES
+        // ===================================
+
+        setMessages([]);
+
+        // ===================================
+        // 🔥 RESET OLD GROUP DETAILS
+        // ===================================
+
+        setGroupDetails(null);
+
+        // ===================================
+        // 🔥 SET ACTIVE GROUP
+        // ===================================
+
         setSelectedGroup(chat);
 
-        // 🔥 CREATE GROUP CONVERSATION
         const groupConversation = {
           id: chat.conversationId,
-
           isGroup: true,
-
           groupId: chat.id,
         };
 
-        // 🔥 SAVE ACTIVE CONVERSATION
         setConversation(groupConversation);
 
-        // 🔥 FETCH GROUP MESSAGES
-        await fetchMessages(chat.conversationId);
-
-        onSelectChat &&
-          onSelectChat({
-            ...chat,
-            isGroup: true,
-          });
+        onSelectChat?.({
+          ...chat,
+          isGroup: true,
+        });
 
         navigate(`/group/${chat.id}`);
 
         return;
       }
+
+      // ===================================
+      // 🔥 RESET OLD GROUP
+      // ===================================
+
+      setSelectedGroup(null);
+
+      setGroupDetails(null);
+
+      setMessages([]);
 
       // ===============================
       // 🔥 PRIVATE CHAT

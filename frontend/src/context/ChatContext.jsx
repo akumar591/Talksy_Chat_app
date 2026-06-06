@@ -91,7 +91,7 @@ export const ChatProvider = ({ children }) => {
     if (conversation?.id) {
       fetchMessages(conversation.id);
     }
-  }, [conversation?.id]);
+  }, [conversation?.id, fetchMessages]);
 
   // ===============================
   // 🔥 GET CURRENT USER
@@ -268,11 +268,11 @@ export const ChatProvider = ({ children }) => {
         conversationId: conversationData.id,
       };
 
+      setMessages([]);
+
       setSelectedChat(updatedChat);
 
       setConversation(conversationData);
-
-      setMessages([]);
 
       // 🔥 SAVE ACTIVE CHAT
       localStorage.setItem("activeChat", JSON.stringify(updatedChat));
@@ -301,6 +301,16 @@ export const ChatProvider = ({ children }) => {
       if (!conversationId) {
         return;
       }
+
+      // ==================================
+      // 🔥 PREVENT MULTIPLE FETCHES
+      // ==================================
+
+      if (messageFetchLock.current) {
+        return;
+      }
+
+      messageFetchLock.current = true;
 
       const res = await API.get(`/messages/${conversationId}`);
 
@@ -385,6 +395,8 @@ export const ChatProvider = ({ children }) => {
       ) {
         toast.error("Failed to load messages");
       }
+    } finally {
+      messageFetchLock.current = false;
     }
   }, []);
 
@@ -463,11 +475,11 @@ export const ChatProvider = ({ children }) => {
 
           senderAvatar: currentUser?.avatar || "",
 
-          isGroup: selectedChat?.isGroup || false,
+          isGroup: conversation?.isGroup || false,
 
-          conversationType: selectedChat?.isGroup ? "GROUP" : "PRIVATE",
+          conversationType: conversation?.isGroup ? "GROUP" : "PRIVATE",
 
-          senderRole: selectedChat?.isGroup ? "MEMBER" : null,
+          senderRole: conversation?.isGroup ? "MEMBER" : null,
 
           createdAt: new Date().toISOString(),
 

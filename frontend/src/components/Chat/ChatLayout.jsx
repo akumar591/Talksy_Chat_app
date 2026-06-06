@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 
-import {
-  useParams,
-  useNavigate,
-} from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
@@ -11,113 +8,95 @@ import ChatWindow from "./ChatWindow";
 import { useChat } from "../../context/ChatContext";
 import { useGroup } from "../../context/GroupContext";
 
-const ChatLayout = ({mobileSearch}) => {
-
+const ChatLayout = ({ mobileSearch }) => {
   const { id } = useParams();
-
-  const navigate =
-    useNavigate();
-
-  const {
-    contacts,
-    selectedChat,
-    setSelectedChat,
-    setConversation,
-  } = useChat();
-
-  const {
-    groups,
-  } = useGroup();
+  const navigate = useNavigate();
+  const { groups, selectedGroup, setSelectedGroup } = useGroup();
+  const { contacts, selectedChat, setSelectedChat, setConversation } =
+    useChat();
 
   // ===============================
   // 🔥 ROUTE CHECK
   // ===============================
-  const hasChatRoute =
-    !!id;
+  const hasChatRoute = !!id;
 
   // ===============================
   // 🔥 AUTO SELECT CHAT
   // ===============================
   useEffect(() => {
-
-    // 🔥 NO ROUTE
     if (!id) {
+      setSelectedChat(null);
+      setSelectedGroup(null);
 
       return;
     }
 
     // 🔥 WAIT DATA
-    if (
-      contacts.length === 0 &&
-      groups.length === 0
-    ) {
-
+    if (contacts.length === 0 && groups.length === 0) {
       return;
     }
 
     // ===============================
     // 🔥 PRIVATE CHAT
     // ===============================
-    let foundChat =
-      contacts.find(
-        (chat) =>
-          String(chat.id) ===
-          String(id)
-      );
+    let foundChat = contacts.find((chat) => String(chat.id) === String(id));
 
     // ===============================
     // 🔥 GROUP CHAT
     // ===============================
     if (!foundChat) {
-
-      foundChat =
-        groups.find(
-          (group) =>
-            String(group.id) ===
-            String(id)
-        );
+      foundChat = groups.find((group) => String(group.id) === String(id));
     }
 
     // ===============================
     // 🔥 UPDATE SELECTED CHAT
     // ===============================
     if (foundChat) {
+      // ==========================
+      // GROUP
+      // ==========================
+      if (foundChat.isGroup) {
+        setSelectedChat(null);
 
-      // 🔥 RESTORE CHAT
-      setSelectedChat(
-        foundChat
-      );
-
-      // 🔥 RESTORE CONVERSATION
-      if (
-        foundChat.conversationId
-      ) {
+        setSelectedGroup(foundChat);
 
         setConversation({
-          id:
-            foundChat.conversationId,
+          id: foundChat.conversationId,
+          isGroup: true,
+          groupId: foundChat.id,
+        });
+      }
+
+      // ==========================
+      // PRIVATE
+      // ==========================
+      else {
+        setSelectedGroup(null);
+
+        setSelectedChat(foundChat);
+
+        setConversation({
+          id: foundChat.conversationId,
+          isGroup: false,
         });
       }
     }
-
   }, [
     id,
     contacts,
     groups,
     setSelectedChat,
+    setSelectedGroup,
+    setConversation,
   ]);
 
   return (
     <div className="w-full h-screen text-[var(--text)]">
-
       {/* 🔥 SIDEBAR */}
       <div
         className={`
 
-          ${hasChatRoute
-            ? "hidden md:block"
-            : "block"
-          }
+          ${hasChatRoute ? "hidden md:block" : "block"}
 
           fixed
           top-16
@@ -133,22 +112,14 @@ const ChatLayout = ({mobileSearch}) => {
           md:border-[var(--border)]
         `}
       >
-
-        <Sidebar
-          mobileSearch={mobileSearch}
-          onSelectChat={setSelectedChat}
-        />
-
+        <Sidebar mobileSearch={mobileSearch} onSelectChat={setSelectedChat} />
       </div>
 
       {/* 🔥 CHAT WINDOW */}
       <div
         className={`
 
-          ${hasChatRoute
-            ? "flex"
-            : "hidden md:flex"
-          }
+          ${hasChatRoute ? "flex" : "hidden md:flex"}
 
           fixed
 
@@ -169,25 +140,19 @@ const ChatLayout = ({mobileSearch}) => {
           flex-col
         `}
       >
-
-        {selectedChat && (
-
+        {(selectedChat || selectedGroup) && (
           <ChatWindow
-            chat={selectedChat}
-
+            chat={selectedChat || selectedGroup}
             onBack={() => {
-
-              setSelectedChat(
-                null
-              );
+              setSelectedChat(null);
+              setSelectedGroup(null);
+              setConversation(null);
 
               navigate("/");
             }}
           />
         )}
-
       </div>
-
     </div>
   );
 };
