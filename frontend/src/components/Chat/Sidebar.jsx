@@ -177,11 +177,6 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
 
         setConversation(groupConversation);
 
-        onSelectChat?.({
-          ...chat,
-          isGroup: true,
-        });
-
         navigate(`/group/${chat.id}`);
 
         return;

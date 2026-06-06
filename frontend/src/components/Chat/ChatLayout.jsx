@@ -1,7 +1,5 @@
 import { useEffect } from "react";
-
-import { useParams, useNavigate } from "react-router-dom";
-
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 
@@ -36,16 +34,20 @@ const ChatLayout = ({ mobileSearch }) => {
       return;
     }
 
-    // ===============================
-    // 🔥 PRIVATE CHAT
-    // ===============================
-    let foundChat = contacts.find((chat) => String(chat.id) === String(id));
+    let foundChat = null;
 
-    // ===============================
-    // 🔥 GROUP CHAT
-    // ===============================
-    if (!foundChat) {
+    // ==========================
+    // GROUP ROUTE
+    // ==========================
+    if (location.pathname.startsWith("/group/")) {
       foundChat = groups.find((group) => String(group.id) === String(id));
+    }
+
+    // ==========================
+    // PRIVATE ROUTE
+    // ==========================
+    else {
+      foundChat = contacts.find((chat) => String(chat.id) === String(id));
     }
 
     // ===============================

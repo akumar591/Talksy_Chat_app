@@ -85,15 +85,6 @@ export const ChatProvider = ({ children }) => {
   const sendLock = useRef(false);
 
   // ===============================
-  // 🔥 AUTO FETCH AFTER REFRESH
-  // ===============================
-  useEffect(() => {
-    if (conversation?.id) {
-      fetchMessages(conversation.id);
-    }
-  }, [conversation?.id, fetchMessages]);
-
-  // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
@@ -399,6 +390,15 @@ export const ChatProvider = ({ children }) => {
       messageFetchLock.current = false;
     }
   }, []);
+
+  // ===============================
+  // 🔥 AUTO FETCH AFTER REFRESH
+  // ===============================
+  useEffect(() => {
+    if (conversation?.id) {
+      fetchMessages(conversation.id);
+    }
+  }, [conversation?.id, fetchMessages]);
 
   // ===============================
   // 🔥 UPLOAD CHAT MEDIA
