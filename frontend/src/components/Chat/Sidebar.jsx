@@ -45,20 +45,17 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
   const finalSearch = window.innerWidth < 768 ? mobileSearch || "" : search;
 
   // ===============================
-  // 🔥 FETCH SIDEBAR DATA
+  // 🔥 FETCH CONTACTS
   // ===============================
-  const [sidebarReady, setSidebarReady] = useState(false);
-
   useEffect(() => {
-    const loadSidebar = async () => {
-      try {
-        await Promise.all([fetchContacts(), fetchGroups()]);
-      } finally {
-        setSidebarReady(true);
-      }
-    };
+    fetchContacts();
+  }, []);
 
-    loadSidebar();
+  // ===============================
+  // 🔥 FETCH GROUPS
+  // ===============================
+  useEffect(() => {
+    fetchGroups();
   }, []);
 
   // ===============================
