@@ -367,7 +367,6 @@ export const ChatProvider = ({ children }) => {
 
       mapped.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-      console.log("MAPPED MESSAGE", mapped[0]);
       setMessages(mapped);
     } catch (err) {
       console.log(err);

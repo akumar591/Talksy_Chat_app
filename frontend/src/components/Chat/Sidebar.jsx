@@ -17,15 +17,27 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
     fetchContacts,
     openConversation,
     setConversation,
+    fetchMessages,
     sidebarLoading,
     activeFilter,
     setSelectedChat,
     setMessages,
   } = useChat();
 
-  const { groups, fetchGroups, setSelectedGroup, setGroupDetails } = useGroup();
+  const {
+    groups,
+    fetchGroups,
+    setSelectedGroup,
+    setGroupDetails,
+    fetchGroupById,
+  } = useGroup();
 
   const [search, setSearch] = useState("");
+
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
+
+  // 🔥 Currently opening chat/group
+  const [openingChatKey, setOpeningChatKey] = useState(null);
 
   // ===============================
   // 🔥 MOBILE VS DESKTOP SEARCH
@@ -33,17 +45,20 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
   const finalSearch = window.innerWidth < 768 ? mobileSearch || "" : search;
 
   // ===============================
-  // 🔥 FETCH CONTACTS
+  // 🔥 FETCH SIDEBAR DATA
   // ===============================
-  useEffect(() => {
-    fetchContacts();
-  }, []);
+  const [sidebarReady, setSidebarReady] = useState(false);
 
-  // ===============================
-  // 🔥 FETCH GROUPS
-  // ===============================
   useEffect(() => {
-    fetchGroups();
+    const loadSidebar = async () => {
+      try {
+        await Promise.all([fetchContacts(), fetchGroups()]);
+      } finally {
+        setSidebarReady(true);
+      }
+    };
+
+    loadSidebar();
   }, []);
 
   // ===============================
@@ -101,6 +116,13 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
       return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
     });
 
+    console.log(
+      "SIDEBAR RENDER",
+      filtered.map((c) => ({
+        name: c.name,
+        time: c.lastMessageTime,
+      })),
+    );
     return filtered;
   }, [allChats, search, mobileSearch, activeFilter]);
 
@@ -135,7 +157,15 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
   // 🔥 OPEN CHAT / GROUP
   // ===============================
   const handleClick = async (chat) => {
+    // 🔥 Prevent multiple clicks
+    if (isOpeningChat) {
+      return;
+    }
     try {
+      setIsOpeningChat(true);
+      // 🔥 Show loading on clicked item only
+      setOpeningChatKey(`${chat.isGroup ? "group" : "chat"}-${chat.id}`);
+
       // ===============================
       // 🔥 GROUP CHAT
       // ===============================
@@ -169,13 +199,20 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
 
         setSelectedGroup(chat);
 
+        // 🔥 WAIT FOR GROUP DATA
+        await fetchGroupById(chat.id);
+
         const groupConversation = {
           id: chat.conversationId,
           isGroup: true,
           groupId: chat.id,
         };
 
+        // 🔥 SET CONVERSATION
         setConversation(groupConversation);
+
+        // 🔥 LOAD GROUP MESSAGES FIRST
+        await fetchMessages(chat.conversationId);
 
         navigate(`/group/${chat.id}`);
 
@@ -212,6 +249,9 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
       navigate(`/chat/${chat.id}`);
     } catch (err) {
       console.log(err);
+    } finally {
+      setOpeningChatKey(null);
+      setIsOpeningChat(false);
     }
   };
 
@@ -276,10 +316,16 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
               location.pathname === `/chat/${chat.id}` ||
               location.pathname === `/group/${chat.id}`;
 
+            const currentChatKey = `${chat.isGroup ? "group" : "chat"}-${chat.id}`;
+
             return (
               <div
                 key={`${chat.isGroup ? "group" : "chat"}-${chat.id}`}
-                onClick={() => handleClick(chat)}
+                onClick={() => {
+                  if (!isOpeningChat) {
+                    handleClick(chat);
+                  }
+                }}
                 className={`
                     flex
                     items-center
@@ -368,11 +414,28 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
 
                   <div className="flex justify-between items-center mt-0.5 gap-2">
                     <p className="text-sm opacity-70 truncate">
-                      {chat.isGroup
-                        ? `${chat.memberCount} members`
-                        : chat.lastMessage && chat.lastMessage.trim() !== ""
-                          ? chat.lastMessage
-                          : "Start conversation"}
+                      {openingChatKey === currentChatKey ? (
+                        <span className="flex items-center gap-2 text-[var(--primary)]">
+                          <span
+                            className="
+          w-3
+          h-3
+          border-2
+          border-[var(--primary)]
+          border-t-transparent
+          rounded-full
+          animate-spin
+        "
+                          />
+                          Opening chat...
+                        </span>
+                      ) : chat.isGroup ? (
+                        `${chat.memberCount} members`
+                      ) : chat.lastMessage && chat.lastMessage.trim() !== "" ? (
+                        chat.lastMessage
+                      ) : (
+                        "Start conversation"
+                      )}
                     </p>
 
                     {/* 🔥 UNREAD */}

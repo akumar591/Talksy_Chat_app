@@ -237,12 +237,6 @@ const ChatWindow = ({ chat, onBack }) => {
     ? `group_${conversation?.id}`
     : `private_${conversation?.id}`;
 
-  console.log("CHAT KEY:", chatKey);
-
-  console.log("CONVERSATION:", conversation);
-
-  console.log("CHAT:", chat);
-
   // ===============================
   // 🔥 CURRENT WALLPAPER
   // ===============================
