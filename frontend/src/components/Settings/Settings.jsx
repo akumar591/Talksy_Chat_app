@@ -1,5 +1,5 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { useAuth } from "../../context/AuthContext";
 
 import {
@@ -16,175 +16,80 @@ import {
 } from "react-icons/fi";
 
 const Settings = () => {
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const { user, logout } = useAuth();
 
-  const {
-    user,
-    logout,
-  } = useAuth();
-
-  // =====================================
-  // 🔥 LOGOUT LOCK
-  // =====================================
-  let loggingOut =
-    false;
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // =====================================
   // 🔥 HANDLE LOGOUT
   // =====================================
-  const handleLogout =
-    async () => {
+  const handleLogout = async () => {
+    if (loggingOut) return;
 
-      // 🔥 duplicate click safety
-      if (loggingOut)
-        return;
+    try {
+      setLoggingOut(true);
 
-      loggingOut = true;
+      await logout();
+    } catch (err) {
+      console.log("Logout failed:", err);
 
-      try {
+      localStorage.clear();
+      sessionStorage.clear();
 
-        // 🔥 IMPORTANT
-        // reset flow before logout
-        localStorage.removeItem(
-          "seenSplash"
-        );
+      localStorage.setItem("step", "splash");
 
-        localStorage.removeItem(
-          "seenOnboarding"
-        );
-
-        // 🔥 IMPORTANT
-        localStorage.setItem(
-          "step",
-          "splash"
-        );
-
-        // 🔥 clear random old cache
-        localStorage.removeItem(
-          "user"
-        );
-
-        sessionStorage.clear();
-
-        // 🔥 api logout
-        await logout();
-
-      } catch (err) {
-
-        console.log(
-          "Logout failed:",
-          err
-        );
-
-        // 🔥 fallback cleanup
-        localStorage.removeItem(
-          "seenSplash"
-        );
-
-        localStorage.removeItem(
-          "seenOnboarding"
-        );
-
-        localStorage.setItem(
-          "step",
-          "splash"
-        );
-
-        sessionStorage.clear();
-
-        // 🔥 fallback redirect
-        window.location.href =
-          "/";
-      }
-    };
+      window.location.replace("/");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <div className="w-full h-screen md:h-[calc(100vh-4rem)] mt-0 md:mt-16 bg-[var(--bg)] text-[var(--text)] flex flex-col items-center">
-
       {/* 🔥 CONTAINER */}
       <div className="w-full max-w-2xl h-full flex flex-col">
-
         {/* 🔥 HEADER */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)]">
-
-          <button
-            onClick={() =>
-              navigate(-1)
-            }
-          >
+          <button onClick={() => navigate(-1)}>
             <FiArrowLeft />
           </button>
 
-          <h2 className="font-semibold text-lg">
-            Settings
-          </h2>
-
+          <h2 className="font-semibold text-lg">Settings</h2>
         </div>
 
         {/* 🔥 BODY */}
         <div className="flex-1 overflow-y-auto hide-scrollbar">
-
           {/* 🔥 PROFILE */}
           <div
-            onClick={() =>
-              navigate(
-                "/profile"
-              )
-            }
+            onClick={() => navigate("/profile")}
             className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)] cursor-pointer hover:bg-[var(--card)]"
           >
-
             <div className="w-12 h-12 rounded-full bg-[var(--card)] flex items-center justify-center font-semibold overflow-hidden">
-
               {user?.avatar ? (
-
                 <img
-                  src={
-                    user.avatar
-                  }
+                  src={user.avatar}
                   alt="profile"
                   className="w-full h-full object-cover"
                 />
-
               ) : (
-
-                <span>
-
-                  {user?.name
-                    ? user.name[0].toUpperCase()
-                    : "U"}
-
-                </span>
+                <span>{user?.name ? user.name[0].toUpperCase() : "U"}</span>
               )}
-
             </div>
 
             <div>
-
-              <p className="font-medium">
-                {user?.name ||
-                  "User"}
-              </p>
+              <p className="font-medium">{user?.name || "User"}</p>
 
               <p className="text-xs opacity-60">
-                {user?.bio ||
-                  "No bio available"}
+                {user?.bio || "No bio available"}
               </p>
-
             </div>
-
           </div>
 
           {/* 🔥 ACCOUNT */}
           <Section title="Account">
-
-            <Item
-              label="Privacy"
-              icon={<FiLock />}
-              path="/settings/privacy"
-            />
+            <Item label="Privacy" icon={<FiLock />} path="/settings/privacy" />
 
             <Item
               label="Security"
@@ -203,17 +108,13 @@ const Settings = () => {
               icon={<FiRefreshCw />}
               path="/settings/change-number"
             />
-
           </Section>
 
           {/* 🔥 PREFERENCES */}
           <Section title="Preferences">
-
             <Item
               label="Chats"
-              icon={
-                <FiMessageCircle />
-              }
+              icon={<FiMessageCircle />}
               path="/settings/chats"
             />
 
@@ -228,66 +129,47 @@ const Settings = () => {
               icon={<FiDatabase />}
               path="/settings/storage"
             />
-
           </Section>
 
           {/* 🔥 APPEARANCE */}
           <Section title="Appearance">
-
-            <Item
-              label="Theme"
-              icon={<FiSun />}
-              path="/settings/appearance"
-            />
-
+            <Item label="Theme" icon={<FiSun />} path="/settings/appearance" />
           </Section>
 
           {/* 🔥 HELP */}
           <Section title="Help">
-
             <Item
               label="Help center"
-              icon={
-                <FiHelpCircle />
-              }
+              icon={<FiHelpCircle />}
               path="/settings/help"
             />
-
           </Section>
 
           {/* 🔥 LOGOUT */}
           <div className="px-4 py-6">
-
             <button
-              onClick={
-                handleLogout
-              }
+              onClick={handleLogout}
+              disabled={loggingOut}
               className="
-                w-full
-                py-2
-                rounded-md
-                text-sm
-                font-medium
-
-                border
-                border-red-400/30
-
-                text-red-400
-
-                hover:bg-red-500/10
-
-                transition
-              "
+                          w-full
+                          py-2
+                          rounded-md
+                          text-sm
+                          font-medium
+                          border
+                          border-red-400/30
+                          text-red-400
+                          hover:bg-red-500/10
+                          transition
+                          disabled:opacity-50
+                          disabled:cursor-not-allowed
+                        "
             >
-              Logout
+              {loggingOut ? "Logging out..." : "Logout"}
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 };
@@ -297,70 +179,32 @@ export default Settings;
 /* ===================================== */
 /* 🔥 SECTION */
 /* ===================================== */
-const Section = ({
-  title,
-  children,
-}) => (
-
+const Section = ({ title, children }) => (
   <div>
+    <p className="text-xs opacity-50 px-4 py-2">{title}</p>
 
-    <p className="text-xs opacity-50 px-4 py-2">
-
-      {title}
-
-    </p>
-
-    <div className="divide-y divide-[var(--border)]">
-
-      {children}
-
-    </div>
-
+    <div className="divide-y divide-[var(--border)]">{children}</div>
   </div>
 );
 
 /* ===================================== */
 /* 🔥 ITEM */
 /* ===================================== */
-const Item = ({
-  label,
-  icon,
-  path,
-}) => {
-
-  const navigate =
-    useNavigate();
+const Item = ({ label, icon, path }) => {
+  const navigate = useNavigate();
 
   return (
     <div
-      onClick={() =>
-        navigate(path)
-      }
+      onClick={() => navigate(path)}
       className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[var(--card)] transition"
     >
-
       <div className="flex items-center gap-3">
+        <span className="opacity-80">{icon}</span>
 
-        <span className="opacity-80">
-
-          {icon}
-
-        </span>
-
-        <span className="text-sm">
-
-          {label}
-
-        </span>
-
+        <span className="text-sm">{label}</span>
       </div>
 
-      <span className="text-xs opacity-50">
-
-        ›
-
-      </span>
-
+      <span className="text-xs opacity-50">›</span>
     </div>
   );
 };

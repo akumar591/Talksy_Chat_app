@@ -32,6 +32,8 @@ function ProfileSetup({ onComplete }) {
 
   const [sendingOTP, setSendingOTP] = useState(false);
 
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+
   const [otp, setOtp] = useState("");
 
   const [generatedOTP, setGeneratedOTP] = useState(false);
@@ -222,11 +224,12 @@ function ProfileSetup({ onComplete }) {
   const verifyOTP = async () => {
     if (otp.trim().length < 6) {
       toast.error("Enter valid OTP");
-
       return;
     }
 
     try {
+      setVerifyingOTP(true);
+
       await API.post("/auth/verify-email", {
         phone,
         email,
@@ -234,7 +237,6 @@ function ProfileSetup({ onComplete }) {
       });
 
       setEmailVerified(true);
-
       setOtp("");
 
       toast.success("Email verified ✅");
@@ -248,6 +250,8 @@ function ProfileSetup({ onComplete }) {
       });
 
       toast.error(msg);
+    } finally {
+      setVerifyingOTP(false);
     }
   };
 
@@ -484,9 +488,10 @@ function ProfileSetup({ onComplete }) {
 
                 <button
                   onClick={verifyOTP}
-                  className="text-xs border px-2 rounded cursor-pointer"
+                  disabled={verifyingOTP}
+                  className="text-xs border px-2 rounded cursor-pointer disabled:opacity-50"
                 >
-                  OK
+                  {verifyingOTP ? "Verifying..." : "OK"}
                 </button>
               </div>
             )}
