@@ -174,7 +174,8 @@ const UserProfile = () => {
 
   return (
     <>
-      <div className="
+      <div
+        className="
   w-full
 
   bg-[var(--bg)]
@@ -193,7 +194,8 @@ const UserProfile = () => {
   min-h-0
 
   overflow-hidden
-">
+"
+      >
         {/* =============================== */}
         {/* 🔥 HEADER */}
         {/* =============================== */}
@@ -585,15 +587,8 @@ const UserProfile = () => {
           {/* =============================== */}
           {/* 🔥 INFO */}
           {/* =============================== */}
-          <div
-            className="
-            px-4
+          <div className="px-4 space-y-4 pb-24 md:pb-10">
 
-            space-y-4
-
-            pb-10
-          "
-          >
             {/* 🔥 ABOUT */}
             <div
               className="

@@ -780,7 +780,7 @@ const GroupInfo = () => {
           {/* =============================== */}
           {/* 🔥 MEMBERS */}
           {/* =============================== */}
-          <div className="pb-6">
+          <div className="pb-24 md:pb-6">
             {/* TITLE */}
             <div className="px-4 py-4 flex items-center justify-between">
               <h3 className="text-sm font-semibold opacity-70">Members</h3>

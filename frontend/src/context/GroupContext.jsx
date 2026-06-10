@@ -9,6 +9,7 @@ import {
 
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import { useAuth } from "./AuthContext";
 import { useChat } from "./ChatContext";
 
 // ===============================
@@ -23,6 +24,8 @@ export const GroupProvider = ({ children }) => {
   // ===============================
   // 🔥 STATES
   // ===============================
+
+  const { user } = useAuth();
 
   const { resetChatState } = useChat();
 
@@ -42,13 +45,7 @@ export const GroupProvider = ({ children }) => {
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      return Number(user?.id);
-    } catch {
-      return null;
-    }
+    return Number(user?.id) || null;
   };
 
   // ===============================
@@ -476,7 +473,6 @@ export const GroupProvider = ({ children }) => {
   const deleteGroup = useCallback(
     async (groupId) => {
       try {
-
         await API.delete(`/groups/${groupId}`);
 
         // 🔥 REMOVE GROUP

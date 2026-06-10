@@ -52,13 +52,6 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
   }, []);
 
   // ===============================
-  // 🔥 FETCH GROUPS
-  // ===============================
-  useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  // ===============================
   // 🔥 MERGE CONTACTS + GROUPS
   // ===============================
   const allChats = useMemo(() => {
@@ -302,9 +295,9 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
         {/* 🔥 CHAT LIST */}
         <div className="flex flex-col gap-1 pt-[80px] md:pt-0">
           {filteredChats.map((chat) => {
-            const isActive =
-              location.pathname === `/chat/${chat.id}` ||
-              location.pathname === `/group/${chat.id}`;
+            const isActive = chat.isGroup
+              ? location.pathname === `/group/${chat.id}`
+              : location.pathname === `/chat/${chat.id}`;
 
             const currentChatKey = `${chat.isGroup ? "group" : "chat"}-${chat.id}`;
 
