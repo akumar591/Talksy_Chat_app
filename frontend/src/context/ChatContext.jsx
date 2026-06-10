@@ -8,12 +8,14 @@ import {
   useMemo,
 } from "react";
 
+import { useAuth } from "./AuthContext";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
+  const { user } = useAuth();
   // ===============================
   // 🔥 STATES
   // ===============================
@@ -88,13 +90,7 @@ export const ChatProvider = ({ children }) => {
   // 🔥 GET CURRENT USER
   // ===============================
   const getCurrentUserId = () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      return Number(user?.id);
-    } catch {
-      return null;
-    }
+    return Number(user?.id);
   };
 
   // ===============================
@@ -175,7 +171,11 @@ export const ChatProvider = ({ children }) => {
   // ===============================
   // 🔥 FETCH CONTACTS
   // ===============================
-  const fetchContacts = useCallback(async () => {
+  const fetchContacts = useCallback(async (force = false) => {
+    if (!force && hasFetchedContacts && contacts.length > 0) {
+      return;
+    }
+
     try {
       if (sidebarLoading) return;
 
@@ -237,7 +237,7 @@ export const ChatProvider = ({ children }) => {
     } finally {
       setSidebarLoading(false);
     }
-  }, [sidebarLoading]);
+  }, [sidebarLoading, hasFetchedContacts, contacts.length]);
 
   // ===============================
   // 🔥 OPEN PRIVATE CONVERSATION
@@ -454,8 +454,7 @@ export const ChatProvider = ({ children }) => {
         setSending(true);
 
         const currentUserId = getCurrentUserId();
-
-        const currentUser = JSON.parse(localStorage.getItem("user"));
+        const currentUser = user;
 
         const tempId = `temp-${Date.now()}`;
 
@@ -622,7 +621,7 @@ export const ChatProvider = ({ children }) => {
         setSending(false);
       }
     },
-    [replyTo],
+    [replyTo, user, conversation],
   );
 
   // ===============================
@@ -828,6 +827,7 @@ export const ChatProvider = ({ children }) => {
         sending,
         sidebarLoading,
         hasFetchedContacts,
+        setHasFetchedContacts,
 
         mediaMessages,
         imageMessages,

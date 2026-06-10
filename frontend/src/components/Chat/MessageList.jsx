@@ -59,24 +59,23 @@ const MessageList = ({
             }}
             className={`flex ${isMe ? "justify-end" : "justify-start"}`}
           >
-                <MessageBubble
-                  msg={msg}
-                  isMe={isMe}
-                  actionMessage={actionMessage}
-                  activeMessageId={activeMessageId}
-                  setActiveMessageId={setActiveMessageId}
-                  reactionMsgId={reactionMsgId}
-                  setReactionMsgId={setReactionMsgId}
-                  messageMenuId={messageMenuId}
-                  setMessageMenuId={setMessageMenuId}
-                  // 🔥 VIEWER
-                  setViewerOpen={setViewerOpen}
-                  setViewerMedia={setViewerMedia}
-                  setViewerIndex={setViewerIndex}
-                  currentChatStyle={currentChatStyle}
-                  currentBubbleColor={currentBubbleColor}
-                />
-              
+            <MessageBubble
+              msg={msg}
+              isMe={isMe}
+              actionMessage={actionMessage}
+              activeMessageId={activeMessageId}
+              setActiveMessageId={setActiveMessageId}
+              reactionMsgId={reactionMsgId}
+              setReactionMsgId={setReactionMsgId}
+              messageMenuId={messageMenuId}
+              setMessageMenuId={setMessageMenuId}
+              // 🔥 VIEWER
+              setViewerOpen={setViewerOpen}
+              setViewerMedia={setViewerMedia}
+              setViewerIndex={setViewerIndex}
+              currentChatStyle={currentChatStyle}
+              currentBubbleColor={currentBubbleColor}
+            />
           </motion.div>
         );
       })}

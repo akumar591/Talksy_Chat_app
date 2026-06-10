@@ -32,6 +32,7 @@ const NewChat = () => {
     fetchContacts,
     sidebarLoading,
     openConversation,
+    setHasFetchedContacts,
   } = useChat();
 
   // ===============================
@@ -115,8 +116,9 @@ const NewChat = () => {
         "Contact added"
       );
 
+      
       // 🔥 refresh sidebar
-      await fetchContacts();
+      await fetchContacts(true);
 
       // 🔥 reset form
       setForm({

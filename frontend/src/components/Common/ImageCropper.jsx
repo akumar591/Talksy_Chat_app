@@ -9,25 +9,13 @@ import { FiMove } from "react-icons/fi";
 // =====================================
 const createImage = (url) =>
   new Promise((resolve, reject) => {
+    const image = new Image();
 
-    const image =
-      new Image();
+    image.addEventListener("load", () => resolve(image));
 
-    image.addEventListener(
-      "load",
-      () => resolve(image)
-    );
+    image.addEventListener("error", (error) => reject(error));
 
-    image.addEventListener(
-      "error",
-      (error) =>
-        reject(error)
-    );
-
-    image.setAttribute(
-      "crossOrigin",
-      "anonymous"
-    );
+    image.setAttribute("crossOrigin", "anonymous");
 
     image.src = url;
   });
@@ -35,97 +23,62 @@ const createImage = (url) =>
 // =====================================
 // 🔥 GET CROPPED IMAGE
 // =====================================
-export const getCroppedImg =
-  async (
-    imageSrc,
-    pixelCrop
-  ) => {
+export const getCroppedImg = async (imageSrc, pixelCrop) => {
+  const image = await createImage(imageSrc);
 
-    const image =
-      await createImage(
-        imageSrc
-      );
+  const canvas = document.createElement("canvas");
 
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
+  const ctx = canvas.getContext("2d");
 
-    const ctx =
-      canvas.getContext("2d");
+  // 🔥 SAFETY
+  if (!ctx || !pixelCrop) {
+    return null;
+  }
 
-    // 🔥 SAFETY
-    if (
-      !ctx ||
-      !pixelCrop
-    ) {
+  canvas.width = pixelCrop.width;
 
-      return null;
-    }
+  canvas.height = pixelCrop.height;
 
-    canvas.width =
-      pixelCrop.width;
+  ctx.drawImage(
+    image,
 
-    canvas.height =
-      pixelCrop.height;
+    pixelCrop.x,
+    pixelCrop.y,
 
-    ctx.drawImage(
+    pixelCrop.width,
+    pixelCrop.height,
 
-      image,
+    0,
+    0,
 
-      pixelCrop.x,
-      pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
 
-      pixelCrop.width,
-      pixelCrop.height,
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        // ❌ FAILED
+        if (!blob) {
+          resolve(null);
 
-      0,
-      0,
+          return;
+        }
 
-      pixelCrop.width,
-      pixelCrop.height
+        // 🔥 REAL FILE
+        const file = new File([blob], "cropped.jpeg", {
+          type: "image/jpeg",
+        });
+
+        resolve(file);
+      },
+
+      "image/jpeg",
+
+      0.95,
     );
-
-    return new Promise(
-      (resolve) => {
-
-        canvas.toBlob(
-
-          (blob) => {
-
-            // ❌ FAILED
-            if (!blob) {
-
-              resolve(
-                null
-              );
-
-              return;
-            }
-
-            // 🔥 REAL FILE
-            const file =
-              new File(
-                [blob],
-                "cropped.jpeg",
-                {
-                  type:
-                    "image/jpeg",
-                }
-              );
-
-            resolve(
-              file
-            );
-          },
-
-          "image/jpeg",
-
-          0.95
-        );
-      }
-    );
-  };
+  });
+};
 
 const ImageCropper = ({
   image,
@@ -152,14 +105,10 @@ const ImageCropper = ({
 
   showGrid = false,
 }) => {
-
   // =====================================
   // 🔥 INTERNAL CROP
   // =====================================
-  const [
-    internalCrop,
-    setInternalCrop,
-  ] = useState({
+  const [internalCrop, setInternalCrop] = useState({
     x: 0,
     y: 0,
   });
@@ -167,100 +116,56 @@ const ImageCropper = ({
   // =====================================
   // 🔥 CROPPED AREA
   // =====================================
-  const [
-    croppedAreaPixels,
-    setCroppedAreaPixels,
-  ] = useState(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  const finalCrop =
-    crop ||
-    internalCrop;
+  const [cropping, setCropping] = useState(false);
 
-  const finalSetCrop =
-    setCrop ||
-    setInternalCrop;
+  const finalCrop = crop || internalCrop;
+
+  const finalSetCrop = setCrop || setInternalCrop;
 
   // =====================================
   // 🔥 CROP COMPLETE
   // =====================================
-  const handleCropComplete =
-    useCallback(
+  const handleCropComplete = useCallback(
+    (croppedArea, croppedPixels) => {
+      setCroppedAreaPixels(croppedPixels);
 
-      (
-        croppedArea,
-        croppedPixels
-      ) => {
+      onCropComplete(croppedArea, croppedPixels);
+    },
 
-        setCroppedAreaPixels(
-          croppedPixels
-        );
-
-        onCropComplete(
-          croppedArea,
-          croppedPixels
-        );
-      },
-
-      [onCropComplete]
-    );
+    [onCropComplete],
+  );
 
   // =====================================
   // 🔥 HANDLE DONE
   // =====================================
-  const handleDone =
-    async () => {
+  const handleDone = async () => {
+    if (cropping) {
+      return;
+    }
 
-      try {
+    try {
+      setCropping(true);
 
-        // ❌ NO AREA
-        if (
-          !croppedAreaPixels
-        ) {
-
-          return;
-        }
-
-        // 🔥 CREATE FILE
-        const croppedFile =
-          await getCroppedImg(
-            image,
-            croppedAreaPixels
-          );
-
-        // ❌ INVALID FILE
-        if (
-          !croppedFile ||
-          !(
-            croppedFile instanceof
-            File
-          )
-        ) {
-
-          console.log(
-            "INVALID FILE"
-          );
-
-          return;
-        }
-
-        console.log(
-          "CROPPED FILE:",
-          croppedFile
-        );
-
-        // 🔥 SEND FILE
-        onCropDone(
-          croppedFile
-        );
-
-      } catch (err) {
-
-        console.log(
-          "Crop Error:",
-          err
-        );
+      if (!croppedAreaPixels) {
+        return;
       }
-    };
+
+      const croppedFile = await getCroppedImg(image, croppedAreaPixels);
+
+      if (!croppedFile || !(croppedFile instanceof File)) {
+        console.log("INVALID FILE");
+        return;
+      }
+
+      onCropDone(croppedFile);
+    } catch (err) {
+      console.log("Crop Error:", err);
+    } finally {
+      setCropping(false);
+    }
+  };
 
   return (
     <div
@@ -276,7 +181,6 @@ const ImageCropper = ({
         bg-black
       "
     >
-
       {/* 🔥 CROPPER */}
       <Cropper
         image={image}
@@ -287,15 +191,9 @@ const ImageCropper = ({
         showGrid={showGrid}
         minZoom={minZoom}
         maxZoom={maxZoom}
-        onCropChange={
-          finalSetCrop
-        }
-        onZoomChange={
-          setZoom
-        }
-        onCropComplete={
-          handleCropComplete
-        }
+        onCropChange={finalSetCrop}
+        onZoomChange={setZoom}
+        onCropComplete={handleCropComplete}
       />
 
       {/* 🔥 ZOOM */}
@@ -327,7 +225,6 @@ const ImageCropper = ({
           z-50
         "
       >
-
         <FiMove
           className="
             text-white
@@ -341,13 +238,7 @@ const ImageCropper = ({
           max={maxZoom}
           step={0.1}
           value={zoom}
-          onChange={(e) =>
-            setZoom(
-              Number(
-                e.target.value
-              )
-            )
-          }
+          onChange={(e) => setZoom(Number(e.target.value))}
           className="
             w-full
 
@@ -356,38 +247,49 @@ const ImageCropper = ({
             cursor-pointer
           "
         />
-
       </div>
 
       {/* 🔥 DONE */}
       <button
         type="button"
         onClick={handleDone}
-        className="
-          absolute
+        disabled={cropping}
+        className={`
+                    absolute
+                    top-5
+                    right-5
+                    z-50
+                    px-5
+                    py-2
+                    rounded-full
+                    bg-[var(--primary)]
+                    text-white
+                    text-sm
+                    font-medium
+                    shadow-lg
 
-          top-5
-          right-5
-
-          z-50
-
-          px-5
-          py-2
-
-          rounded-full
-
-          bg-[var(--primary)]
-
-          text-white
-          text-sm
-          font-medium
-
-          shadow-lg
-        "
+    ${cropping ? "opacity-70 cursor-not-allowed" : ""}
+  `}
       >
-        Done
+        {cropping ? (
+          <span className="flex items-center gap-2">
+            <span
+              className="
+          w-4
+          h-4
+          border-2
+          border-white
+          border-t-transparent
+          rounded-full
+          animate-spin
+        "
+            />
+            Cropping...
+          </span>
+        ) : (
+          "Done"
+        )}
       </button>
-
     </div>
   );
 };

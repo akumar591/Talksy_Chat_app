@@ -36,6 +36,8 @@ export const GroupProvider = ({ children }) => {
 
   const [groupMedia, setGroupMedia] = useState([]);
 
+  const [hasFetchedGroups, setHasFetchedGroups] = useState(false);
+
   // ===============================
   // 🔥 GET CURRENT USER
   // ===============================
@@ -141,7 +143,10 @@ export const GroupProvider = ({ children }) => {
   // ===============================
   // 🔥 FETCH GROUPS
   // ===============================
-  const fetchGroups = async () => {
+  const fetchGroups = async (force = false) => {
+    if (!force && hasFetchedGroups && groups.length > 0) {
+      return;
+    }
     try {
       setLoading(true);
 
@@ -151,11 +156,9 @@ export const GroupProvider = ({ children }) => {
 
       const mapped = data.map(mapGroup);
 
-      console.log("GROUPS API DATA", data);
-
-      console.log("MAPPED GROUPS", mapped);
-
       setGroups(sortGroups(mapped));
+
+      setHasFetchedGroups(true);
     } catch (error) {
       console.log(error);
 
@@ -187,10 +190,6 @@ export const GroupProvider = ({ children }) => {
         }
 
         const mapped = mapGroup(data);
-
-        console.log("GROUP DETAILS API", data);
-
-        console.log("MAPPED GROUP DETAILS", mapped);
 
         setGroupDetails(mapped);
 
@@ -477,9 +476,6 @@ export const GroupProvider = ({ children }) => {
   const deleteGroup = useCallback(
     async (groupId) => {
       try {
-        console.log("DELETE USER", JSON.parse(localStorage.getItem("user")));
-
-        console.log("DELETE GROUP ID", groupId);
 
         await API.delete(`/groups/${groupId}`);
 
@@ -556,16 +552,12 @@ export const GroupProvider = ({ children }) => {
   // 🔥 AUTO FETCH
   // ===============================
   useEffect(() => {
-    // 🔥 CHECK USER
-    const user = localStorage.getItem("user");
-
-    // ❌ NO USER
-    if (!user) {
+    if (hasFetchedGroups) {
       return;
     }
 
     fetchGroups();
-  }, []);
+  }, [hasFetchedGroups]);
 
   // ===============================
   // 🔥 VALUE
@@ -588,6 +580,7 @@ export const GroupProvider = ({ children }) => {
 
     // 🔥 METHODS
     fetchGroups,
+    setHasFetchedGroups,
     fetchGroupById,
 
     createGroup,

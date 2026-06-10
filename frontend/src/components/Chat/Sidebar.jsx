@@ -113,13 +113,6 @@ const Sidebar = ({ onSelectChat, mobileSearch }) => {
       return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
     });
 
-    console.log(
-      "SIDEBAR RENDER",
-      filtered.map((c) => ({
-        name: c.name,
-        time: c.lastMessageTime,
-      })),
-    );
     return filtered;
   }, [allChats, search, mobileSearch, activeFilter]);
 

@@ -12,7 +12,7 @@ const CallDetails = ({ call, onEnd }) => {
   const [videoOn, setVideoOn] = useState(true);
 
   return (
-    <div className="relative w-full h-full bg-black text-white flex flex-col items-center justify-center overflow-hidden">
+    <div className="relative w-full h-[100dvh] bg-black text-white flex flex-col items-center justify-center overflow-hidden">
 
       {/* 🔥 VIDEO MODE */}
       {call.type === "video" ? (

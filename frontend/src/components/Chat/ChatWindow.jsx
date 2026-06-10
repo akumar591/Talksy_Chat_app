@@ -52,6 +52,8 @@ const ChatWindow = ({ chat, onBack }) => {
   // ===============================
   const [input, setInput] = useState("");
 
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   const [isRecording, setIsRecording] = useState(false);
 
   const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
@@ -332,7 +334,9 @@ const ChatWindow = ({ chat, onBack }) => {
   // 🔥 SEND MESSAGE
   // ===============================
   const handleSendMessage = useCallback(async () => {
-    if (!input.trim()) {
+    const text = input.trim();
+
+    if (!text) {
       return;
     }
 
@@ -340,24 +344,33 @@ const ChatWindow = ({ chat, onBack }) => {
       return;
     }
 
+    if (sendingMessage) {
+      return;
+    }
+
+    // 🔥 instant clear
+    setInput("");
+
+    setReplyTo(null);
+
+    setSendingMessage(true);
+
     try {
       await sendMessage({
         conversationId: conversation.id,
-
-        content: input.trim(),
-
+        content: text,
         type: "TEXT",
-
         replyToId: replyTo?.id || null,
       });
-
-      setInput("");
-
-      setReplyTo(null);
     } catch (error) {
       console.log(error);
+
+      // 🔥 restore if failed
+      setInput(text);
+    } finally {
+      setSendingMessage(false);
     }
-  }, [input, conversation, sendMessage, replyTo, setReplyTo]);
+  }, [input, conversation, sendMessage, replyTo, setReplyTo, sendingMessage]);
 
   // ===============================
   // 🔥 VOICE RECORDING
@@ -708,6 +721,7 @@ const ChatWindow = ({ chat, onBack }) => {
       <div className="pb-[env(safe-area-inset-bottom)]">
         <ChatInput
           input={input}
+          sendingMessage={sendingMessage}
           setInput={setInput}
           inputRef={inputRef}
           handleSendMessage={handleSendMessage}

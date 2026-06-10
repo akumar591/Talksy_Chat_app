@@ -449,10 +449,10 @@ const StatusViewer = ({
     )].length;
 
   return (
-    <div className="relative w-full h-screen flex items-center justify-center bg-[var(--bg)]">
+    <div className="relative w-full  h-[100dvh] flex items-center justify-center bg-[var(--bg)]">
 
       {/* 🔥 MAIN */}
-      <div className="relative w-full h-screen md:mt-20 lg:mt-24 md:w-[320px] md:h-[600px] lg:w-[350px] lg:h-[650px] md:rounded-[28px] overflow-hidden bg-black md:shadow-2xl">
+      <div className="relative w-full h-[100dvh] md:mt-20 lg:mt-24 md:w-[320px] md:h-[600px] lg:w-[350px] lg:h-[650px] md:rounded-[28px] overflow-hidden bg-black md:shadow-2xl">
 
         {/* 🔥 IMAGE */}
         {isImage && (

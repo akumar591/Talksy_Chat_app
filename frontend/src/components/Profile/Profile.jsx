@@ -506,7 +506,7 @@ const Profile = () => {
       </div>
 
       {/* MAIN */}
-      <div className="w-full md:max-w-2xl flex-1 min-h-0 px-3 overflow-y-auto hide-scrollbar space-y-4 pb-6">
+      <div className="w-full md:max-w-2xl flex-1 min-h-0 px-3 overflow-y-auto hide-scrollbar space-y-4 pb-28 md:pb-6">
 
         {/* PROFILE CARD */}
         <div className="glass rounded-2xl p-6 flex flex-col items-center shadow-xl">
@@ -915,7 +915,7 @@ const Profile = () => {
 
         <div className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center p-4">
 
-          <div className="w-full max-w-md h-[500px] rounded-3xl overflow-hidden bg-[#111827] relative">
+          <div className="w-full max-w-md h-[100dvh] rounded-3xl overflow-hidden bg-[#111827] relative">
 
             <ImageCropper
               image={preview}
