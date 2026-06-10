@@ -705,29 +705,31 @@ const ChatWindow = ({ chat, onBack }) => {
       )}
 
       {/* 🔥 INPUT */}
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        inputRef={inputRef}
-        handleSendMessage={handleSendMessage}
-        handleMicClick={handleMicClick}
-        isRecording={isRecording}
-        // 🔥 ATTACH
-        showAttach={showAttach}
-        setShowAttach={setShowAttach}
-        attachRef={attachRef}
-        galleryInputRef={galleryInputRef}
-        cameraInputRef={cameraInputRef}
-        fileInputRef={fileInputRef}
-        setPreviewMedia={setPreviewMedia}
-        setPreviewType={setPreviewType}
-        setShowMediaPreview={setShowMediaPreview}
-        setShowCamera={setShowCamera}
-        // 🔥 EMOJI
-        showEmoji={showEmoji}
-        setShowEmoji={setShowEmoji}
-        emojiRef={emojiRef}
-      />
+      <div className="pb-[env(safe-area-inset-bottom)]">
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          inputRef={inputRef}
+          handleSendMessage={handleSendMessage}
+          handleMicClick={handleMicClick}
+          isRecording={isRecording}
+          // 🔥 ATTACH
+          showAttach={showAttach}
+          setShowAttach={setShowAttach}
+          attachRef={attachRef}
+          galleryInputRef={galleryInputRef}
+          cameraInputRef={cameraInputRef}
+          fileInputRef={fileInputRef}
+          setPreviewMedia={setPreviewMedia}
+          setPreviewType={setPreviewType}
+          setShowMediaPreview={setShowMediaPreview}
+          setShowCamera={setShowCamera}
+          // 🔥 EMOJI
+          showEmoji={showEmoji}
+          setShowEmoji={setShowEmoji}
+          emojiRef={emojiRef}
+        />
+      </div>
 
       {/* 🔥 MEDIA PREVIEW */}
       <MediaPreviewModal

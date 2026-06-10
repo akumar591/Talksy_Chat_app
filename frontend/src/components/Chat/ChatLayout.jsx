@@ -136,7 +136,7 @@ const ChatLayout = ({ mobileSearch }) => {
           md:w-[70%]
           lg:w-[75%]
 
-          h-screen
+          h-[100dvh]
           md:h-[calc(100vh-64px)]
 
           flex-col
