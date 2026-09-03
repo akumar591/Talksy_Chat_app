@@ -119,6 +119,11 @@ public class SecurityConfig {
 
                                 ).permitAll()
 
+                                // 🔓 HEALTH CHECK (for UptimeRobot ping)
+                                .requestMatchers(
+                                        "/health"
+                                ).permitAll()
+
                                 // 🔓 FILE APIs
                                 .requestMatchers(
                                         "/api/file/**"

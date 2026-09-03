@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL:
-    "https://talksy-chat-app-pnk2.onrender.com/api",
+    "https://talksy-chat-app-pnk2.onrender.com",
   withCredentials: true,
 });
 
